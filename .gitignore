@@ -1,0 +1,4 @@
+_thu/
+private/
+*.sql.local
+__pycache__/
