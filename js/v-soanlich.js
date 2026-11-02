@@ -9,6 +9,12 @@ const thanhNho = (tieu, href, nhan, phai) => h('div', { class: 'thanh-nho' }, h(
 const suaDuoc = (l) => S.toi.la_phu_trach || l.nguoi_tao === S.toi.id || TEN_NHA_APP[l.nhom] === S.toi.nha;
 const tenLich = (l) => l.ten || 'Chương trình chưa đặt tên';
 
+/* Trang soạn lịch cũ cùng tên miền với app nên bản nháp trong trình duyệt vẫn đọc được. */
+const KHOA_NHAP_CU = 'nktv-lich-sinh-hoat-v1';
+let choMo = null;
+const docNhapCu = () => { try { const o = JSON.parse(localStorage.getItem(KHOA_NHAP_CU)); return o && o.sample !== true ? V.normalize(o) : null; } catch (_) { return null; } };
+const xoaNhapCu = () => { try { localStorage.removeItem(KHOA_NHAP_CU); } catch (_) { /* không có bộ nhớ */ } };
+
 function taiFile(blob, ten) {
   const u = URL.createObjectURL(blob), a = h('a', { href: u, download: ten, rel: 'noopener' });
   document.body.append(a); a.click(); a.remove();
@@ -34,8 +40,10 @@ function moi() {
 /* ---------- Soạn lịch ---------- */
 export async function manSoanLich(vung, id, idMau) {
   await V.napTaiNguyen();
-  let banGhi = null, st;
-  if (id && id !== 'moi') {
+  let banGhi = null, st, tuNhap = null;
+  const lichMoi = !id && !idMau;
+  if (lichMoi && choMo) { tuNhap = choMo; st = choMo.st; choMo = null; }
+  else if (id && id !== 'moi') {
     banGhi = await S.db.docLich(id);
     if (!banGhi) throw new Error('Không tìm thấy lịch này.');
     st = V.normalize(banGhi.du_lieu);
@@ -69,6 +77,7 @@ export async function manSoanLich(vung, id, idMau) {
       const kq = await S.db.luuLich(banGhi ? banGhi.id : null, V.duLieu(st), false);
       if (!banGhi) { banGhi = { id: kq.id, trang_thai: kq.trang_thai, nguoi_tao: S.toi.id, nhom: st.nhom }; history.replaceState(null, '', '#lich/soan/' + kq.id); }
       baoLuu.textContent = 'Đã lưu nháp lúc ' + gio(new Date());
+      if (tuNhap && tuNhap.cuaMay) xoaNhapCu();
     } catch (e) { chuaLuu = true; baoLuu.textContent = 'Chưa lưu được nháp: ' + e.message; }
     dangLuu = false;
   };
@@ -122,7 +131,26 @@ export async function manSoanLich(vung, id, idMau) {
     }));
   };
 
+  /* Mở bản nháp của trang cũ: trong trình duyệt này, hoặc tệp .json đã lưu */
+  const moNhap = (s, cuaMay) => { clearTimeout(henLuu); chuaLuu = false; choMo = { st: s, cuaMay }; manSoanLich(vung); };
+  const nhapCu = lichMoi && !tuNhap ? docNhapCu() : null;
+  const hopNhapCu = nhapCu ? h('div', { class: 'nhom', style: 'padding:12px 16px' },
+    h('p', { style: 'margin:0 0 10px' }, 'Máy này còn một bản nháp từ trang lịch cũ: ', h('b', null, nhapCu.mau === 'dacbiet' ? (nhapCu.tenCT || 'Chương trình đặc biệt') : 'Lịch tuần'), nhapCu.ngay ? ', ngày ' + ngay(nhapCu.ngay + 'T12:00:00+07:00') : '', '.'),
+    h('div', { class: 'hang-nut' },
+      h('button', { class: 'nut nho', type: 'button', onclick: () => moNhap(nhapCu, true) }, 'Mở bản nháp'),
+      h('button', { class: 'nut phu nho', type: 'button', onclick: async () => {
+        if (await xacNhan({ tieuDe: 'Bỏ bản nháp cũ?', chu: 'Bản nháp này sẽ bị xóa khỏi máy.', nut: 'Bỏ bản nháp', nguy: true })) { xoaNhapCu(); hopNhapCu.remove(); }
+      } }, 'Bỏ'))) : null;
+  const chonTep = h('input', { type: 'file', accept: '.json,application/json', style: 'display:none', 'aria-label': 'Chọn tệp bản nháp', onchange: async (e) => {
+    const tep = e.target.files[0]; e.target.value = '';
+    if (!tep) return;
+    let s = null;
+    try { s = V.normalize(JSON.parse(await tep.text())); } catch (_) { /* báo ở dưới */ }
+    if (s) moNhap(s, false); else toast('Tệp này không phải bản nháp lịch.', true);
+  } });
+
   const f = h('form', { onsubmit: (e) => e.preventDefault(), class: 'o-nhap-lich' },
+    hopNhapCu,
     h('div', { class: 'chon-ngang' }, nutLoai), khungCT,
     h('div', { class: 'nhan-nhom' }, 'Nhóm trực'), h('div', { class: 'luoi-nha' }, nutNha),
     h('div', { class: 'nhan-nhom' }, 'Ngày, giờ và địa điểm', thuCua),
@@ -137,7 +165,8 @@ export async function manSoanLich(vung, id, idMau) {
     h('div', { class: 'nhom' }, o('Chủ trì', 'chuTri', { placeholder: 'BS. Nguyễn Văn A' }), o('Điều hành', 'dieuHanh', { placeholder: 'SV. Trần Thị B' })),
     h('div', { class: 'nhan-nhom' }, 'Mã QR trên ảnh (không bắt buộc)'),
     h('div', { class: 'nhom' }, o('Link', 'qrLink', { type: 'url', inputmode: 'url', maxlength: 300, placeholder: 'https://forms.gle/…' }), o('Chú thích cạnh mã', 'qrNote', { maxlength: 40, placeholder: 'Đăng ký tham gia' })),
-    h('datalist', { id: 'ds-nguoi' }, ['Thành viên CLB', 'Ban tổ chức', 'Ban chủ nhiệm'].map(v => h('option', { value: v }))));
+    h('datalist', { id: 'ds-nguoi' }, ['Thành viên CLB', 'Ban tổ chức', 'Ban chủ nhiệm'].map(v => h('option', { value: v }))),
+    lichMoi ? h('button', { class: 'nut-chu', type: 'button', onclick: () => chonTep.click() }, 'Mở tệp bản nháp từ trang cũ (.json)') : null, chonTep);
 
   /* Xem trước và các nút */
   const nutKho = [['post', 'Bài đăng 4:5'], ['story', 'Story 9:16']].map(([v, c]) => h('button', { class: 'vien', type: 'button', 'aria-pressed': st.kho === v ? 'true' : 'false', 'data-v': v, onclick: () => { st.kho = v; nutKho.forEach(n => n.setAttribute('aria-pressed', n.dataset.v === v ? 'true' : 'false')); doi(); } }, c));
@@ -150,7 +179,7 @@ export async function manSoanLich(vung, id, idMau) {
     const lanDau = !daGui();
     const kq = await thu(() => S.db.luuLich(banGhi ? banGhi.id : null, V.duLieu(st), true), lanDau ? 'Đã gửi lịch. Lịch hiện ở tab Lịch và đã có thông báo.' : 'Đã cập nhật lịch');
     nutGui.disabled = false;
-    if (kq) { chuaLuu = false; location.hash = 'lich/kho'; }
+    if (kq) { chuaLuu = false; if (tuNhap && tuNhap.cuaMay) xoaNhapCu(); location.hash = 'lich/kho'; }
   } }, daGui() ? 'Cập nhật lịch' : 'Xác nhận và gửi');
   const xem = h('aside', { class: 'o-xem' },
     h('div', { class: 'chon-ngang' }, nutKho),
@@ -179,6 +208,7 @@ export async function manSoanLich(vung, id, idMau) {
     h('div', { class: 'thanh-soan' }, h('div', { class: 'giua' }, demKiem, h('br'), baoLuu), h('button', { class: 'nut nho', type: 'button', onclick: moXem }, 'Xem và gửi')));
   vung.className = 'noi-dung rong';
   capLoai(); veMuc(); ve();
+  if (tuNhap) doi();
 }
 
 /* ---------- Xem một lịch đã lưu ---------- */
