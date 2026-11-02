@@ -137,6 +137,12 @@ export const api = {
   hoatDongCho: () => rest('hoat_dong_ghi_nhan?select=*,thanh_vien!hoat_dong_ghi_nhan_thanh_vien_id_fkey(ma,ho_ten,gen,nha)&trang_thai=eq.cho&order=gui_luc'),
   diemTestCua: (tv) => rest(`lam_bai?select=diem,nop_luc,bai_id,bai_test(tieu_de)&thanh_vien_id=eq.${tv}&nop_luc=not.is.null&order=nop_luc.desc`),
 
+  dsLich: () => rest('lich?select=*&order=ngay.desc.nullsfirst,sua_luc.desc&limit=500'),
+  docLich: async (id) => (await rest(`lich?select=*&id=eq.${id}`))[0],
+  lichCuaBuoi: async (buoi) => (await rest(`lich?select=*&buoi_id=eq.${buoi}`))[0],
+  luuLich: (id, duLieu, gui) => rpc('luu_lich', { p_id: id, p_du_lieu: duLieu, p_gui: gui }),
+  xoaLich: (id) => rpc('xoa_lich', { p_id: id }),
+
   baiCuaToi: () => rpc('bai_cua_toi'),
   batDauBai: (bai) => rpc('bat_dau_bai', { p_bai: bai }),
   luuTamBai: (lam, tl) => rpc('luu_tam_bai', { p_lam: lam, p_tra_loi: tl }),

@@ -4,6 +4,7 @@ import { $, h, dat, bieuTuong, oNhap, NHA, moTaTV, dangTai, dongHetSheet } from 
 import { api, chuanMa } from './api.js';
 import { manHomNay } from './v-homnay.js';
 import { manLich } from './v-lich.js';
+import { manSoanLich, manKhoLich } from './v-soanlich.js';
 import { manPostTest, manLamBai, manKetQua } from './v-test.js';
 import { manHoSo } from './v-hoso.js';
 import { manQuanLy, tuyenQuanLy } from './v-quanly.js';
@@ -33,7 +34,11 @@ async function tuyen() {
   dat(vung, dangTai());
   window.scrollTo(0, 0);
   try {
-    if (tab === 'lich') await manLich(vung);
+    if (tab === 'lich') {
+      if (con[0] === 'soan') await manSoanLich(vung, con[1], con[2]);
+      else if (con[0] === 'kho') await manKhoLich(vung);
+      else await manLich(vung);
+    }
     else if (tab === 'post-test') {
       if (con[0] === 'lam') await manLamBai(vung, con[1]);
       else if (con[0] === 'ket-qua') await manKetQua(vung, con[1]);

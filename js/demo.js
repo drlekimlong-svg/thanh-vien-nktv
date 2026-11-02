@@ -1,7 +1,7 @@
 // Bản chạy thử trên máy (localhost, ?demo=admin|diem|tv): dữ liệu giả trong bộ nhớ, không gọi máy chủ.
 // Cùng tên hàm với api.js để thử giao diện mà không chạm vào dữ liệu thật.
 const uid = () => 'x' + Math.random().toString(36).slice(2, 12);
-const NHA = ['Seiryu', 'Suzaku', 'Byakko', 'Genbu', 'Kirin', 'YinYang Kois'];
+const NHA = ['Seiryu', 'Suzaku', 'Byakko', 'Genbu', 'Kirin', 'Yin-Yang Kois'];
 
 export function demo(vai) {
   const tv = Array.from({ length: 18 }, (_, i) => ({
@@ -32,7 +32,10 @@ export function demo(vai) {
     { id: 'c2', bai_id: 'p1', phan: 'PHẦN A. KIẾN THỨC NỀN', noi_dung: 'Câu hỏi mẫu thứ hai, dài hơn một chút để thử xuống dòng trên màn hình điện thoại?', lua_chon: ['Một', 'Hai', 'Ba', 'Bốn'], dung: 2 }
   ];
   const lam = [];
-  const gioi = (ms = 60) => new Promise(r => setTimeout(r, ms));
+  const lich = [{ id: 'k1', buoi_id: 'b1', loai: 'tuan', nhom: 'suzaku', ngay: buoi[0].bat_dau.slice(0, 10), ten: 'Lịch sinh hoạt tuần', trang_thai: 'da_gui', nguoi_tao: 't1', nguoi_tao_ten: 'TRẦN THỊ B', gui_luc: buoi[0].bat_dau, sua_luc: buoi[0].bat_dau,
+    du_lieu: { mau: 'tuan', kho: 'post', nhom: 'suzaku', ngay: buoi[0].bat_dau.slice(0, 10), gioBD: '14:00', gioKT: '16:00', dd1: 'Phòng A', dd2: 'ĐHYK Phạm Ngọc Thạch', chuTri: 'BS. Nguyễn Văn A', dieuHanh: 'SV. Trần Thị B', tenCT: '', phuCT: '', moTa: '', qrLink: '', qrNote: '',
+      rows: [{ t1: '14:00', t2: '15:00', title: 'Chuyên đề mẫu', who: 'SV. Lê Minh C', org: 'kirin' }, { t1: '15:00', t2: '16:00', title: 'Thông báo chung', who: 'Ban tổ chức', org: '' }] } }];
+  const gioi =(ms = 60) => new Promise(r => setTimeout(r, ms));
   const tt = (b, t) => {
     const d = dd.find(x => x.buoi_id === b.id && x.thanh_vien_id === t.id);
     const x = don.find(y => y.buoi_id === b.id && y.thanh_vien_id === t.id && y.trang_thai === 'duyet');
@@ -104,6 +107,24 @@ export function demo(vai) {
     async xuLyHoatDong(id, duyet) { Object.assign(hd.find(x => x.id === id), { trang_thai: duyet ? 'dat' : 'tu_choi' }); },
     async hoatDongCho() { return hd.filter(x => x.trang_thai === 'cho').map(x => Object.assign({}, x, { thanh_vien: tv.find(t => t.id === x.thanh_vien_id) })); },
     async diemTestCua(id) { return lam.filter(l => l.thanh_vien_id === id && l.nop_luc).map(l => ({ diem: l.diem, nop_luc: l.nop_luc, bai_id: l.bai_id, bai_test: bai.find(b => b.id === l.bai_id) })); },
+    async dsLich() { await gioi(); return lich.slice(); },
+    async docLich(id) { return lich.find(l => l.id === id); },
+    async lichCuaBuoi(b) { return lich.find(l => l.buoi_id === b); },
+    async luuLich(id, d, gui) {
+      const ten = d.mau === 'dacbiet' ? d.tenCT : 'Lịch sinh hoạt tuần';
+      let l = lich.find(x => x.id === id);
+      if (!l) { l = { id: uid(), nguoi_tao: me().id, nguoi_tao_ten: me().ho_ten, trang_thai: 'nhap' }; lich.unshift(l); }
+      Object.assign(l, { du_lieu: d, nhom: d.nhom, ngay: d.ngay, ten, loai: d.mau, sua_luc: new Date().toISOString(), nguoi_sua_ten: me().ho_ten });
+      if (gui) {
+        l.trang_thai = 'da_gui'; l.gui_luc = l.gui_luc || new Date().toISOString();
+        const bd = new Date(`${d.ngay}T${d.gioBD || '14:00'}:00+07:00`).toISOString();
+        const o = { ten: d.mau === 'tuan' ? 'Sinh hoạt hằng tuần' : d.tenCT, bat_dau: bd, dia_diem: [d.dd1, d.dd2].filter(Boolean).join(', '), nhom_truc: d.nhom === 'koi' ? 'Yin-Yang Kois' : d.nhom[0].toUpperCase() + d.nhom.slice(1), chu_tri: d.chuTri, noi_dung: d.rows.map(r => `${r.t1} ${r.title}`).join('\n') };
+        const c = buoi.find(b => b.id === l.buoi_id);
+        if (c) Object.assign(c, o); else { const b = Object.assign({ id: uid(), tre_sau_phut: 10, tinh_chuyen_can: d.mau === 'tuan', dong: false, ket_thuc: null }, o); buoi.push(b); l.buoi_id = b.id; }
+      }
+      return { id: l.id, buoi_id: l.buoi_id, trang_thai: l.trang_thai };
+    },
+    async xoaLich(id) { lich.splice(lich.findIndex(l => l.id === id), 1); },
     async baiCuaToi() {
       return bai.filter(b => b.trang_thai === 'mo').map(b => {
         const ls = lam.filter(l => l.bai_id === b.id && l.thanh_vien_id === me().id), g = ls.filter(l => l.nop_luc), d = ls.find(l => !l.nop_luc);

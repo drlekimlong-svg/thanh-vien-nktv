@@ -231,7 +231,7 @@ export const NHA = {
   Byakko: { anh: 'byakko', mau: '#3A4756', nhat: '#E9EEF2', ten: 'Bạch Hổ' },
   Genbu: { anh: 'genbu', mau: '#3B4A2F', nhat: '#ECEFE3', ten: 'Huyền Vũ' },
   Kirin: { anh: 'kirin', mau: '#4B3F8F', nhat: '#EEEAF8', ten: 'Kỳ Lân' },
-  'YinYang Kois': { anh: 'koi', mau: '#252B3B', nhat: '#F2EEE3', ten: 'Cá Chép' }
+  'Yin-Yang Kois': { anh: 'koi', mau: '#252B3B', nhat: '#F2EEE3', ten: 'Cá Chép' }
 };
 export const DS_NHA = Object.keys(NHA);
 export const TT_DIEM_DANH = { dung: 'Đúng giờ', tre: 'Trễ', phep: 'Vắng có phép', vang: 'Vắng', chua: 'Chưa điểm danh' };

@@ -7,7 +7,7 @@ Chạy lại an toàn: người đã có mã giữ nguyên Mã QR và tài kho�
 import csv
 import sys
 
-NHA = {'Seiryu', 'Suzaku', 'Byakko', 'Genbu', 'Kirin', 'YinYang Kois'}
+NHA = {'Seiryu', 'Suzaku', 'Byakko', 'Genbu', 'Kirin', 'Yin-Yang Kois'}
 CAP = {'Junior', 'Senior', 'Ban cố vấn'}
 
 
@@ -26,6 +26,8 @@ def doc(duong_dan):
         if not ten:
             continue
         nha, cap, hd = r[3].strip(), r[4].strip(), r[5].strip()
+        if nha == 'YinYang Kois':  # cách viết cũ trong tệp của Ban nhân sự
+            nha = 'Yin-Yang Kois'
         if nha and nha not in NHA:
             raise SystemExit(f'Nhà lạ ở dòng của {ten}: {nha}')
         if cap and cap not in CAP:

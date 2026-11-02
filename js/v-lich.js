@@ -12,7 +12,7 @@ const taiDon = async () => (donCache = await S.db.donCuaToi(S.toi.id));
 export async function suKienBuoi(b, sauKhi) {
   const noiDung = h('div', null, h('div', { class: 'dang-tai' }, 'Đang tải…'));
   const s = moSheet({ tieuDe: 'Buổi sinh hoạt', noiDung });
-  const [don, lichSu] = await Promise.all([taiDon(), S.db.lichSuCuaToi(b.bat_dau, b.bat_dau)]);
+  const [don, lichSu, lichBuoi] = await Promise.all([taiDon(), S.db.lichSuCuaToi(b.bat_dau, b.bat_dau), S.db.lichCuaBuoi(b.id).catch(() => null)]);
   const toiDon = don.find(d => d.buoi_id === b.id);
   const toi = lichSu.find(x => x.buoi_id === b.id);
   const daQua = new Date(b.bat_dau) < new Date();
@@ -39,7 +39,8 @@ export async function suKienBuoi(b, sauKhi) {
       b.dia_diem ? dong({ tieu: b.dia_diem, phu: 'Địa điểm' }) : null,
       b.nhom_truc ? dong({ tieu: b.nhom_truc, phu: 'Nhóm trực' }) : null,
       b.chu_tri ? dong({ tieu: b.chu_tri, phu: 'Chủ trì' }) : null,
-      toi && (coMat || b.dong) ? dong({ tieu: TT_DIEM_DANH[toi.trang_thai] + (toi.tre_phut ? ` ${toi.tre_phut} phút` : ''), phu: 'Điểm danh của tôi' + (toi.luc ? ' · ' + gio(toi.luc) : '') }) : null),
+      toi && (coMat || b.dong) ? dong({ tieu: TT_DIEM_DANH[toi.trang_thai] + (toi.tre_phut ? ` ${toi.tre_phut} phút` : ''), phu: 'Điểm danh của tôi' + (toi.luc ? ' · ' + gio(toi.luc) : '') }) : null,
+      lichBuoi ? dong({ tieu: 'Xem ảnh lịch', onclick: async () => { const { moLich } = await import('./v-soanlich.js'); s.dong(); moLich(lichBuoi, sauKhi); } }) : null),
     b.noi_dung ? h('div', { class: 'nhom', style: 'padding:13px 16px' }, h('div', { class: 'noi-dung-tb' }, b.noi_dung)) : null,
     toiDon ? nhom('Đơn của tôi',
       dong({ tieu: toiDon.ly_do, phu: 'Gửi ' + ngayGio(toiDon.gui_luc) + (toiDon.phan_hoi ? ' · Phản hồi: ' + toiDon.phan_hoi : ''), sau: nhanDon(toiDon) }),
@@ -65,6 +66,9 @@ export async function manLich(vung) {
   });
   dat(vung,
     h('h1', { class: 'tieu-de-lon' }, 'Lịch sinh hoạt'),
+    h('div', { class: 'hang-nut', style: 'margin-bottom:20px' },
+      h('a', { class: 'nut', href: '#lich/soan' }, 'Soạn lịch'),
+      h('a', { class: 'nut phu', href: '#lich/kho' }, 'Kho lịch')),
     cc && cc.tong ? soLieu([
       { so: Math.round((cc.dung + cc.tre) / cc.tong * 100) + '%', ten: `Chuyên cần ${cc.dung + cc.tre}/${cc.tong}` },
       { so: cc.tre, ten: 'Trễ', lop: 'tre' }, { so: cc.phep, ten: 'Có phép', lop: 'phep' }, { so: cc.vang, ten: 'Vắng', lop: 'vang' }

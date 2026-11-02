@@ -9,7 +9,7 @@ Kho này chỉ chứa giao diện và lược đồ cơ sở dữ liệu. Danh s
 | Vai trò | Quyền |
 |---|---|
 | Không đăng nhập, quét mã trên thẻ | Thẻ của đúng người đó: họ tên, Generation, nhà, cấp, tình trạng |
-| Thành viên | Lịch, thông báo, xin nghỉ, làm post-test, hồ sơ và chuyên cần của chính mình |
+| Thành viên | Lịch, soạn lịch, thông báo, xin nghỉ, làm post-test, hồ sơ và chuyên cần của chính mình |
 | Ban cố vấn | Thêm danh sách có tên: hiện diện, chuyên cần; chỉ xem |
 | Phụ trách điểm danh | Thêm tạo buổi, quét mã, ghi tay, duyệt đơn xin nghỉ |
 | Quản trị | Thêm thành viên, vai trò, kích hoạt, thông báo, post-test, xác nhận năng lực |
@@ -17,6 +17,12 @@ Kho này chỉ chứa giao diện và lược đồ cơ sở dữ liệu. Danh s
 ## Đăng nhập
 
 Thành viên không cần email. Ban nhân sự cấp mã kích hoạt trong app (dùng một lần, hết hạn sau 30 ngày); thành viên nhập mã thành viên và mã kích hoạt, tự đặt mật khẩu. Quên mật khẩu thì xin mã mới và làm lại đúng bước đó.
+
+## Soạn lịch sinh hoạt
+
+Mọi thành viên soạn được lịch tuần hoặc chương trình đặc biệt, xem trước ảnh theo mascot nhóm trực, tải PNG hoặc Excel. Bản nháp tự lưu và người cùng nhà soạn tiếp được. Khi gửi, lịch vào kho, tạo buổi ở tab Lịch để điểm danh và đăng một thông báo. Ảnh không lưu thành tệp: dữ liệu được giữ nguyên nên vẽ lại được bất cứ lúc nào.
+
+`js/lich-ve.js` là bộ vẽ ảnh trích nguyên văn từ app soạn lịch cũ bằng `tools/tao_lich_ve.py`, không sửa tay.
 
 ## Post-test
 
