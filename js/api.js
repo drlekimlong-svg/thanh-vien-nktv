@@ -9,7 +9,9 @@ const luuPhien = (p) => { phien = p; try { p ? localStorage.setItem(KHOA, JSON.s
 const THONG_DICH = [
   [/Invalid login credentials/i, 'Mã thành viên hoặc mật khẩu không đúng.'],
   [/Failed to fetch|NetworkError|Load failed/i, 'Không có mạng hoặc máy chủ đang tạm dừng. Thử lại sau ít phút.'],
-  [/JWT expired/i, 'Phiên đăng nhập đã hết hạn. Đăng nhập lại.']
+  [/JWT expired/i, 'Phiên đăng nhập đã hết hạn. Đăng nhập lại.'],
+  [/thanh_vien_chuc_vu_nha/, 'Nhóm trưởng, nhóm phó cần thuộc một nhà. Chọn nhà cho người này trước.'],
+  [/cau_hoi_hinh_check/, 'Hình quá lớn. Chọn hình khác hoặc cắt nhỏ lại.']
 ];
 const loiViet = (m) => { for (const [a, b] of THONG_DICH) if (a.test(m)) return b; return m; };
 
@@ -91,7 +93,7 @@ export const api = {
   caiDat: async () => { const r = await rest('cai_dat?select=khoa,gia_tri'); const o = {}; r.forEach(x => { o[x.khoa] = x.gia_tri; }); return o; },
   datCaiDat: (khoa, gia_tri) => rest('cai_dat', { method: 'POST', body: JSON.stringify({ khoa, gia_tri }), headers: { Prefer: 'resolution=merge-duplicates' } }),
 
-  dsThanhVien: () => rest('thanh_vien?select=id,ma,ho_ten,gen,nha,cap,hoat_dong,ghi_chu,khoa_qr,vai_tro,tham_gia_tu&order=ma'),
+  dsThanhVien: () => rest('thanh_vien?select=id,ma,ho_ten,gen,nha,cap,chuc_vu,hoat_dong,ghi_chu,khoa_qr,vai_tro,tham_gia_tu&order=ma'),
   themThanhVien: async (o) => (await them('thanh_vien', o))[0],
   suaThanhVien: (id, o) => sua('thanh_vien', id, o),
   tinhTrangKichHoat: () => rpc('tinh_trang_kich_hoat'),
@@ -108,6 +110,7 @@ export const api = {
   chuyenCan: (tv, tu, den) => rpc('chuyen_can', { p_tv: tv, p_tu: tu, p_den: den }),
   lichSuCuaToi: (tu, den) => rpc('lich_su_cua_toi', { p_tu: tu, p_den: den }),
   baoCaoChuyenCan: (tu, den) => rpc('bao_cao_chuyen_can', { p_tu: tu, p_den: den }),
+  diemNhom: (tu, den) => rpc('diem_nhom', { p_tu: tu, p_den: den }),
 
   donCuaToi: (tv) => rest(`xin_nghi?select=*,buoi(ten,bat_dau)&thanh_vien_id=eq.${tv}&order=gui_luc.desc`),
   guiXinNghi: (buoi, lyDo) => rpc('gui_xin_nghi', { p_buoi: buoi, p_ly_do: lyDo }),
@@ -148,10 +151,10 @@ export const api = {
   luuTamBai: (lam, tl) => rpc('luu_tam_bai', { p_lam: lam, p_tra_loi: tl }),
   guiBai: (lam, tl) => rpc('gui_bai', { p_lam: lam, p_tra_loi: tl }),
   xemLaiBai: (bai) => rpc('xem_lai_bai', { p_bai: bai }),
-  dsBaiQuanTri: () => rest('bai_test?select=*,cau_hoi(id)&order=tao_luc.desc'),
+  dsBaiQuanTri: () => rest('bai_test?select=*,cau_hoi(id),buoi(bat_dau)&order=tao_luc.desc'),
   docBaiQuanTri: async (id) => {
     const [b, c] = await Promise.all([rest(`bai_test?select=*&id=eq.${id}`), rest(`cau_hoi?select=*,dap_an(dung)&bai_id=eq.${id}&order=thu_tu`)]);
-    return Object.assign(b[0], { cau: c.map(x => ({ id: x.id, phan: x.phan, noi_dung: x.noi_dung, lua_chon: x.lua_chon, dung: x.dap_an ? x.dap_an.dung : null })) });
+    return Object.assign(b[0], { cau: c.map(x => ({ id: x.id, phan: x.phan, noi_dung: x.noi_dung, lua_chon: x.lua_chon, hinh: x.hinh, dung: x.dap_an ? x.dap_an.dung : null })) });
   },
   luuBaiTest: (p) => rpc('luu_bai_test', { p }),
   xoaBaiTest: (id) => xoa('bai_test', id),

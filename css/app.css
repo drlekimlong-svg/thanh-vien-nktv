@@ -33,7 +33,9 @@
     --bong: 0 1px 2px rgba(0, 0, 0, 0.3); --bong-lon: 0 -8px 40px rgba(0, 0, 0, 0.5);
   }
 }
+:root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"] {
+  color-scheme: dark;
   --nen: #0f1411; --be-mat: #1a211c; --be-mat-2: #222a25; --chu: #edf1ee; --chu-2: #a7b1aa; --chu-3: #79837c;
   --ke: rgba(237, 241, 238, 0.12); --chinh: #4cc27f; --chinh-chu: #06180e; --chinh-nhat: rgba(76, 194, 127, 0.15);
   --kinh: rgba(24, 30, 26, 0.72); --man: rgba(0, 0, 0, 0.55); --dung: #4cc27f; --tre: #e5a23c; --phep: #79a8ee; --vang: #f0776c;
@@ -103,6 +105,9 @@ a { color: var(--chinh); }
 }
 .logo-ben { display: none; align-items: center; gap: 10px; padding: 0 8px 18px; font-weight: 600; font-size: 0.9375rem; line-height: 1.2; letter-spacing: -0.01em; }
 .logo-ben img { width: 38px; height: 38px; }
+/* Nền tối: logo nét đậm bị chìm, mà không được đặt nền sau logo, nên chỉ giữ tên CLB. */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .logo-ben img { display: none; } }
+:root[data-theme="dark"] .logo-ben img { display: none; }
 
 /* ---------- Nhóm và dòng ---------- */
 .nhom { background: var(--be-mat); border-radius: var(--bo); box-shadow: var(--bong); overflow: hidden; margin-bottom: 22px; }
@@ -266,8 +271,16 @@ button.dong:active, a.dong:active { background: var(--ke); transition: none; }
 .tien-do i { display: block; height: 100%; background: var(--chinh); border-radius: 2px; transform-origin: left; transition: transform 240ms ease-out; }
 .cau { margin-bottom: 26px; scroll-margin-top: 80px; }
 .cau .phan { font-size: 0.8125rem; font-weight: 600; color: var(--chinh); margin-bottom: 14px; }
-.cau .de { font-size: 1.0625rem; line-height: 1.42; margin-bottom: 11px; }
+.cau .de { font-size: 1.0625rem; line-height: 1.42; margin-bottom: 11px; white-space: pre-line; }
 .cau .de b { font-weight: 600; }
+.mo-ta-bai { color: var(--chu-2); font-size: 0.9375rem; line-height: 1.45; white-space: pre-line; margin: -10px 0 20px; }
+.hinh-cau { display: block; width: 100%; padding: 0; border: 0; background: #000; border-radius: 13px; overflow: hidden; margin: 0 0 11px; cursor: zoom-in; box-shadow: var(--bong); }
+.hinh-cau img { display: block; width: 100%; height: auto; }
+.lop-hinh { position: fixed; inset: 0; z-index: 80; background: #000; display: flex; align-items: center; justify-content: center; padding: calc(var(--dem-dau) + 8px) 0 calc(var(--dem-day) + 8px); cursor: zoom-out; touch-action: pinch-zoom; }
+.lop-hinh img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.lop-hinh .dong-lai { position: absolute; top: calc(var(--dem-dau) + 10px); right: 12px; background: rgba(255, 255, 255, 0.16); color: #fff; border: 0; border-radius: 999px; padding: 7px 14px; font-weight: 600; cursor: pointer; }
+.soan-cau .hinh-soan { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+.soan-cau .hinh-soan img { width: 92px; height: 64px; object-fit: cover; border-radius: 8px; background: #000; }
 .lua-chon {
   width: 100%; display: flex; gap: 11px; align-items: flex-start; text-align: left; border: 0; background: var(--be-mat); box-shadow: var(--bong); border-radius: 13px; padding: 12px 13px; margin-bottom: 8px; cursor: pointer; line-height: 1.38;
   transition: transform 100ms ease-out, background-color 120ms ease-out; color: inherit; font-size: 1rem;
@@ -344,6 +357,15 @@ button.dong:active, a.dong:active { background: var(--ke); transition: none; }
 .chon-nha:active { transform: scale(0.96); }
 .chon-nha img { width: 52px; height: 52px; object-fit: contain; }
 .chon-nha[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--mau); color: var(--chu); font-weight: 600; }
+.chon-nha[disabled] { opacity: 0.35; cursor: default; }
+
+/* ---------- Điểm nhóm ---------- */
+.hang-nha { gap: 10px; }
+.hang-nha .hang-so { width: 22px; flex: none; text-align: center; font-weight: 700; color: var(--chu-2); font-variant-numeric: tabular-nums; }
+.hang-nha img { width: 40px; height: 40px; object-fit: contain; flex: none; }
+.hang-nha .thanh-pt i { background: var(--mau); }
+.diem-nha { font-size: 1.375rem; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; flex: none; min-width: 52px; text-align: right; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .hang-nha .thanh-pt i { background: color-mix(in srgb, var(--mau) 45%, #fff); } }
 .muc-lich input, .muc-lich select { width: 100%; border: 0; background: var(--be-mat-2); border-radius: 8px; padding: 8px 9px; font-size: 0.9375rem; outline: none; margin-top: 6px; min-height: 38px; }
 .muc-lich input:focus, .muc-lich select:focus { box-shadow: inset 0 0 0 1.5px var(--chinh); }
 .hang-gio { display: flex; align-items: center; gap: 8px; color: var(--chu-2); }

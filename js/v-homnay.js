@@ -37,7 +37,9 @@ export async function manHomNay(vung) {
   const tenGoi = S.toi.ho_ten.trim().split(/\s+/).pop();
   const canh = tenGoi[0] + tenGoi.slice(1).toLowerCase();
   const daDoc = new Set(doc);
-  const baiMo = bai.filter(b => b.dang_lam_den || (b.da_gui === 0 && (!b.dong_luc || new Date(b.dong_luc) > new Date()) && (!b.mo_luc || new Date(b.mo_luc) <= new Date())));
+  // Test đầu giờ hiện từ 12 giờ trước buổi, kể cả khi chưa điểm danh, để thành viên biết có bài.
+  const ganBuoi = (b) => b.buoi_bat_dau && Math.abs(new Date(b.buoi_bat_dau) - Date.now()) < 12 * 3600e3;
+  const baiMo = bai.filter(b => b.dang_lam_den || (b.da_gui === 0 && (!b.dong_luc || new Date(b.dong_luc) > new Date()) && (!b.mo_luc || new Date(b.mo_luc) <= new Date()) && (b.da_diem_danh || ganBuoi(b))));
 
   const veTB = () => {
     const chua = tb.filter(x => !daDoc.has(x.id));
@@ -62,9 +64,11 @@ export async function manHomNay(vung) {
         S.toi.la_phu_trach ? h('a', { class: 'nut', href: '#quan-ly/buoi/' + toi.id }, bieuTuong('quet'), 'Điểm danh') : null,
         h('button', { class: 'nut phu', type: 'button', onclick: () => suKienBuoi(toi) }, 'Chi tiết, xin nghỉ')))
       : h('div', { class: 'the-buoi' }, h('div', { class: 'chi-tiet' }, 'Chưa có buổi sinh hoạt nào sắp tới.')),
-    baiMo.length ? nhom('Post-test cần làm', baiMo.map(b => dong({
+    baiMo.length ? nhom('Bài cần làm', baiMo.map(b => dong({
       tieu: b.tieu_de,
-      phu: b.dang_lam_den ? 'Đang làm dở, hạn ' + gio(b.dang_lam_den) : (b.dong_luc ? 'Hạn ' + ngayGio(b.dong_luc) : `${b.so_cau} câu · ${b.thoi_gian_phut} phút`),
+      phu: b.dang_lam_den ? 'Đang làm dở, hạn ' + gio(b.dang_lam_den)
+        : !b.da_diem_danh ? `Test đầu giờ · ${b.so_cau} câu · ${b.thoi_gian_phut} phút · Điểm danh xong là mở`
+        : (b.dong_luc ? 'Hạn ' + ngayGio(b.dong_luc) : `${b.so_cau} câu · ${b.thoi_gian_phut} phút`),
       truoc: h('div', { class: 'bieu-tuong' }, bieuTuong('test')), href: '#post-test'
     }))) : null,
     vungTB,

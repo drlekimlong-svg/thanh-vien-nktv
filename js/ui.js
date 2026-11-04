@@ -242,5 +242,16 @@ export const taiCSV = (ten, hang) => {
   a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 };
 export const qrSvg = (chu) => { const q = window.qrcode(0, 'M'); q.addData(chu); q.make(); const d = h('div'); d.innerHTML = q.createSvgTag({ scalable: true, margin: 0 }); return d.firstChild; };
+/** Hình của câu hỏi: chạm để xem toàn màn hình, chạm lần nữa hoặc Esc để đóng. */
+export function hinhCau(src, nhan) {
+  return h('button', { class: 'hinh-cau', type: 'button', 'aria-label': 'Phóng to ' + nhan, onclick: () => {
+    const truoc = document.activeElement;
+    const dong = () => { lop.remove(); document.removeEventListener('keydown', phim); if (truoc) truoc.focus({ preventScroll: true }); };
+    const phim = (e) => { if (e.key === 'Escape') dong(); };
+    const nut = h('button', { class: 'dong-lai', type: 'button', onclick: dong }, 'Đóng');
+    const lop = h('div', { class: 'lop-hinh', role: 'dialog', 'aria-modal': 'true', 'aria-label': nhan, onclick: (e) => { if (e.target === lop || e.target.tagName === 'IMG') dong(); } }, h('img', { src, alt: nhan }), nut);
+    document.body.append(lop); document.addEventListener('keydown', phim); nut.focus();
+  } }, h('img', { src, alt: nhan, loading: 'lazy' }));
+}
 export const rungThanhCong = () => { try { navigator.vibrate && navigator.vibrate(40); } catch (_) {} };
 export const rungLoi = () => { try { navigator.vibrate && navigator.vibrate([70, 50, 70]); } catch (_) {} };

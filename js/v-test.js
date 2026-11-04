@@ -1,6 +1,6 @@
 // Post-test phía thành viên: danh sách, làm bài có đồng hồ và lưu tự động, xem kết quả.
 import { S, khiRoi } from './state.js';
-import { h, dat, dong, nhom, thu, toast, ngayGio, soVN, rong, xacNhan, rungThanhCong, rungLoi } from './ui.js';
+import { h, dat, dong, nhom, thu, toast, ngay, ngayGio, soVN, rong, xacNhan, rungThanhCong, rungLoi, hinhCau } from './ui.js';
 
 const CHU = 'ABCDEFGH';
 const khoaNhap = (lam) => 'nktv-bai-' + lam;
@@ -11,10 +11,15 @@ function trangThaiBai(b) {
   const daDong = b.dong_luc && new Date(b.dong_luc) <= nay;
   const chuaMo = b.mo_luc && new Date(b.mo_luc) > nay;
   if (chuaMo) return { chu: 'Mở ' + ngayGio(b.mo_luc), lop: '' };
-  if (b.da_gui > 0) return { chu: 'Điểm ' + soVN(b.diem), lop: 'dat', xem: true, lam: !daDong && b.da_gui < b.so_lan };
+  if (b.da_gui > 0) return { chu: 'Điểm ' + soVN(b.diem), lop: 'dat', xem: true, lam: !daDong && b.da_gui < b.so_lan && b.da_diem_danh };
   if (daDong) return { chu: 'Đã đóng', lop: 'vang' };
+  if (!b.da_diem_danh) return { chu: 'Chờ điểm danh', lop: 'cho', khoa: true };
   return { chu: 'Đang mở', lop: 'dung', lam: true };
 }
+
+/** Bài test đầu giờ: chỉ mở khi đã điểm danh buổi gắn với bài. */
+export const laDauGio = (b) => !!b.buoi_id;
+export const baoChoDiemDanh = (b) => toast(`Bài này mở sau khi bạn điểm danh buổi ${ngay(b.buoi_bat_dau)}. Điểm danh xong, mở lại trang Post-test.`);
 
 export async function manPostTest(vung) {
   const ds = await S.db.baiCuaToi();
@@ -24,9 +29,9 @@ export async function manPostTest(vung) {
       const tt = trangThaiBai(b);
       return dong({
         tieu: b.tieu_de,
-        phu: `${b.so_cau} câu · ${b.thoi_gian_phut} phút` + (b.dong_luc ? ' · Hạn ' + ngayGio(b.dong_luc) : ''),
+        phu: (laDauGio(b) ? `Test đầu giờ buổi ${ngay(b.buoi_bat_dau)} · ` : '') + `${b.so_cau} câu · ${b.thoi_gian_phut} phút` + (b.dong_luc ? ' · Hạn ' + ngayGio(b.dong_luc) : ''),
         sau: h('span', { class: 'the-nhan ' + tt.lop }, tt.chu),
-        onclick: tt.lam || tt.xem ? () => moBai(b, tt) : null, muiTen: !!(tt.lam || tt.xem)
+        onclick: tt.lam || tt.xem ? () => moBai(b, tt) : tt.khoa ? () => baoChoDiemDanh(b) : null, muiTen: !!(tt.lam || tt.xem)
       });
     })) : rong('Chưa có bài post-test nào.'));
 }
@@ -101,6 +106,7 @@ export async function manLamBai(vung, baiId) {
   dat(vung,
     h('div', { class: 'lam-bai-dau' }, dongHo, h('div', { class: 'tien-do' }, vach)),
     h('h1', { style: 'font-size:1.375rem;font-weight:700;letter-spacing:-0.018em;line-height:1.2;margin:4px 0 18px' }, d.tieu_de),
+    d.mo_ta ? h('p', { class: 'mo-ta-bai' }, d.mo_ta) : null,
     d.cau.map((c, n) => {
       const hienPhan = c.phan && c.phan !== phanCu; phanCu = c.phan;
       const nutChon = [];
@@ -108,7 +114,7 @@ export async function manLamBai(vung, baiId) {
         class: 'lua-chon', type: 'button', 'aria-pressed': traLoi[c.id] === i ? 'true' : 'false', onclick: () => chon(c, i, nutChon)
       }, h('span', { class: 'chu' }, CHU[i]), h('span', null, t))));
       return h('section', { class: 'cau' }, hienPhan ? h('div', { class: 'phan' }, c.phan) : null,
-        h('p', { class: 'de' }, h('b', null, `Câu ${n + 1}. `), c.noi_dung), nutChon);
+        h('p', { class: 'de' }, h('b', null, `Câu ${n + 1}. `), c.noi_dung), c.hinh ? hinhCau(c.hinh, `Hình câu ${n + 1}`) : null, nutChon);
     }),
     nutGui,
     h('p', { class: 'chu-nho giua-chu', style: 'margin-top:12px' }, 'Bài được lưu tự động sau mỗi lần chọn. Hết giờ, bài tự gửi.'));
@@ -126,6 +132,7 @@ export async function manKetQua(vung, baiId) {
       h('p', { class: 'chu-nho', style: 'margin-top:10px' }, k.tieu_de, h('br'), 'Gửi ' + ngayGio(k.nop_luc), k.tu_dong ? ' · Tự gửi khi hết giờ' : '')),
     k.hien_dap_an && k.cau ? k.cau.map((c, n) => h('section', { class: 'cau' },
       h('p', { class: 'de' }, h('b', null, `Câu ${n + 1}. `), c.noi_dung),
+      c.hinh ? hinhCau(c.hinh, `Hình câu ${n + 1}`) : null,
       c.lua_chon.map((t, i) => h('button', {
         class: 'lua-chon' + (i === c.dung ? ' dung-roi' : i === c.chon ? ' sai-roi' : ''), type: 'button', disabled: true
       }, h('span', { class: 'chu' }, CHU[i]), h('span', null, t))),

@@ -5,6 +5,7 @@ import { api, chuanMa } from './api.js';
 import { manHomNay } from './v-homnay.js';
 import { manLich } from './v-lich.js';
 import { manSoanLich, manKhoLich } from './v-soanlich.js';
+import { manDiemNhom } from './v-diemnhom.js';
 import { manPostTest, manLamBai, manKetQua } from './v-test.js';
 import { manHoSo } from './v-hoso.js';
 import { manQuanLy, tuyenQuanLy } from './v-quanly.js';
@@ -37,6 +38,7 @@ async function tuyen() {
     if (tab === 'lich') {
       if (con[0] === 'soan') await manSoanLich(vung, con[1], con[2]);
       else if (con[0] === 'kho') await manKhoLich(vung);
+      else if (con[0] === 'diem-nhom') await manDiemNhom(vung);
       else await manLich(vung);
     }
     else if (tab === 'post-test') {
@@ -52,7 +54,15 @@ async function tuyen() {
   }
 }
 
+/* Màn đăng nhập và thẻ công khai luôn nền sáng: logo nét đậm chìm trên nền tối, và không đặt nền tròn sau logo. */
+function nenSang(bat) {
+  const r = document.documentElement;
+  if (bat) r.dataset.theme = 'light'; else delete r.dataset.theme;
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => { m.content = bat || !m.media.includes('dark') ? '#f2f4f1' : '#0f1411'; });
+}
+
 function dungKhung() {
+  nenSang(false);
   const nha = S.toi.nha && NHA[S.toi.nha];
   document.documentElement.style.setProperty('--tab-nen', 'var(--be-mat)');
   dat(goc, h('div', { class: 'khung' },
@@ -67,6 +77,7 @@ function dungKhung() {
 
 /* ---------- Thẻ công khai khi quét bằng camera thường ---------- */
 async function manThe(khoa) {
+  nenSang(true);
   dat(goc, h('div', { class: 'man-ngoai' }, dangTai()));
   let t = null, loi = '';
   try { t = await S.db.theCongKhai(khoa); } catch (e) { loi = e.message; }
@@ -85,6 +96,7 @@ async function manThe(khoa) {
 
 /* ---------- Đăng nhập và kích hoạt ---------- */
 function manDangNhap(cheDo = 'dang-nhap', baoLoi = '') {
+  nenSang(true);
   const ma = oNhap('Mã thành viên', { name: 'ma', autocomplete: 'username', placeholder: 'NKTV-001', autocapitalize: 'characters', required: true });
   const mk = oNhap(cheDo === 'kich-hoat' ? 'Mật khẩu tự đặt (ít nhất 8 ký tự)' : 'Mật khẩu', { name: 'mk', type: 'password', autocomplete: cheDo === 'kich-hoat' ? 'new-password' : 'current-password', required: true });
   const code = cheDo === 'kich-hoat' ? oNhap('Mã kích hoạt', { name: 'code', autocomplete: 'one-time-code', autocapitalize: 'characters', required: true }) : null;

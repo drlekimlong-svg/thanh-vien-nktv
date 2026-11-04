@@ -4,9 +4,10 @@ import { h, dat, dong, nhom, moSheet, thu, toast, oNhap, gio, ngay, ngayGio, ron
 import * as V from './lich-ve.js';
 
 const KHOA_NHA = { Seiryu: 'seiryu', Suzaku: 'suzaku', Byakko: 'byakko', Genbu: 'genbu', Kirin: 'kirin', 'Yin-Yang Kois': 'koi' };
-const TEN_NHA_APP = Object.fromEntries(Object.entries(KHOA_NHA).map(([a, b]) => [b, a]));
 const thanhNho = (tieu, href, nhan, phai) => h('div', { class: 'thanh-nho' }, h('div', { class: 'khoang' }, h('a', { class: 'nut-lui', href, style: 'text-decoration:none' }, '‹ ' + nhan)), h('h1', null, tieu), h('div', { class: 'khoang phai' }, phai || null));
-const suaDuoc = (l) => S.toi.la_phu_trach || l.nguoi_tao === S.toi.id || TEN_NHA_APP[l.nhom] === S.toi.nha;
+/** Nhà được soạn lịch: người phụ trách, Ban cố vấn, quản trị soạn cho mọi nhà; nhóm trưởng, nhóm phó cho nhà mình. */
+const nhaDuocSoan = () => S.toi.lich_moi_nha ? V.GROUPS : S.toi.lich_nha && KHOA_NHA[S.toi.lich_nha] ? [KHOA_NHA[S.toi.lich_nha]] : [];
+const suaDuoc = (l) => nhaDuocSoan().includes(l.nhom);
 const tenLich = (l) => l.ten || 'Chương trình chưa đặt tên';
 
 /* Trang soạn lịch cũ cùng tên miền với app nên bản nháp trong trình duyệt vẫn đọc được. */
@@ -31,14 +32,22 @@ async function chiaSe(cv, st) {
   catch (e) { if (e && e.name !== 'AbortError') toast('Máy này chưa chia sẻ được. Dùng nút Tải ảnh.', true); }
 }
 
+const nhaMacDinh = () => { const ds = nhaDuocSoan(); return ds.includes(KHOA_NHA[S.toi.nha]) ? KHOA_NHA[S.toi.nha] : ds[0]; };
+
 function moi() {
-  const nhaToi = KHOA_NHA[S.toi.nha] || 'seiryu';
-  return V.normalize({ mau: 'tuan', kho: 'post', nhom: nhaToi, ngay: V.nextSunday(), gioBD: '14:00', gioKT: '18:00', dd1: 'Phòng [số phòng], khu A2', dd2: 'ĐHYK Phạm Ngọc Thạch',
+  return V.normalize({ mau: 'tuan', kho: 'post', nhom: nhaMacDinh(), ngay: V.nextSunday(), gioBD: '14:00', gioKT: '18:00', dd1: 'Phòng [số phòng], khu A2', dd2: 'ĐHYK Phạm Ngọc Thạch',
     chuTri: '', dieuHanh: '', tenCT: '', phuCT: '', moTa: '', qrLink: '', qrNote: '', rows: [{ t1: '14:00', t2: '', title: '', who: '', org: '' }] });
 }
 
 /* ---------- Soạn lịch ---------- */
 export async function manSoanLich(vung, id, idMau) {
+  const choPhep = nhaDuocSoan();
+  if (!choPhep.length) {
+    dat(vung, thanhNho('Soạn lịch', '#lich', 'Lịch'),
+      rong('Nhóm trưởng, nhóm phó của nhà trực, Ban cố vấn và người phụ trách soạn được lịch. Lịch đã gửi xem ở Kho lịch.'),
+      h('a', { class: 'nut phu day', href: '#lich/kho' }, 'Mở Kho lịch'));
+    return;
+  }
   await V.napTaiNguyen();
   let banGhi = null, st, tuNhap = null;
   const lichMoi = !id && !idMau;
@@ -49,8 +58,10 @@ export async function manSoanLich(vung, id, idMau) {
     st = V.normalize(banGhi.du_lieu);
   } else if (idMau) {
     const m = await S.db.docLich(idMau);
-    st = V.normalize(Object.assign({}, m.du_lieu, { ngay: V.nextSunday(), nhom: KHOA_NHA[S.toi.nha] || m.du_lieu.nhom }));
+    st = V.normalize(Object.assign({}, m.du_lieu, { ngay: V.nextSunday(), nhom: nhaMacDinh() }));
   } else st = moi();
+  if (banGhi && !suaDuoc(banGhi)) throw new Error('Lịch này thuộc nhà khác. Mở trong Kho lịch để xem.');
+  if (!choPhep.includes(st.nhom)) st.nhom = nhaMacDinh();
 
   const cv = h('canvas', { width: 1080, height: 1350, role: 'img', 'aria-label': 'Ảnh xem trước lịch sinh hoạt', class: 'anh-lich' }), ctx = cv.getContext('2d');
   const dsKiem = h('div'), demKiem = h('span'), baoLuu = h('span', { class: 'chu-nho' });
@@ -105,7 +116,7 @@ export async function manSoanLich(vung, id, idMau) {
   const nutLoai = [['tuan', 'Lịch tuần'], ['dacbiet', 'Chương trình đặc biệt']].map(([v, c]) => h('button', { class: 'vien', type: 'button', 'aria-pressed': st.mau === v ? 'true' : 'false', 'data-v': v, onclick: () => { st.mau = v; capLoai(); doi(); } }, c));
   const capLoai = () => { nutLoai.forEach(n => n.setAttribute('aria-pressed', n.dataset.v === st.mau ? 'true' : 'false')); khungCT.hidden = st.mau !== 'dacbiet'; };
   const nutNha = V.GROUPS.map(g => h('button', {
-    class: 'chon-nha', type: 'button', 'aria-pressed': st.nhom === g ? 'true' : 'false', 'data-g': g, style: `--mau:${V.THEMES[g].col}`,
+    class: 'chon-nha', type: 'button', 'aria-pressed': st.nhom === g ? 'true' : 'false', 'data-g': g, style: `--mau:${V.THEMES[g].col}`, disabled: !choPhep.includes(g),
     onclick: () => { st.nhom = g; nutNha.forEach(n => n.setAttribute('aria-pressed', n.dataset.g === g ? 'true' : 'false')); doi(); }
   }, h('img', { src: `img/${g}.webp`, alt: '' }), h('span', null, V.THEMES[g].name)));
 
@@ -259,7 +270,7 @@ export async function manKhoLich(vung) {
     dat(vungDs,
       nhap.length ? nhom('Bản nháp', nhap.map(l => dong({ truoc: l.ngay ? dauNgay(l.ngay + 'T12:00:00+07:00') : null, tieu: tenLich(l), phu: 'Trực: ' + V.THEMES[l.nhom].name + (l.nguoi_sua_ten ? ' · ' + l.nguoi_sua_ten : '') + ' · Sửa ' + ngay(l.sua_luc), href: '#lich/soan/' + l.id }))) : null,
       gui.length ? nhom(`Đã gửi · ${gui.length}`, gui.map(hang)) : null,
-      !kq.length ? rong(ds.length ? 'Không có lịch nào khớp.' : 'Chưa có lịch nào. Bấm Soạn lịch để bắt đầu.') : null);
+      !kq.length ? rong(ds.length ? 'Không có lịch nào khớp.' : nhaDuocSoan().length ? 'Chưa có lịch nào. Bấm Soạn để bắt đầu.' : 'Chưa có lịch nào được gửi.') : null);
   };
   const xuat = () => {
     const hang = [['Ngày', 'Thứ', 'Loại lịch', 'Tên', 'Nhóm trực', 'Giờ', 'Địa điểm', 'Chủ trì', 'Điều hành', 'Người soạn', 'STT', 'Bắt đầu', 'Kết thúc', 'Nội dung', 'Chức danh – họ tên', 'Nhóm / vai trò']];
@@ -270,7 +281,7 @@ export async function manKhoLich(vung) {
     taiCSV('kho-lich-sinh-hoat.csv', hang);
   };
   dat(vung,
-    thanhNho('Kho lịch', '#lich', 'Lịch', h('a', { class: 'nut-lui', href: '#lich/soan', style: 'text-decoration:none' }, 'Soạn')),
+    thanhNho('Kho lịch', '#lich', 'Lịch', nhaDuocSoan().length ? h('a', { class: 'nut-lui', href: '#lich/soan', style: 'text-decoration:none' }, 'Soạn') : null),
     h('input', { class: 'tim', type: 'search', placeholder: 'Tìm tên chương trình, nội dung, người trình bày…', 'aria-label': 'Tìm trong kho lịch', oninput: (e) => { tim = e.target.value; veDs(); } }),
     h('div', { class: 'chon-ngang' }, [['', 'Tất cả'], ...V.GROUPS.map(x => [x, V.THEMES[x].name])].map(([v, c]) => h('button', { class: 'vien', type: 'button', 'data-v': v, 'aria-pressed': g === v ? 'true' : 'false', onclick: (e) => { g = v; e.currentTarget.parentElement.querySelectorAll('.vien').forEach(n => n.setAttribute('aria-pressed', n.dataset.v === v ? 'true' : 'false')); veDs(); } }, c))),
     vungDs,

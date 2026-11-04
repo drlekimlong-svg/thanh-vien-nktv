@@ -22,6 +22,7 @@ export async function tuyenQuanLy(vung, con) {
   if (a === 'don') return manDon(vung);
   if (a === 'thong-bao') return manThongBao(vung);
   if (a === 'kich-hoat') return manKichHoat(vung);
+  if (a === 'phan-quyen') return manPhanQuyen(vung);
   if (a === 'danh-muc') return manDanhMuc(vung);
   if (a === 'xac-nhan') return manXacNhan(vung);
   if (a === 'bao-cao') return manBaoCao(vung);
@@ -32,7 +33,7 @@ export async function tuyenQuanLy(vung, con) {
 }
 
 export async function manQuanLy(vung) {
-  const qt = S.toi.la_quan_tri, pt = S.toi.la_phu_trach;
+  const qt = S.toi.la_quan_tri, pt = S.toi.la_phu_trach, ad = S.toi.la_admin;
   const [don, nl, hd] = await Promise.all([
     pt ? S.db.dsDon('cho').catch(() => []) : [],
     qt ? S.db.nangLucCho().catch(() => []) : [],
@@ -46,18 +47,22 @@ export async function manQuanLy(vung) {
       dong({ tieu: 'Buổi sinh hoạt và điểm danh', phu: pt ? 'Tạo lịch, quét mã, xem hiện diện' : 'Xem hiện diện từng buổi', truoc: icon('quet'), href: '#quan-ly/buoi' }),
       pt ? dong({ tieu: 'Đơn xin nghỉ', truoc: icon('don'), sau: so(don.length), href: '#quan-ly/don' }) : null,
       dong({ tieu: 'Báo cáo chuyên cần', truoc: icon('bieu_do'), href: '#quan-ly/bao-cao' }),
+      dong({ tieu: 'Điểm nhóm', phu: 'Xếp hạng 6 nhà theo chuyên cần và test đầu giờ', truoc: icon('sao'), href: '#lich/diem-nhom' }),
       qt ? dong({ tieu: 'Thông báo', truoc: icon('chuong'), href: '#quan-ly/thong-bao' }) : null),
     nhom('Thành viên',
       dong({ tieu: 'Danh sách thành viên', truoc: icon('nguoi'), href: '#quan-ly/thanh-vien' }),
-      qt ? dong({ tieu: 'Kích hoạt tài khoản', phu: 'Cấp mã lần đầu, cấp lại khi quên mật khẩu', truoc: icon('khoa'), href: '#quan-ly/kich-hoat' }) : null),
+      ad ? dong({ tieu: 'Phân quyền', phu: 'Ban cố vấn, Senior, Junior, nhóm trưởng, nhóm phó', truoc: icon('khoa'), href: '#quan-ly/phan-quyen' }) : null,
+      ad ? dong({ tieu: 'Kích hoạt tài khoản', phu: 'Cấp mã lần đầu, cấp lại khi quên mật khẩu', truoc: icon('khoa'), href: '#quan-ly/kich-hoat' }) : null),
     qt ? nhom('Học tập',
-      dong({ tieu: 'Post-test', phu: 'Tải đề lên, xem điểm', truoc: icon('test'), href: '#quan-ly/post-test' }),
+      dong({ tieu: 'Post-test và test đầu giờ', phu: 'Tải đề lên, xem điểm', truoc: icon('test'), href: '#quan-ly/post-test' }),
       dong({ tieu: 'Xác nhận năng lực và hoạt động', truoc: icon('sao'), sau: so(choXn), href: '#quan-ly/xac-nhan' }),
       dong({ tieu: 'Danh mục năng lực', truoc: icon('don'), href: '#quan-ly/danh-muc' })) : null);
 }
 
 /* ---------- Thành viên ---------- */
 const VAI = { thanh_vien: 'Thành viên', diem_danh: 'Phụ trách điểm danh', quan_tri: 'Quản trị' };
+const CHUC_VU = { nhom_truong: 'Nhóm trưởng', nhom_pho: 'Nhóm phó' };
+const nhanChucVu = (t) => t.chuc_vu ? CHUC_VU[t.chuc_vu] + (t.nha ? ' ' + t.nha : '') : null;
 
 function inMaQR(ds) {
   const the = h('div', { class: 'trang-in' }, h('div', { class: 'in-luoi' }, ds.map(t => h('div', { class: 'in-the' }, qrSvg(linkThe(t.khoa_qr)), h('b', null, t.ho_ten), moTaTV(t)))));
@@ -67,7 +72,7 @@ function inMaQR(ds) {
 }
 
 function suaThanhVien(t, sauKhi) {
-  const qt = S.toi.la_quan_tri;
+  const qt = S.toi.la_admin;
   const f = h('form', {
     onsubmit: async (e) => {
       e.preventDefault();
@@ -76,7 +81,8 @@ function suaThanhVien(t, sauKhi) {
       if (!ten) { toast('Cần có họ và tên.', true); return; }
       const o = {
         ho_ten: ten, gen: x.gen.value === '' ? null : Number(x.gen.value), nha: x.nha.value || null, cap: x.cap.value || null,
-        hoat_dong: x.hd.checked, ghi_chu: x.ghi.value.trim() || null, vai_tro: x.vai.value, tham_gia_tu: x.tg.value || null
+        hoat_dong: x.hd.checked, ghi_chu: x.ghi.value.trim() || null, vai_tro: x.vai.value, tham_gia_tu: x.tg.value || null,
+        chuc_vu: x.nha.value ? x.cv.value || null : null
       };
       if (t) {
         const ok = await thu(() => S.db.suaThanhVien(t.id, o), 'Đã lưu');
@@ -96,10 +102,13 @@ function suaThanhVien(t, sauKhi) {
       oNhap('Generation', { name: 'gen', type: 'number', min: 0, inputmode: 'numeric', value: t ? t.gen : '', disabled: !qt }),
       oChon('Nhà', [['', 'Chưa có'], ...DS_NHA], t ? t.nha : '', { name: 'nha', disabled: !qt }),
       oChon('Cấp', [['', 'Chưa có'], 'Junior', 'Senior', 'Ban cố vấn'], t ? t.cap : '', { name: 'cap', disabled: !qt }),
+      oChon('Chức vụ trong nhà', [['', 'Không'], ...Object.entries(CHUC_VU)], t ? t.chuc_vu || '' : '', { name: 'cv', disabled: !qt }),
       oBat('Còn hoạt động', { name: 'hd', checked: t ? t.hoat_dong : true, disabled: !qt }),
       oNhap('Tính chuyên cần từ ngày', { name: 'tg', type: 'date', value: t ? t.tham_gia_tu : '', disabled: !qt }),
       oNhap('Ghi chú', { name: 'ghi', value: t ? t.ghi_chu : '', disabled: !qt })),
-    qt ? [h('div', { class: 'nhom' }, oChon('Vai trò trong app', Object.entries(VAI), t ? t.vai_tro : 'thanh_vien', { name: 'vai' })),
+    qt ? [h('div', { class: 'nhom' }, oChon('Vai trò trong app', Object.entries(VAI), t ? t.vai_tro : 'thanh_vien', { name: t && t.id === S.toi.id ? null : 'vai', disabled: t && t.id === S.toi.id })),
+      t && t.id === S.toi.id ? h('p', { class: 'chu-nhom' }, 'Không tự đổi vai trò của chính mình, để app luôn còn người quản trị.') : null,
+      t && t.id === S.toi.id ? h('input', { type: 'hidden', name: 'vai', value: t.vai_tro }) : null,
       h('button', { class: 'nut day', type: 'submit', style: 'margin-bottom:12px' }, t ? 'Lưu' : 'Thêm thành viên')] : h('input', { type: 'hidden', name: 'vai', value: t ? t.vai_tro : '' }),
     t && qt ? h('div', { class: 'nhom' },
       dong({ tieu: 'Xem hồ sơ năng lực', href: '#ho-so/' + t.id }),
@@ -119,21 +128,71 @@ async function manThanhVien(vung) {
     const k = chuan(loc.tim);
     const kq = ds.filter(t => (loc.hd === 'tat' || (loc.hd === 'co') === t.hoat_dong) && (!loc.nha || t.nha === loc.nha) && (!k || chuan(t.ho_ten + ' ' + t.ma + ' gen' + t.gen).includes(k)));
     dem.textContent = kq.length + ' người';
-    dat(vungDs, kq.length ? h('div', { class: 'nhom' }, kq.slice(0, 300).map(t => dong({ tieu: t.ho_ten, phu: t.ma + (moTaTV(t) ? ' · ' + moTaTV(t) : '') + (t.ghi_chu ? ' · ' + t.ghi_chu : ''), onclick: () => suaThanhVien(t, lai) }))) : rong('Không có ai khớp.'));
+    dat(vungDs, kq.length ? h('div', { class: 'nhom' }, kq.slice(0, 300).map(t => dong({ tieu: t.ho_ten, phu: [t.ma, moTaTV(t), t.chuc_vu ? CHUC_VU[t.chuc_vu] : null, t.ghi_chu].filter(Boolean).join(' · '), onclick: () => suaThanhVien(t, lai) }))) : rong('Không có ai khớp.'));
   };
   const vien = (nhan, duoc, bat) => { const n = h('button', { class: 'vien', type: 'button', 'aria-pressed': duoc() ? 'true' : 'false', onclick: () => { bat(); hang.querySelectorAll('.vien').forEach(v => v.__cn()); ve(); } }, nhan); n.__cn = () => n.setAttribute('aria-pressed', duoc() ? 'true' : 'false'); return n; };
   const hang = h('div', { class: 'chon-ngang' },
     vien('Còn hoạt động', () => loc.hd === 'co', () => { loc.hd = 'co'; }), vien('Đã ngừng', () => loc.hd === 'khong', () => { loc.hd = 'khong'; }), vien('Tất cả', () => loc.hd === 'tat', () => { loc.hd = 'tat'; }),
     DS_NHA.map(n => vien(n, () => loc.nha === n, () => { loc.nha = loc.nha === n ? '' : n; })));
   dat(vung,
-    thanhNho('Thành viên', '#quan-ly', 'Quản lý', S.toi.la_quan_tri ? h('button', { class: 'nut-lui', type: 'button', onclick: () => suaThanhVien(null, lai) }, 'Thêm') : null),
+    thanhNho('Thành viên', '#quan-ly', 'Quản lý', S.toi.la_admin ? h('button', { class: 'nut-lui', type: 'button', onclick: () => suaThanhVien(null, lai) }, 'Thêm') : null),
     h('input', { class: 'tim', type: 'search', placeholder: 'Tìm tên, mã, gen…', 'aria-label': 'Tìm thành viên', oninput: (e) => { loc.tim = e.target.value; ve(); } }),
     hang,
     h('div', { class: 'nhan-nhom' }, dem, h('span', { style: 'display:flex;gap:6px' },
       S.toi.la_quan_tri ? h('button', { class: 'nut-chu', type: 'button', onclick: () => inMaQR(ds.filter(t => t.hoat_dong)) }, 'In mã QR') : null,
-      h('button', { class: 'nut-chu', type: 'button', onclick: () => taiCSV('thanh-vien-nktv.csv', [['Mã thành viên', 'Họ và tên', 'Generation', 'Nhà', 'Cấp', 'Còn hoạt động', 'Ghi chú', 'Vai trò'], ...ds.map(t => [t.ma, t.ho_ten, t.gen, t.nha, t.cap, t.hoat_dong ? 'Có' : 'Không', t.ghi_chu, VAI[t.vai_tro]])]) }, 'Xuất CSV'))),
+      h('button', { class: 'nut-chu', type: 'button', onclick: () => taiCSV('thanh-vien-nktv.csv', [['Mã thành viên', 'Họ và tên', 'Generation', 'Nhà', 'Cấp', 'Chức vụ', 'Còn hoạt động', 'Ghi chú', 'Vai trò'], ...ds.map(t => [t.ma, t.ho_ten, t.gen, t.nha, t.cap, CHUC_VU[t.chuc_vu] || '', t.hoat_dong ? 'Có' : 'Không', t.ghi_chu, VAI[t.vai_tro]])]) }, 'Xuất CSV'))),
     vungDs);
   ve();
+}
+
+/* ---------- Phân quyền (chỉ quản trị, cho tài khoản đã kích hoạt) ---------- */
+const QUYEN = [
+  ['Quản trị', 'Toàn quyền, kể cả phân quyền, sửa danh sách thành viên và cấp mã kích hoạt.'],
+  ['Ban cố vấn', 'Gần đủ quyền quản trị: điểm danh, duyệt đơn, tạo buổi, thông báo, post-test, xác nhận năng lực, soạn lịch cho mọi nhà. Không phân quyền, không sửa danh sách, không cấp mã.'],
+  ['Phụ trách điểm danh', 'Quét mã, ghi điểm danh, duyệt đơn xin nghỉ, tạo buổi, soạn lịch cho mọi nhà.'],
+  ['Nhóm trưởng, nhóm phó', 'Soạn và gửi lịch sinh hoạt cho nhà mình.'],
+  ['Senior, Junior', 'Chưa có quyền riêng: xem lịch, xin nghỉ, làm bài, cập nhật hồ sơ của mình.']
+];
+
+function suaQuyen(t, sauKhi) {
+  const ban = t.id === S.toi.id;
+  const f = h('form', {
+    onsubmit: async (e) => {
+      e.preventDefault();
+      const x = f.elements;
+      const o = { cap: x.cap.value || null, chuc_vu: t.nha ? x.cv.value || null : null };
+      if (!ban) o.vai_tro = x.vai.value;
+      const ok = await thu(() => S.db.suaThanhVien(t.id, o), 'Đã lưu quyền');
+      if (ok) { s.dong(); sauKhi(); }
+    }
+  },
+    h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:14px' }, [t.ma, moTaTV(t)].filter(Boolean).join(' · ')),
+    h('div', { class: 'nhom' },
+      oChon('Cấp', [['', 'Chưa ghi'], 'Junior', 'Senior', 'Ban cố vấn'], t.cap || '', { name: 'cap' }),
+      oChon('Chức vụ trong nhà' + (t.nha ? ' ' + t.nha : ''), [['', 'Không'], ...Object.entries(CHUC_VU)], t.chuc_vu || '', { name: 'cv', disabled: !t.nha }),
+      oChon('Quyền trong app', Object.entries(VAI), t.vai_tro, { name: ban ? null : 'vai', disabled: ban })),
+    !t.nha ? h('p', { class: 'chu-nhom' }, 'Người này chưa thuộc nhà nào nên chưa đặt được nhóm trưởng, nhóm phó. Ghi nhà ở Danh sách thành viên trước.') : null,
+    ban ? h('p', { class: 'chu-nhom' }, 'Không tự đổi quyền trong app của chính mình, để app luôn còn người quản trị.') : null,
+    h('button', { class: 'nut day', type: 'submit' }, 'Lưu'));
+  const s = moSheet({ tieuDe: t.ho_ten, noiDung: f });
+}
+
+async function manPhanQuyen(vung) {
+  const [ds, tt] = await Promise.all([S.db.dsThanhVien(), S.db.tinhTrangKichHoat()]);
+  const daKH = new Set(tt.filter(x => x.da_kich_hoat).map(x => x.thanh_vien_id));
+  const kh = ds.filter(t => daKH.has(t.id));
+  const lai = () => manPhanQuyen(vung);
+  const hang = (t) => dong({ tieu: t.ho_ten, phu: [t.ma, t.vai_tro !== 'thanh_vien' ? VAI[t.vai_tro] : null, t.cap || 'Chưa ghi cấp', nhanChucVu(t)].filter(Boolean).join(' · '), onclick: () => suaQuyen(t, lai) });
+  const nhomQ = (nhan, loc) => { const x = kh.filter(loc); return x.length ? nhom(`${nhan} · ${x.length}`, x.map(hang)) : null; };
+  dat(vung, thanhNho('Phân quyền'),
+    h('p', { class: 'tieu-de-phu', style: 'margin-top:4px;text-align:center' }, `${kh.length} tài khoản đã kích hoạt · chạm vào tên để đổi`),
+    nhomQ('Quản trị và phụ trách điểm danh', t => t.vai_tro !== 'thanh_vien'),
+    nhomQ('Ban cố vấn', t => t.vai_tro === 'thanh_vien' && t.cap === 'Ban cố vấn'),
+    nhomQ('Nhóm trưởng, nhóm phó', t => t.vai_tro === 'thanh_vien' && t.cap !== 'Ban cố vấn' && t.chuc_vu),
+    nhomQ('Senior, Junior và chưa ghi cấp', t => t.vai_tro === 'thanh_vien' && t.cap !== 'Ban cố vấn' && !t.chuc_vu),
+    !kh.length ? rong('Chưa có tài khoản nào được kích hoạt.') : null,
+    nhom('Mỗi vai trò làm được gì', QUYEN.map(([tieu, phu]) => dong({ tieu, phu }))),
+    h('p', { class: 'chu-nhom' }, 'Một người có thể vừa là Senior vừa là nhóm trưởng. Người chưa kích hoạt thì đổi ở Danh sách thành viên.'));
 }
 
 /* ---------- Buổi sinh hoạt ---------- */
