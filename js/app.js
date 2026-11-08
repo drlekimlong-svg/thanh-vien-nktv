@@ -143,6 +143,8 @@ async function vaoApp() {
     await S.db.dangXuat();
     return manDangNhap('dang-nhap', 'Tài khoản này chưa gắn với thành viên nào. Báo lại cho Ban nhân sự.');
   }
+  // Lệch giờ giữa máy này và máy chủ, để mã động và giờ quét không sai khi đồng hồ điện thoại chạy lệch.
+  if (S.toi.bay_gio) S.lech = new Date(S.toi.bay_gio).getTime() - Date.now();
   S.caiDat = await S.db.caiDat().catch(() => ({}));
   if (S.toi.la_phu_trach) S.soCho = (await S.db.dsDon('cho').catch(() => [])).length;
   dungKhung();

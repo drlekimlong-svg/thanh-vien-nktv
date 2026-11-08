@@ -7,7 +7,8 @@ import {
 import { soanThongBao, linkThe } from './v-homnay.js';
 import { nhanDon } from './v-lich.js';
 import { BAC, LOAI_HD, BANG_MINH_HOA } from './v-hoso.js';
-import { batMayQuet, docAnh, layKhoa, moAmThanh, kieu, hangCho } from './quet.js';
+import { batMayQuet, docAnh, moAmThanh, kieu, noi, batGiong, datGiong, hangCho } from './quet.js';
+import { docMa, conHan } from './ma-dong.js';
 import { manDsBai, manSoanBai, manThongKeBai } from './v-qltest.js';
 
 export const thanhNho = (tieu, href = '#quan-ly', nhan = 'Quản lý', phai = null) =>
@@ -149,7 +150,8 @@ async function manThanhVien(vung) {
 const QUYEN = [
   ['Quản trị', 'Toàn quyền, kể cả phân quyền, sửa danh sách thành viên và cấp mã kích hoạt.'],
   ['Ban cố vấn', 'Gần đủ quyền quản trị: điểm danh, duyệt đơn, tạo buổi, thông báo, post-test, xác nhận năng lực, soạn lịch cho mọi nhà. Không phân quyền, không sửa danh sách, không cấp mã.'],
-  ['Phụ trách điểm danh', 'Quét mã, ghi điểm danh, duyệt đơn xin nghỉ, tạo buổi, soạn lịch cho mọi nhà.'],
+  ['Phụ trách điểm danh', 'Điểm danh mọi buổi, duyệt đơn xin nghỉ, tạo buổi, soạn lịch cho mọi nhà.'],
+  ['Người được giao điểm danh', 'Quét mã và ghi tay cho đúng buổi được giao, tới khi buổi đóng. Giao ở trang của từng buổi (Quản lý → Buổi sinh hoạt).'],
   ['Nhóm trưởng, nhóm phó', 'Soạn và gửi lịch sinh hoạt cho nhà mình.'],
   ['Senior, Junior', 'Chưa có quyền riêng: xem lịch, xin nghỉ, làm bài, cập nhật hồ sơ của mình.']
 ];
@@ -253,7 +255,13 @@ async function manDsBuoi(vung) {
   dat(vung,
     thanhNho('Buổi sinh hoạt', '#quan-ly', 'Quản lý', S.toi.la_phu_trach ? h('button', { class: 'nut-lui', type: 'button', onclick: () => suaBuoi(null, lai) }, 'Thêm') : null),
     sap.length ? nhom('Sắp tới', sap.map(hang)) : rong('Chưa có buổi nào sắp tới.'),
-    qua.length ? nhom('Đã qua', qua.map(hang)) : null);
+    qua.length ? nhom('Đã qua', qua.map(hang)) : null,
+    S.toi.la_quan_tri ? [h('div', { class: 'nhom' }, oBat('Chỉ nhận mã đang chạy trên app', { checked: S.caiDat.chi_nhan_ma_dong === true, onchange: async (e) => {
+      const v = e.target.checked;
+      const ok = await thu(() => S.db.datCaiDat('chi_nhan_ma_dong', v), v ? 'Đã bật: chỉ nhận mã trên app' : 'Đã tắt: nhận cả mã trên thẻ in');
+      if (ok) S.caiDat.chi_nhan_ma_dong = v; else e.target.checked = !v;
+    } })),
+    h('p', { class: 'chu-nhom' }, 'Mã trên app đổi sau mỗi 20 giây nên ảnh chụp gửi cho bạn không dùng được. Khi bật, mã trên thẻ in và ảnh chụp mã không quét được; ai quên điện thoại thì người quét nhìn mặt rồi ghi tay.')] : null);
 }
 
 async function manMotBuoi(vung, id) {
@@ -262,9 +270,12 @@ async function manMotBuoi(vung, id) {
   if (!b) throw new Error('Không tìm thấy buổi này.');
   let bang = await S.db.bangDiemDanh(id);
   const pt = S.toi.la_phu_trach;
-  const coThe = pt && (!b.dong || S.toi.la_quan_tri);
+  // Người được giao điểm danh buổi này quét và ghi tay được tới khi buổi đóng.
+  const duocGiao = (S.toi.buoi_diem_danh || []).includes(id);
+  const coThe = (pt || duocGiao) && (!b.dong || S.toi.la_quan_tri);
   const tv = pt ? await S.db.dsThanhVien() : [];
   const theoKhoa = new Map(tv.map(t => [t.khoa_qr, t]));
+  const giao = S.toi.la_quan_tri ? await S.db.nguoiDiemDanh(id).catch(() => []) : [];
   let loc = 'tat', timChu = '';
   const lai = () => manMotBuoi(vung, id);
 
@@ -272,7 +283,7 @@ async function manMotBuoi(vung, id) {
   const nhanTT = (r) => r.trang_thai === 'vang' && !b.dong ? 'chua' : r.trang_thai;
   const dem = () => { const o = { dung: 0, tre: 0, phep: 0, vang: 0 }; bang.forEach(r => { o[r.trang_thai]++; }); return o; };
   const vungSo = h('div'), vungDs = h('div');
-  const veSo = () => { const o = dem(); dat(vungSo, soLieu([{ so: o.dung + o.tre, ten: `Có mặt / ${bang.length}`, lop: 'dung' }, { so: o.tre, ten: 'Trễ', lop: 'tre' }, { so: o.phep, ten: 'Có phép', lop: 'phep' }, { so: o.vang, ten: b.dong ? 'Vắng' : 'Chưa điểm danh', lop: 'vang' }])); };
+  const veSo = () => { const o = dem(); demMat.textContent = `Có mặt ${o.dung + o.tre}/${bang.length}`; dat(vungSo, soLieu([{ so: o.dung + o.tre, ten: `Có mặt / ${bang.length}`, lop: 'dung' }, { so: o.tre, ten: 'Trễ', lop: 'tre' }, { so: o.phep, ten: 'Có phép', lop: 'phep' }, { so: o.vang, ten: b.dong ? 'Vắng' : 'Chưa điểm danh', lop: 'vang' }])); };
   const veDs = () => {
     const k = chuan(timChu);
     const kq = bang.filter(r => (loc === 'tat' || (loc === 'mat' ? (r.trang_thai === 'dung' || r.trang_thai === 'tre') : r.trang_thai === loc)) && (!k || chuan(r.ho_ten + ' ' + r.ma).includes(k)));
@@ -293,7 +304,7 @@ async function manMotBuoi(vung, id) {
       noiDung: h('div', null,
         h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:14px' }, moTaTV(r), ' · ', TT_DIEM_DANH[nhanTT(r)]),
         h('div', { class: 'hang-nut', style: 'flex-direction:column' },
-          !coMat ? h('button', { class: 'nut', type: 'button', onclick: async () => { const ok = await thu(() => S.db.ghiDiemDanh({ buoi: id, tv: r.thanh_vien_id, luc: new Date().toISOString(), cach: 'tay' }), 'Đã ghi có mặt'); if (ok) { s.dong(); taiLai(); } } }, 'Ghi có mặt') : null,
+          !coMat ? h('button', { class: 'nut', type: 'button', onclick: async () => { const ok = await thu(() => S.db.ghiDiemDanh({ buoi: id, tv: r.thanh_vien_id, luc: new Date(Date.now() + (S.lech || 0)).toISOString(), cach: 'tay' }), 'Đã ghi có mặt'); if (ok) { s.dong(); taiLai(); } } }, 'Ghi có mặt') : null,
           r.trang_thai !== 'phep' && !coMat ? h('button', { class: 'nut phu', type: 'button', onclick: () => { s.dong(); ghiPhep(r); } }, 'Ghi vắng có phép') : null,
           coMat ? h('button', { class: 'nut nguy', type: 'button', onclick: async () => { const ok = await thu(() => S.db.xoaDiemDanh(id, r.thanh_vien_id), 'Đã xóa lượt điểm danh'); if (ok) { s.dong(); taiLai(); } } }, 'Xóa lượt điểm danh') : null))
     });
@@ -304,49 +315,97 @@ async function manMotBuoi(vung, id) {
     const s = moSheet({ tieuDe: r.ho_ten, noiDung: f });
   };
 
-  /* Máy quét */
+  /* Máy quét: kết quả phủ lên khung camera, kèm tiếng và giọng nói, để người quét không phải nhìn xuống dưới */
   const video = h('video', { playsinline: true, muted: true });
-  const baoCam = h('div', { class: 'bao' }, 'Bấm “Bật máy quét”, rồi đưa mã QR trên thẻ vào khung.');
+  const baoCam = h('div', { class: 'bao' }, 'Bấm “Bật máy quét”, rồi đưa mã điểm danh trên app vào khung.');
+  const lop = h('div', { class: 'phu-quet', hidden: true, 'aria-hidden': 'true' });
+  const demMat = h('div', { class: 'dem-quet' });
   const ketQua = h('div', { 'aria-live': 'polite' });
   const baoCho = h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:12px' });
-  let tatMay = null, cuoi = { k: '', t: 0 };
+  let tatMay = null, cuoi = { k: '', t: 0 }, henAn = 0, nghiDen = 0;
   const nutCam = h('button', { class: 'nut', type: 'button', onclick: async () => {
     if (tatMay) { tatMay(); tatMay = null; nutCam.textContent = 'Bật máy quét'; baoCam.hidden = false; return; }
     moAmThanh(); baoCam.textContent = 'Đang mở camera…'; baoCam.hidden = false;
     try { tatMay = await batMayQuet(video, nhanMa); baoCam.hidden = true; nutCam.textContent = 'Tắt máy quét'; }
     catch (e) { baoCam.textContent = e.message; }
   } }, 'Bật máy quét');
+  const nutGiong = h('button', { class: 'nut-chu', type: 'button', onclick: () => {
+    datGiong(!batGiong()); veGiong();
+    if (batGiong()) { moAmThanh(); noi('Đã điểm danh'); }
+  } });
+  const veGiong = () => { nutGiong.textContent = batGiong() ? 'Giọng nói: bật' : 'Giọng nói: tắt'; };
+  veGiong();
   const nhapAnh = h('input', { type: 'file', accept: 'image/*', capture: 'environment', hidden: true, onchange: async (e) => {
     const t = e.target.files[0]; e.target.value = ''; if (!t) return;
     moAmThanh();
     const chu = await docAnh(t);
-    if (chu) nhanMa(chu, 'anh'); else hienKQ('loi', 'Không đọc được mã trong ảnh', 'Chụp gần hơn, đủ sáng, để mã nằm trọn trong ảnh.');
+    if (chu) nhanMa(chu, 'anh'); else hienKQ('loi', 'Không đọc được mã trong ảnh', 'Chụp gần hơn, đủ sáng, để mã nằm trọn trong ảnh.', 'Không đọc được');
   } });
-  const hienKQ = (loai, tieu, phu) => { kieu(loai === 'ok' ? 'ok' : loai === 'canh' ? 'canh' : 'loi'); dat(ketQua, h('div', { class: 'ket-qua-quet ' + loai }, h('div', { class: 'tieu' }, tieu), phu ? h('div', { class: 'phu' }, phu) : null)); };
+  const DAU = { ok: '✓', tre: '✓', roi: '✓', loi: '✕', cho: '…' };
+  // loai: ok (đúng giờ, xanh), tre (trễ hoặc cần chú ý, vàng), roi (đã điểm danh trước đó), loi (đỏ), cho (đang kiểm tra)
+  const hienKQ = (loai, tieu, phu, cauNoi) => {
+    kieu(loai); noi(cauNoi);
+    dat(lop, h('div', { class: 'dau' }, DAU[loai]), h('div', { class: 'tieu' }, tieu), phu ? h('div', { class: 'phu' }, phu) : null);
+    lop.className = 'phu-quet ' + loai; lop.hidden = false;
+    clearTimeout(henAn); henAn = setTimeout(() => { lop.hidden = true; }, loai === 'cho' ? 8000 : loai === 'ok' || loai === 'roi' ? 1600 : 2800);
+    if (loai !== 'cho') nghiDen = Date.now() + 900;
+    dat(ketQua, h('div', { class: 'ket-qua-quet ' + (loai === 'ok' || loai === 'roi' ? 'ok' : loai === 'loi' ? 'loi' : 'canh') }, h('div', { class: 'tieu' }, tieu), phu ? h('div', { class: 'phu' }, phu) : null));
+  };
   const capNhatCho = () => { const n = hangCho.doc().length; baoCho.textContent = n ? `${n} lượt đang chờ mạng để gửi lên.` : ''; baoCho.hidden = !n; };
-  async function nhanMa(chu, cach = 'qr') {
-    const khoa = layKhoa(chu);
-    if (!khoa) return hienKQ('loi', 'Mã không phải của CLB', 'Đây không phải mã QR trên thẻ thành viên.');
-    const nay = Date.now();
-    if (khoa === cuoi.k && nay - cuoi.t < 3000) return;
-    cuoi = { k: khoa, t: nay };
-    const t = theoKhoa.get(khoa);
-    if (!t) return hienKQ('loi', 'Không tìm thấy thành viên', 'Mã này không có trong danh sách.');
-    const r = bang.find(x => x.thanh_vien_id === t.id);
-    if (r && (r.trang_thai === 'dung' || r.trang_thai === 'tre')) return hienKQ('canh', t.ho_ten, `Đã điểm danh lúc ${gio(r.luc)}.`);
-    const luc = new Date().toISOString();
-    const tre = Math.ceil((nay - new Date(b.bat_dau).getTime()) / 60000);
-    const laTre = tre > b.tre_sau_phut;
-    // Báo ngay trên màn hình, gửi lên máy chủ phía sau; mất mạng thì lượt nằm trong hàng chờ.
-    if (t.hoat_dong) hienKQ(laTre ? 'canh' : 'ok', t.ho_ten, moTaTV(t) + ' · ' + (laTre ? `Trễ ${tre} phút` : 'Đúng giờ'));
-    else hienKQ('canh', t.ho_ten, 'Đã ngừng hoạt động. Lượt này vẫn được ghi.');
-    const moi = { thanh_vien_id: t.id, ma: t.ma, ho_ten: t.ho_ten, gen: t.gen, nha: t.nha, cap: t.cap, trang_thai: laTre ? 'tre' : 'dung', luc, tre_phut: laTre ? tre : null, cach, ly_do: null };
+  const ghiVaoBang = (t, laTre, tre, luc, cach) => {
+    const moi = { thanh_vien_id: t.thanh_vien_id || t.id, ma: t.ma, ho_ten: t.ho_ten, gen: t.gen, nha: t.nha, cap: t.cap, trang_thai: laTre ? 'tre' : 'dung', luc, tre_phut: laTre ? tre : null, cach, ly_do: null };
+    const r = bang.find(x => x.thanh_vien_id === moi.thanh_vien_id);
+    const cu = r ? Object.assign({}, r) : null;
     if (r) Object.assign(r, moi); else bang.push(moi);
     capNhat();
-    try { await S.db.ghiDiemDanh({ buoi: id, khoa, luc, cach }); }
-    catch (e) {
-      if (/mạng|máy chủ đang/i.test(e.message)) { hangCho.them({ buoi: id, khoa, luc, cach }); capNhatCho(); }
-      else hienKQ('loi', t.ho_ten, e.message);
+    return () => { const x = bang.findIndex(y => y.thanh_vien_id === moi.thanh_vien_id); if (cu) Object.assign(bang[x], cu); else bang.splice(x, 1); capNhat(); };
+  };
+  async function nhanMa(chu, cach = 'qr') {
+    if (Date.now() < nghiDen) return;
+    const m = docMa(chu);
+    if (!m) return hienKQ('loi', 'Không phải mã của CLB', 'Đưa mã điểm danh trên app vào khung.', 'Không hợp lệ');
+    const nay = Date.now(), gioChuan = nay + (S.lech || 0);
+    const khoaLap = m.loai === 'dong' ? m.ma : m.khoa;
+    if (khoaLap === cuoi.k && nay - cuoi.t < 8000) return; // vẫn đang đưa cùng một mã: im lặng
+    cuoi = { k: khoaLap, t: nay };
+    let t = null;
+    if (m.loai === 'dong') {
+      t = bang.find(r => r.ma === m.ma) || null;
+      if (!conHan(m.w, gioChuan)) return hienKQ('loi', t ? t.ho_ten : 'Mã đã hết hạn', 'Mã đã hết hạn, có thể là ảnh chụp. Nhờ bạn mở lại mã trên app.', 'Mã hết hạn');
+    } else {
+      const x = theoKhoa.get(m.khoa);
+      t = x ? Object.assign({ thanh_vien_id: x.id }, x) : null;
+      if (S.caiDat.chi_nhan_ma_dong === true) return hienKQ('loi', t ? t.ho_ten : 'Mã cố định', 'Mã trên thẻ in hoặc ảnh chụp không dùng để điểm danh. Nhờ bạn mở app → Mã điểm danh của tôi.', 'Mã cũ');
+    }
+    const khoa = m.loai === 'dong' ? m.chu : m.khoa;
+    const luc = new Date(gioChuan).toISOString();
+    const tre = Math.ceil((gioChuan - new Date(b.bat_dau).getTime()) / 60000), laTre = tre > b.tre_sau_phut;
+    const baoXong = (x, tre_) => x.hoat_dong === false
+      ? hienKQ('tre', x.ho_ten, 'Đã ngừng hoạt động. Lượt này vẫn được ghi.', 'Đã điểm danh')
+      : hienKQ(tre_ ? 'tre' : 'ok', x.ho_ten, [moTaTV(x), tre_ ? `Trễ ${tre_} phút` : 'Đúng giờ'].filter(Boolean).join(' · '), tre_ ? 'Đã điểm danh, trễ' : 'Đã điểm danh');
+    let hoanTac = null;
+    if (t) {
+      const r = bang.find(x => x.thanh_vien_id === t.thanh_vien_id);
+      if (r && (r.trang_thai === 'dung' || r.trang_thai === 'tre')) return hienKQ('roi', r.ho_ten, `Đã điểm danh lúc ${gio(r.luc)}.`, 'Đã điểm danh rồi');
+      // Biết người này: báo ngay, gửi lên máy chủ phía sau; mất mạng thì lượt nằm trong hàng chờ.
+      baoXong(t, laTre ? tre : null);
+      hoanTac = ghiVaoBang(t, laTre, tre, luc, cach);
+    } else hienKQ('cho', 'Đang kiểm tra…', null, null);
+    try {
+      const kq = await S.db.ghiDiemDanh({ buoi: id, khoa, luc, cach });
+      if (kq && kq.ok === false) {
+        if (hoanTac) hoanTac();
+        return hienKQ('loi', kq.ho_ten || (t && t.ho_ten) || 'Không ghi được', kq.loi, kq.het_han ? 'Mã hết hạn' : kq.ma_cu ? 'Mã cũ' : 'Không hợp lệ');
+      }
+      if (!t && kq) {
+        const r = bang.find(x => x.thanh_vien_id === kq.id);
+        if (r && !kq.moi) return hienKQ('roi', kq.ho_ten, `Đã điểm danh lúc ${gio(kq.luc)}.`, 'Đã điểm danh rồi');
+        ghiVaoBang(kq, !!kq.tre_phut, kq.tre_phut, kq.luc, kq.cach);
+        baoXong(kq, kq.tre_phut);
+      }
+    } catch (e) {
+      if (/mạng|máy chủ đang/i.test(e.message) && t) { hangCho.them({ buoi: id, khoa, luc, cach }); capNhatCho(); }
+      else { if (hoanTac) hoanTac(); hienKQ('loi', t ? t.ho_ten : 'Không ghi được', e.message, 'Không ghi được'); }
     }
   }
   const dayHang = async () => { if (await hangCho.day(S.db)) { capNhatCho(); taiLai(); } };
@@ -356,14 +415,34 @@ async function manMotBuoi(vung, id) {
 
   const vien = (nhan, ma) => h('button', { class: 'vien', type: 'button', 'data-ma': ma, 'aria-pressed': loc === ma ? 'true' : 'false', onclick: (e) => { loc = ma; e.currentTarget.parentElement.querySelectorAll('.vien').forEach(v => v.setAttribute('aria-pressed', v.dataset.ma === ma ? 'true' : 'false')); veDs(); } }, nhan);
 
+  /* Giao quyền điểm danh buổi này (quản trị, Ban cố vấn) */
+  const giaoQuyen = async () => {
+    const [ds, tt] = await Promise.all([tv.length ? tv : S.db.dsThanhVien(), S.db.tinhTrangKichHoat()]);
+    const daKH = new Set(tt.filter(x => x.da_kich_hoat).map(x => x.thanh_vien_id));
+    const chon = new Set(giao.map(g => g.thanh_vien_id));
+    const ung = ds.filter(t => daKH.has(t.id) && t.hoat_dong).sort((x, y) => (chon.has(y.id) - chon.has(x.id)) || x.ho_ten.localeCompare(y.ho_ten, 'vi'));
+    const hang = ung.map(t => { const o = oBat(t.ho_ten, { checked: chon.has(t.id), onchange: (e) => { if (e.target.checked) chon.add(t.id); else chon.delete(t.id); } }); o.dataset.tim = chuan(t.ho_ten + ' ' + t.ma + ' ' + (t.nha || '')); o.querySelector('span').append(h('small', { style: 'display:block;color:var(--chu-2);font-size:.8125rem' }, [t.ma, moTaTV(t)].join(' · '))); return o; });
+    const s = moSheet({
+      tieuDe: 'Người điểm danh',
+      noiDung: h('div', null,
+        h('p', { class: 'chu-nho', style: 'margin-bottom:12px' }, `${ngayGio(b.bat_dau)}. Người được chọn quét mã và ghi tay được buổi này tới khi buổi đóng. Ban cố vấn và người phụ trách luôn điểm danh được.`),
+        h('input', { class: 'tim', type: 'search', placeholder: 'Tìm tên, mã, nhà…', 'aria-label': 'Tìm người', oninput: (e) => { const k = chuan(e.target.value); hang.forEach(o => { o.hidden = !!k && !o.dataset.tim.includes(k); }); } }),
+        h('div', { class: 'nhom' }, hang.length ? hang : rong('Chưa có tài khoản nào được kích hoạt.')),
+        h('button', { class: 'nut day', type: 'button', onclick: async () => { const ok = await thu(() => S.db.datNguoiDiemDanh(id, [...chon]), 'Đã lưu người điểm danh'); if (ok) { s.dong(); lai(); } } }, 'Lưu'))
+    });
+  };
+  const tenGiao = giao.map(g => (tv.find(t => t.id === g.thanh_vien_id) || {}).ho_ten).filter(Boolean);
+
   dat(vung,
-    thanhNho(b.ten, '#quan-ly/buoi', 'Buổi', pt ? h('button', { class: 'nut-lui', type: 'button', onclick: () => suaBuoi(b, lai) }, 'Sửa') : null),
+    thanhNho(b.ten, S.toi.xem_duoc_ten ? '#quan-ly/buoi' : '#hom-nay', S.toi.xem_duoc_ten ? 'Buổi' : 'Hôm nay', pt ? h('button', { class: 'nut-lui', type: 'button', onclick: () => suaBuoi(b, lai) }, 'Sửa') : null),
     h('p', { class: 'tieu-de-phu', style: 'margin-top:4px;text-align:center' }, ngayGio(b.bat_dau), ` · Trễ sau ${b.tre_sau_phut} phút`, b.dong ? ' · Đã đóng' : ''),
     vungSo,
+    S.toi.la_quan_tri ? nhom(null, dong({ tieu: 'Người điểm danh buổi này', phu: tenGiao.length ? tenGiao.join(', ') : 'Chưa giao ai. Ban cố vấn và người phụ trách luôn điểm danh được.', onclick: giaoQuyen })) : null,
     coThe ? h('div', null,
-      h('div', { class: 'khung-quet' }, video, h('div', { class: 'ngam' }), baoCam),
+      h('div', { class: 'khung-quet' }, video, h('div', { class: 'ngam' }), baoCam, demMat, lop),
       ketQua, baoCho, nhapAnh,
-      h('div', { class: 'hang-nut', style: 'margin-bottom:20px' }, nutCam, h('button', { class: 'nut phu', type: 'button', onclick: () => nhapAnh.click() }, 'Chụp ảnh mã'))) : null,
+      h('div', { class: 'hang-nut', style: 'margin-bottom:8px' }, nutCam, h('button', { class: 'nut phu', type: 'button', onclick: () => nhapAnh.click() }, 'Chụp ảnh mã')),
+      h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:20px' }, nutGiong, ' · Nhìn mặt người đưa mã trước khi cho qua.')) : null,
     h('input', { class: 'tim', type: 'search', placeholder: 'Tìm tên để xem hoặc ghi tay…', 'aria-label': 'Tìm trong danh sách', oninput: (e) => { timChu = e.target.value; veDs(); } }),
     h('div', { class: 'chon-ngang' }, vien('Tất cả', 'tat'), vien('Có mặt', 'mat'), vien('Trễ', 'tre'), vien('Có phép', 'phep'), vien(b.dong ? 'Vắng' : 'Chưa điểm danh', 'vang')),
     vungDs,

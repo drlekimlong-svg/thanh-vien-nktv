@@ -44,6 +44,13 @@ export function demo(vai) {
     { id: 'c5', bai_id: 'p3', phan: null, noi_dung: 'Câu của bài tuần trước?', lua_chon: ['Một', 'Hai'], dung: 0, hinh: null }
   ];
   const lam = [3, 5, 6, 7, 10, 13].map((i, k) => ({ id: 'l' + i, bai_id: 'p3', thanh_vien_id: 't' + i, lan: 1, han_luc: buoi[0].bat_dau, nop_luc: buoi[0].bat_dau, tra_loi: {}, so_dung: k % 3 ? 1 : 0, tong: 1, diem: k % 3 ? 10 : 0 }));
+  const giao = [{ buoi_id: 'b2', thanh_vien_id: 't2' }];
+  const caiDat = { danh_muc_da_duyet: false, chi_nhan_ma_dong: true };
+  const duocQuet = (b) => { const t = me(); return t.vai_tro !== 'thanh_vien' || t.cap === 'Ban cố vấn' || giao.some(g => g.buoi_id === b && g.thanh_vien_id === t.id); };
+  const kyMa = async (ma, w, biMat) => {
+    const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(biMat), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    return [...new Uint8Array(await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(`${ma}.${w}`)))].map(x => x.toString(16).padStart(2, '0')).join('').slice(0, 12);
+  };
   const daDiemDanh = (b, t) => !b || dd.some(x => x.buoi_id === b && x.thanh_vien_id === t);
   const soanDuoc = (nhom) => { const t = me(); return t.vai_tro !== 'thanh_vien' || t.cap === 'Ban cố vấn' || (!!t.chuc_vu && khoaNha(t.nha) === nhom); };
   const lich = [{ id: 'k1', buoi_id: 'b1', loai: 'tuan', nhom: 'suzaku', ngay: buoi[0].bat_dau.slice(0, 10), ten: 'Lịch sinh hoạt tuần', trang_thai: 'da_gui', nguoi_tao: 't1', nguoi_tao_ten: 'TRẦN THỊ B', gui_luc: buoi[0].bat_dau, sua_luc: buoi[0].bat_dau,
@@ -74,10 +81,14 @@ export function demo(vai) {
     async theCongKhai(k) { await gioi(); const t = tv.find(x => x.khoa_qr === k); return t ? { ho_ten: t.ho_ten, gen: t.gen, nha: t.nha, cap: t.cap, hoat_dong: t.hoat_dong } : null; },
     async toi() {
       const t = me(), bcv = t.cap === 'Ban cố vấn', pt = t.vai_tro !== 'thanh_vien' || bcv;
-      return Object.assign({}, t, { la_admin: t.vai_tro === 'quan_tri', la_quan_tri: t.vai_tro === 'quan_tri' || bcv, la_phu_trach: pt, xem_duoc_ten: pt, lich_moi_nha: pt, lich_nha: t.chuc_vu ? t.nha : null });
+      return Object.assign({}, t, { la_admin: t.vai_tro === 'quan_tri', la_quan_tri: t.vai_tro === 'quan_tri' || bcv, la_phu_trach: pt, xem_duoc_ten: pt, lich_moi_nha: pt, lich_nha: t.chuc_vu ? t.nha : null,
+        buoi_diem_danh: giao.filter(g => g.thanh_vien_id === t.id && !buoi.find(b => b.id === g.buoi_id).dong).map(g => g.buoi_id), bay_gio: new Date().toISOString() });
     },
-    async caiDat() { return { danh_muc_da_duyet: false }; },
-    async datCaiDat() {},
+    async caiDat() { return Object.assign({}, caiDat); },
+    async datCaiDat(k, v) { caiDat[k] = v; },
+    async maDongCuaToi() { await gioi(); return { ma: me().ma, bi_mat: 'demo-' + me().id, bay_gio: new Date().toISOString() }; },
+    async nguoiDiemDanh(b) { return giao.filter(g => g.buoi_id === b).map(g => ({ thanh_vien_id: g.thanh_vien_id })); },
+    async datNguoiDiemDanh(b, ids) { for (let i = giao.length - 1; i >= 0; i--) if (giao[i].buoi_id === b) giao.splice(i, 1); ids.forEach(x => giao.push({ buoi_id: b, thanh_vien_id: x })); },
     async dsThanhVien() { await gioi(); return tv.map(t => Object.assign({}, t)); },
     async themThanhVien(o) { const t = Object.assign({ id: uid(), khoa_qr: uid().padEnd(16, '0').slice(0, 16) }, o); tv.push(t); return t; },
     async suaThanhVien(id, o) { coBoSung(tv.find(t => t.id === id), o); },
@@ -88,10 +99,26 @@ export function demo(vai) {
     async suaBuoi(id, o) { coBoSung(buoi.find(b => b.id === id), o); },
     async xoaBuoi(id) { buoi.splice(buoi.findIndex(b => b.id === id), 1); },
     async ghiDiemDanh(p) {
-      const t = p.khoa ? tv.find(x => x.khoa_qr === p.khoa) : tv.find(x => x.id === p.tv);
+      await gioi(150);
+      if (!duocQuet(p.buoi)) throw new Error('Bạn chưa được giao điểm danh buổi này');
+      const b = buoi.find(x => x.id === p.buoi), luc = p.luc || new Date().toISOString();
+      let t = null, cach = p.cach || 'qr';
+      const m = String(p.khoa || '').match(/^NKTV1\.(NKTV-\d+)\.(\d+)\.([0-9a-f]{12})$/i);
+      if (m) {
+        t = tv.find(x => x.ma === m[1]);
+        if (!t || m[3].toLowerCase() !== await kyMa(m[1], m[2], 'demo-' + t.id)) return { ok: false, loi: 'Mã không hợp lệ.' };
+        const lech = new Date(luc).getTime() / 1000 - Number(m[2]) * 20;
+        if (lech < -30 || lech > 60) return { ok: false, het_han: true, id: t.id, ho_ten: t.ho_ten, loi: 'Mã đã hết hạn, có thể là ảnh chụp. Nhờ bạn mở lại mã trên app.' };
+        cach = 'ma_dong';
+      } else if (p.khoa) {
+        t = tv.find(x => x.khoa_qr === p.khoa);
+        if (t && caiDat.chi_nhan_ma_dong && cach !== 'tay') return { ok: false, ma_cu: true, id: t.id, ho_ten: t.ho_ten, loi: 'Mã cố định trên thẻ hoặc ảnh chụp không dùng để điểm danh. Nhờ bạn mở app → Mã điểm danh của tôi.' };
+      } else t = tv.find(x => x.id === p.tv);
       if (!t) return { ok: false, loi: 'Mã này không thuộc thành viên nào.' };
-      if (!dd.find(x => x.buoi_id === p.buoi && x.thanh_vien_id === t.id)) dd.push({ buoi_id: p.buoi, thanh_vien_id: t.id, luc: p.luc || new Date().toISOString(), cach: p.cach || 'qr' });
-      return { ok: true };
+      const cu = dd.find(x => x.buoi_id === p.buoi && x.thanh_vien_id === t.id);
+      if (!cu) dd.push({ buoi_id: p.buoi, thanh_vien_id: t.id, luc, cach });
+      const r = tt(b, t);
+      return { ok: true, moi: !cu, id: t.id, ma: t.ma, ho_ten: t.ho_ten, gen: t.gen, nha: t.nha, cap: t.cap, hoat_dong: t.hoat_dong, luc: r.luc, cach, tre_phut: r.tre_phut };
     },
     async xoaDiemDanh(b, t) { const i = dd.findIndex(x => x.buoi_id === b && x.thanh_vien_id === t); if (i >= 0) dd.splice(i, 1); },
     async bangDiemDanh(id) { await gioi(); const b = buoi.find(x => x.id === id); return tv.filter(t => t.hoat_dong).map(t => Object.assign({ thanh_vien_id: t.id, ma: t.ma, ho_ten: t.ho_ten, gen: t.gen, nha: t.nha, cap: t.cap }, tt(b, t))); },

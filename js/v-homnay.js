@@ -1,19 +1,50 @@
 // Màn hình "Hôm nay": buổi sắp tới, thông báo, việc đang chờ.
 import { S } from './state.js';
-import { h, dat, dong, nhom, bieuTuong, moSheet, thu, gio, ngayGio, ngay, namHoc, oNhap, oBat, qrSvg } from './ui.js';
+import { h, dat, dong, nhom, bieuTuong, moSheet, thu, gio, ngayGio, ngay, namHoc, oNhap, oBat, qrSvg, moTaTV } from './ui.js';
 import { suKienBuoi } from './v-lich.js';
+import { taoMa, BUOC } from './ma-dong.js';
 
 const C = window.NKTV_CONFIG;
 export const linkThe = (khoa) => (S.demo ? location.origin + location.pathname + '?demo=tv&' : C.appUrl + '?') + 'the=' + khoa;
+const KHOA_MA_DONG = 'nktv-ma-dong-v1';
+const F_GIAY = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
-export function moMaCuaToi() {
+/** Mã điểm danh động: đổi sau mỗi 20 giây, kèm đồng hồ chạy từng giây để người quét thấy đây là app đang mở, không phải ảnh chụp. */
+export async function moMaCuaToi() {
+  const hop = h('div', { class: 'qr-cua-toi' }, h('div', { class: 'dang-tai', style: 'padding:60px 0' }, 'Đang tạo mã…'));
+  const vach = h('i'), dongHo = h('div', { class: 'dong-ho-ma' });
+  let hen = 0;
   moSheet({
     tieuDe: 'Mã điểm danh của tôi',
     noiDung: h('div', null,
-      h('div', { class: 'qr-cua-toi' }, qrSvg(linkThe(S.toi.khoa_qr))),
-      h('p', { class: 'giua-chu', style: 'font-weight:600' }, S.toi.ho_ten),
-      h('p', { class: 'chu-nho giua-chu', style: 'margin:4px 0 0' }, S.toi.ma + ' · Mã này giống mã trên thẻ, đưa cho người phụ trách quét khi quên thẻ.'))
+      hop, h('div', { class: 'vach-ma' }, vach), dongHo,
+      h('p', { class: 'giua-chu', style: 'font-weight:600;font-size:1.125rem;margin-top:8px' }, S.toi.ho_ten),
+      h('p', { class: 'chu-nho giua-chu', style: 'margin:2px 0 10px' }, [S.toi.ma, moTaTV(S.toi)].filter(Boolean).join(' · ')),
+      h('p', { class: 'chu-nho giua-chu' }, 'Mã tự đổi sau mỗi 20 giây. Ảnh chụp màn hình không dùng để điểm danh được.')),
+    khiDong: () => clearInterval(hen)
   });
+  let khoa = null;
+  try {
+    khoa = await S.db.maDongCuaToi();
+    S.lech = new Date(khoa.bay_gio).getTime() - Date.now();
+    try { localStorage.setItem(KHOA_MA_DONG, JSON.stringify({ ma: khoa.ma, bi_mat: khoa.bi_mat })); } catch (_) {}
+  } catch (e) {
+    // Mất mạng lúc điểm danh: dùng khóa đã lưu trên máy từ lần trước.
+    try { const c = JSON.parse(localStorage.getItem(KHOA_MA_DONG)); if (c && c.ma === S.toi.ma) khoa = c; } catch (_) {}
+    if (!khoa) { dat(hop, h('div', { class: 'rong-chu', style: 'color:#333' }, 'Chưa tạo được mã: ' + e.message)); return; }
+  }
+  let wCu = -1, dangVe = false;
+  const ve = async () => {
+    const nay = Date.now() + (S.lech || 0), w = Math.floor(nay / 1000 / BUOC);
+    dongHo.textContent = F_GIAY.format(new Date(nay));
+    vach.style.transform = `scaleX(${(BUOC - (nay / 1000) % BUOC) / BUOC})`;
+    if (w === wCu || dangVe) return;
+    dangVe = true;
+    try { const m = await taoMa(khoa.ma, khoa.bi_mat, nay); dat(hop, qrSvg(m.chu)); wCu = w; }
+    catch (_) { dat(hop, h('div', { class: 'rong-chu', style: 'color:#333' }, 'Trình duyệt này không tạo được mã. Mở app bằng Chrome hoặc Safari.')); clearInterval(hen); }
+    dangVe = false;
+  };
+  ve(); hen = setInterval(ve, 250);
 }
 
 export async function moThongBao(tb, sauKhi) {
@@ -61,7 +92,8 @@ export async function manHomNay(vung) {
       h('h2', null, toi.ten),
       h('div', { class: 'chi-tiet' }, ngayGio(toi.bat_dau), toi.dia_diem ? ' · ' + toi.dia_diem : ''),
       h('div', { class: 'hang-nut' },
-        S.toi.la_phu_trach ? h('a', { class: 'nut', href: '#quan-ly/buoi/' + toi.id }, bieuTuong('quet'), 'Điểm danh') : null,
+        S.toi.la_phu_trach || (S.toi.buoi_diem_danh || []).includes(toi.id) ? h('a', { class: 'nut', href: '#quan-ly/buoi/' + toi.id }, bieuTuong('quet'), 'Điểm danh') : null,
+        Math.abs(new Date(toi.bat_dau) - Date.now()) < 4 * 3600e3 ? h('button', { class: 'nut' + (S.toi.la_phu_trach ? ' phu' : ''), type: 'button', onclick: moMaCuaToi }, bieuTuong('qr'), 'Mã điểm danh') : null,
         h('button', { class: 'nut phu', type: 'button', onclick: () => suKienBuoi(toi) }, 'Chi tiết, xin nghỉ')))
       : h('div', { class: 'the-buoi' }, h('div', { class: 'chi-tiet' }, 'Chưa có buổi sinh hoạt nào sắp tới.')),
     baiMo.length ? nhom('Bài cần làm', baiMo.map(b => dong({

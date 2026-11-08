@@ -12,13 +12,6 @@ const napJsQR = () => {
   return daNapJsQR;
 };
 
-export function layKhoa(chu) {
-  const s = String(chu || '').trim();
-  const m = s.match(/[?&]the=([0-9a-zA-Z_-]+)/);
-  if (m) return m[1];
-  return /^[0-9a-f]{16}$/i.test(s) ? s : '';
-}
-
 const cv = document.createElement('canvas');
 function docKhung(nguon, w, h, toiDa) {
   if (!window.jsQR || !w || !h) return '';
@@ -80,18 +73,48 @@ export async function batMayQuet(video, khiCoMa) {
   return tatMay;
 }
 
-/* ---------- Tiếng và hàng chờ ---------- */
+/* ---------- Tiếng, giọng nói và hàng chờ ---------- */
 let actx = null;
-export const moAmThanh = () => { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume(); } catch (_) {} };
-export function kieu(loai) {
-  try { if (navigator.vibrate) navigator.vibrate(loai === 'ok' ? 60 : [80, 60, 80]); } catch (_) {}
-  if (!actx) return;
+/** Gọi ngay trong lần bấm “Bật máy quét”: iPhone chỉ cho phát tiếng và giọng nói sau một thao tác của người dùng. */
+export const moAmThanh = () => {
   try {
-    const o = actx.createOscillator(), g = actx.createGain();
-    o.frequency.value = loai === 'ok' ? 880 : loai === 'canh' ? 520 : 220;
-    g.gain.value = 0.08; g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + 0.18);
-    o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime + 0.18);
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)(); actx.resume();
+    const s = actx.createBufferSource(); s.buffer = actx.createBuffer(1, 1, 22050); s.connect(actx.destination); s.start(0);
   } catch (_) {}
+  try { if (window.speechSynthesis) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } } catch (_) {}
+};
+// Hai nốt cho mỗi loại: đi lên là được, đi xuống là lỗi. Đủ to để nghe giữa phòng ồn.
+const NOT = { ok: [784, 1175], tre: [784, 988], roi: [659, 659], loi: [330, 233] };
+const RUNG = { ok: 70, tre: [70, 60, 70], roi: 40, loi: [120, 80, 120] };
+export function kieu(loai) {
+  try { if (navigator.vibrate && RUNG[loai]) navigator.vibrate(RUNG[loai]); } catch (_) {}
+  if (!actx || !NOT[loai]) return;
+  try {
+    NOT[loai].forEach((tan, i) => {
+      const o = actx.createOscillator(), g = actx.createGain(), t0 = actx.currentTime + i * 0.13;
+      o.type = loai === 'loi' ? 'square' : 'sine'; o.frequency.value = tan;
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(loai === 'loi' ? 0.12 : 0.3, t0 + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.16);
+      o.connect(g).connect(actx.destination); o.start(t0); o.stop(t0 + 0.17);
+    });
+  } catch (_) {}
+}
+
+const KHOA_GIONG = 'nktv-giong-noi';
+let giong = null;
+const layGiong = () => {
+  if (!window.speechSynthesis) return null;
+  if (!giong) giong = speechSynthesis.getVoices().find(v => /^vi/i.test(v.lang)) || null;
+  return giong;
+};
+try { if (window.speechSynthesis) { speechSynthesis.getVoices(); speechSynthesis.addEventListener('voiceschanged', () => { giong = null; layGiong(); }); } } catch (_) {}
+export const coGiongViet = () => !!layGiong();
+export const batGiong = () => { try { return localStorage.getItem(KHOA_GIONG) !== '0'; } catch (_) { return true; } };
+export const datGiong = (bat) => { try { localStorage.setItem(KHOA_GIONG, bat ? '1' : '0'); } catch (_) {} };
+/** Đọc to câu ngắn bằng giọng tiếng Việt của máy. Máy không có giọng tiếng Việt thì chỉ còn tiếng bíp. */
+export function noi(chu) {
+  const v = layGiong();
+  if (!chu || !v || !batGiong()) return;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(chu); u.voice = v; u.lang = v.lang; u.rate = 1.1; speechSynthesis.speak(u); } catch (_) {}
 }
 
 const KHOA_CHO = 'nktv-hang-cho-v1';

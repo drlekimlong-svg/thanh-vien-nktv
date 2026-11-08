@@ -21,6 +21,13 @@ Quản trị phân quyền ở **Quản lý → Phân quyền** cho tài khoản
 
 Thành viên không cần email. Ban nhân sự cấp mã kích hoạt trong app (dùng một lần, hết hạn sau 30 ngày); thành viên nhập mã thành viên và mã kích hoạt, tự đặt mật khẩu. Quên mật khẩu thì xin mã mới và làm lại đúng bước đó.
 
+## Điểm danh
+
+- **Mã của thành viên:** Hôm nay → Mã điểm danh. Mã đổi sau mỗi 20 giây, ký bằng khóa riêng của từng người (`js/ma-dong.js`, hàm `ghi_diem_danh`), kèm đồng hồ chạy từng giây. Ảnh chụp mã chỉ còn dùng được khoảng một phút.
+- **Cài đặt “Chỉ nhận mã đang chạy trên app”** (Quản lý → Buổi sinh hoạt, mặc định bật): mã cố định trên thẻ in và ảnh chụp mã không quét được; ai quên điện thoại thì người quét nhìn mặt rồi ghi tay.
+- **Người quét:** quản trị, Ban cố vấn, phụ trách điểm danh, và người được giao cho từng buổi (trang của buổi → Người điểm danh buổi này). Quyền được giao hết khi buổi đóng.
+- **Báo hiệu khi quét:** kết quả phủ lên khung camera (xanh: đúng giờ, vàng: trễ, xanh dương: đã điểm danh trước đó, đỏ: lỗi), kèm hai nốt nhạc, rung và giọng đọc “Đã điểm danh” nếu máy có giọng tiếng Việt. Cùng một mã đưa lại trong 8 giây thì bỏ qua.
+
 ## Soạn lịch sinh hoạt
 
 Nhóm trưởng, nhóm phó soạn lịch tuần hoặc chương trình đặc biệt cho nhà mình, xem trước ảnh theo mascot nhóm trực, tải PNG hoặc Excel. Bản nháp tự lưu và nhóm trưởng, nhóm phó cùng nhà soạn tiếp được. Khi gửi, lịch vào kho, tạo buổi ở tab Lịch để điểm danh và đăng một thông báo. Ảnh không lưu thành tệp: dữ liệu được giữ nguyên nên vẽ lại được bất cứ lúc nào.

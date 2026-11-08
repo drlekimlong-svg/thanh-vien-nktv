@@ -78,6 +78,7 @@ export const api = {
   async dangXuat() {
     try { await goiFetch(`${C.supabaseUrl}/auth/v1/logout`, { method: 'POST', headers: await dauDe() }); } catch (_) {}
     luuPhien(null);
+    try { localStorage.removeItem('nktv-ma-dong-v1'); } catch (_) {}
   },
   async doiMatKhau(moi) {
     await goiFetch(`${C.supabaseUrl}/auth/v1/user`, { method: 'PUT', headers: await dauDe(), body: JSON.stringify({ password: moi }) });
@@ -103,6 +104,9 @@ export const api = {
   themBuoi: async (o) => (await them('buoi', o))[0],
   suaBuoi: (id, o) => sua('buoi', id, o),
   xoaBuoi: (id) => xoa('buoi', id),
+  nguoiDiemDanh: (buoi) => rest(`buoi_diem_danh?select=thanh_vien_id&buoi_id=eq.${buoi}`),
+  datNguoiDiemDanh: (buoi, ids) => rpc('dat_nguoi_diem_danh', { p_buoi: buoi, p_ids: ids }),
+  maDongCuaToi: () => rpc('ma_dong_cua_toi'),
   ghiDiemDanh: (p) => rpc('ghi_diem_danh', { p_buoi: p.buoi, p_khoa: p.khoa ?? null, p_tv: p.tv ?? null, p_luc: p.luc ?? null, p_cach: p.cach ?? 'qr' }),
   xoaDiemDanh: (buoi, tv) => rpc('xoa_diem_danh', { p_buoi: buoi, p_tv: tv }),
   bangDiemDanh: (buoi) => rpc('bang_diem_danh', { p_buoi: buoi }),
