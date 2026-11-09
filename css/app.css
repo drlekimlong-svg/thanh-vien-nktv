@@ -378,7 +378,7 @@ button.dong:active, a.dong:active { background: var(--ke); transition: none; }
 /* ---------- Điểm nhóm ---------- */
 .hang-nha { gap: 10px; }
 .hang-nha .hang-so { width: 22px; flex: none; text-align: center; font-weight: 700; color: var(--chu-2); font-variant-numeric: tabular-nums; }
-.hang-nha img { width: 40px; height: 40px; object-fit: contain; flex: none; }
+.hang-nha img, .anh-nha-nho { width: 40px; height: 40px; object-fit: contain; flex: none; }
 .hang-nha .thanh-pt i { background: var(--mau); }
 .diem-nha { font-size: 1.375rem; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; flex: none; min-width: 52px; text-align: right; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .hang-nha .thanh-pt i { background: color-mix(in srgb, var(--mau) 45%, #fff); } }

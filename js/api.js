@@ -106,6 +106,8 @@ export const api = {
   xoaBuoi: (id) => xoa('buoi', id),
   nguoiDiemDanh: (buoi) => rest(`buoi_diem_danh?select=thanh_vien_id&buoi_id=eq.${buoi}`),
   datNguoiDiemDanh: (buoi, ids) => rpc('dat_nguoi_diem_danh', { p_buoi: buoi, p_ids: ids }),
+  dsPhanCongLich: () => rest('phan_cong_lich?select=thanh_vien_id,nha,den_ngay&order=nha'),
+  datPhanCongLich: (nha, ids, denNgay) => rpc('dat_phan_cong_lich', { p_nha: nha, p_ids: ids, p_den_ngay: denNgay || null }),
   maDongCuaToi: () => rpc('ma_dong_cua_toi'),
   ghiDiemDanh: (p) => rpc('ghi_diem_danh', { p_buoi: p.buoi, p_khoa: p.khoa ?? null, p_tv: p.tv ?? null, p_luc: p.luc ?? null, p_cach: p.cach ?? 'qr' }),
   xoaDiemDanh: (buoi, tv) => rpc('xoa_diem_danh', { p_buoi: buoi, p_tv: tv }),

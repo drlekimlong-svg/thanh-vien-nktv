@@ -6,7 +6,12 @@ import * as V from './lich-ve.js';
 const KHOA_NHA = { Seiryu: 'seiryu', Suzaku: 'suzaku', Byakko: 'byakko', Genbu: 'genbu', Kirin: 'kirin', 'Yin-Yang Kois': 'koi' };
 const thanhNho = (tieu, href, nhan, phai) => h('div', { class: 'thanh-nho' }, h('div', { class: 'khoang' }, h('a', { class: 'nut-lui', href, style: 'text-decoration:none' }, '‹ ' + nhan)), h('h1', null, tieu), h('div', { class: 'khoang phai' }, phai || null));
 /** Nhà được soạn lịch: người phụ trách, Ban cố vấn, quản trị soạn cho mọi nhà; nhóm trưởng, nhóm phó cho nhà mình. */
-const nhaDuocSoan = () => S.toi.lich_moi_nha ? V.GROUPS : S.toi.lich_nha && KHOA_NHA[S.toi.lich_nha] ? [KHOA_NHA[S.toi.lich_nha]] : [];
+// Nhà soạn được lịch: mọi nhà (quản trị, Ban cố vấn, phụ trách), nhà mình (nhóm trưởng, nhóm phó) và nhà được phân công.
+const nhaDuocSoan = () => {
+  if (S.toi.lich_moi_nha) return V.GROUPS;
+  const co = new Set([S.toi.lich_nha, ...(S.toi.lich_duoc_giao || []).map(p => p.nha)].map(n => KHOA_NHA[n]).filter(Boolean));
+  return V.GROUPS.filter(g => co.has(g));
+};
 const suaDuoc = (l) => nhaDuocSoan().includes(l.nhom);
 const tenLich = (l) => l.ten || 'Chương trình chưa đặt tên';
 
@@ -44,7 +49,7 @@ export async function manSoanLich(vung, id, idMau) {
   const choPhep = nhaDuocSoan();
   if (!choPhep.length) {
     dat(vung, thanhNho('Soạn lịch', '#lich', 'Lịch'),
-      rong('Nhóm trưởng, nhóm phó của nhà trực, Ban cố vấn và người phụ trách soạn được lịch. Lịch đã gửi xem ở Kho lịch.'),
+      rong('Nhóm trưởng, nhóm phó của nhà trực, người được phân công, Ban cố vấn và người phụ trách soạn được lịch. Lịch đã gửi xem ở Kho lịch.'),
       h('a', { class: 'nut phu day', href: '#lich/kho' }, 'Mở Kho lịch'));
     return;
   }

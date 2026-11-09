@@ -52,7 +52,12 @@ export function demo(vai) {
     return [...new Uint8Array(await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(`${ma}.${w}`)))].map(x => x.toString(16).padStart(2, '0')).join('').slice(0, 12);
   };
   const daDiemDanh = (b, t) => !b || dd.some(x => x.buoi_id === b && x.thanh_vien_id === t);
-  const soanDuoc = (nhom) => { const t = me(); return t.vai_tro !== 'thanh_vien' || t.cap === 'Ban cố vấn' || (!!t.chuc_vu && khoaNha(t.nha) === nhom); };
+  // Phân công soạn lịch: LÊ MINH C (t2, nhà Byakko) được soạn lịch cho nhà Kirin tới 7 ngày nữa.
+  const ngayVN = (ms) => new Date(ms + 7 * 3600e3).toISOString().slice(0, 10);
+  const phanCong = [{ thanh_vien_id: 't2', nha: 'Kirin', den_ngay: ngayVN(nay + 7 * ngay) }];
+  const conPC = (p) => !p.den_ngay || p.den_ngay >= ngayVN(Date.now());
+  const pcCua = (id) => phanCong.filter(p => p.thanh_vien_id === id && conPC(p));
+  const soanDuoc = (nhom) => { const t = me(); return t.vai_tro !== 'thanh_vien' || t.cap === 'Ban cố vấn' || (!!t.chuc_vu && khoaNha(t.nha) === nhom) || pcCua(t.id).some(p => khoaNha(p.nha) === nhom); };
   const lich = [{ id: 'k1', buoi_id: 'b1', loai: 'tuan', nhom: 'suzaku', ngay: buoi[0].bat_dau.slice(0, 10), ten: 'Lịch sinh hoạt tuần', trang_thai: 'da_gui', nguoi_tao: 't1', nguoi_tao_ten: 'TRẦN THỊ B', gui_luc: buoi[0].bat_dau, sua_luc: buoi[0].bat_dau,
     du_lieu: { mau: 'tuan', kho: 'post', nhom: 'suzaku', ngay: buoi[0].bat_dau.slice(0, 10), gioBD: '14:00', gioKT: '16:00', dd1: 'Phòng A', dd2: 'ĐHYK Phạm Ngọc Thạch', chuTri: 'BS. Nguyễn Văn A', dieuHanh: 'SV. Trần Thị B', tenCT: '', phuCT: '', moTa: '', qrLink: '', qrNote: '',
       rows: [{ t1: '14:00', t2: '15:00', title: 'Chuyên đề mẫu', who: 'SV. Lê Minh C', org: 'kirin' }, { t1: '15:00', t2: '16:00', title: 'Thông báo chung', who: 'Ban tổ chức', org: '' }] } }];
@@ -82,11 +87,19 @@ export function demo(vai) {
     async toi() {
       const t = me(), bcv = t.cap === 'Ban cố vấn', pt = t.vai_tro !== 'thanh_vien' || bcv;
       return Object.assign({}, t, { la_admin: t.vai_tro === 'quan_tri', la_quan_tri: t.vai_tro === 'quan_tri' || bcv, la_phu_trach: pt, xem_duoc_ten: pt, lich_moi_nha: pt, lich_nha: t.chuc_vu ? t.nha : null,
+        lich_duoc_giao: pcCua(t.id).map(p => ({ nha: p.nha, den_ngay: p.den_ngay })),
         buoi_diem_danh: giao.filter(g => g.thanh_vien_id === t.id && !buoi.find(b => b.id === g.buoi_id).dong).map(g => g.buoi_id), bay_gio: new Date().toISOString() });
     },
     async caiDat() { return Object.assign({}, caiDat); },
     async datCaiDat(k, v) { caiDat[k] = v; },
     async maDongCuaToi() { await gioi(); return { ma: me().ma, bi_mat: 'demo-' + me().id, bay_gio: new Date().toISOString() }; },
+    async dsPhanCongLich() { return phanCong.map(p => Object.assign({}, p)); },
+    async datPhanCongLich(nha, ids, den) {
+      if (!(me().vai_tro === 'quan_tri' || me().cap === 'Ban cố vấn')) throw new Error('Chỉ quản trị và Ban cố vấn được phân công soạn lịch');
+      if (den && den < ngayVN(Date.now())) throw new Error('Ngày hết hạn đã qua');
+      for (let i = phanCong.length - 1; i >= 0; i--) if (phanCong[i].nha === nha && !ids.includes(phanCong[i].thanh_vien_id)) phanCong.splice(i, 1);
+      ids.forEach(id => { const p = phanCong.find(x => x.nha === nha && x.thanh_vien_id === id); if (p) p.den_ngay = den || null; else phanCong.push({ thanh_vien_id: id, nha, den_ngay: den || null }); });
+    },
     async nguoiDiemDanh(b) { return giao.filter(g => g.buoi_id === b).map(g => ({ thanh_vien_id: g.thanh_vien_id })); },
     async datNguoiDiemDanh(b, ids) { for (let i = giao.length - 1; i >= 0; i--) if (giao[i].buoi_id === b) giao.splice(i, 1); ids.forEach(x => giao.push({ buoi_id: b, thanh_vien_id: x })); },
     async dsThanhVien() { await gioi(); return tv.map(t => Object.assign({}, t)); },
@@ -176,7 +189,7 @@ export function demo(vai) {
     async docLich(id) { return lich.find(l => l.id === id); },
     async lichCuaBuoi(b) { return lich.find(l => l.buoi_id === b); },
     async luuLich(id, d, gui) {
-      if (!soanDuoc(d.nhom)) throw new Error('Chỉ nhóm trưởng, nhóm phó nhà trực, Ban cố vấn và người phụ trách được soạn lịch cho nhà này.');
+      if (!soanDuoc(d.nhom)) throw new Error('Bạn chưa được soạn lịch cho nhà này. Nhóm trưởng, nhóm phó của nhà, người được phân công, Ban cố vấn và người phụ trách soạn được.');
       const ten = d.mau === 'dacbiet' ? d.tenCT : 'Lịch sinh hoạt tuần';
       let l = lich.find(x => x.id === id);
       if (!l) { l = { id: uid(), nguoi_tao: me().id, nguoi_tao_ten: me().ho_ten, trang_thai: 'nhap' }; lich.unshift(l); }

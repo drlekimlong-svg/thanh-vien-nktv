@@ -1,6 +1,6 @@
 // Lịch sinh hoạt và xin nghỉ của thành viên.
 import { S } from './state.js';
-import { h, dat, dong, nhom, moSheet, thu, gio, ngayGio, namHoc, oNhap, rong, dauNgay, soLieu, xacNhan, bieuTuong, TT_DIEM_DANH } from './ui.js';
+import { h, dat, dong, nhom, moSheet, thu, gio, ngay, ngayGio, namHoc, oNhap, rong, dauNgay, soLieu, xacNhan, bieuTuong, TT_DIEM_DANH } from './ui.js';
 
 const TT_DON = { cho: 'Chờ duyệt', duyet: 'Đã duyệt', tu_choi: 'Không duyệt' };
 export const nhanDon = (d) => h('span', { class: 'the-nhan ' + d.trang_thai }, TT_DON[d.trang_thai]);
@@ -67,8 +67,10 @@ export async function manLich(vung) {
   dat(vung,
     h('h1', { class: 'tieu-de-lon' }, 'Lịch sinh hoạt'),
     h('div', { class: 'hang-nut', style: 'margin-bottom:20px' },
-      S.toi.lich_moi_nha || S.toi.lich_nha ? h('a', { class: 'nut', href: '#lich/soan' }, 'Soạn lịch') : null,
+      S.toi.lich_moi_nha || S.toi.lich_nha || (S.toi.lich_duoc_giao || []).length ? h('a', { class: 'nut', href: '#lich/soan' }, 'Soạn lịch') : null,
       h('a', { class: 'nut phu', href: '#lich/kho' }, 'Kho lịch')),
+    !S.toi.lich_moi_nha && (S.toi.lich_duoc_giao || []).length ? h('p', { class: 'chu-nho', style: 'margin:-10px 0 18px' },
+      'Bạn được phân công soạn lịch cho ' + S.toi.lich_duoc_giao.map(p => 'nhà ' + p.nha + (p.den_ngay ? ' (đến hết ' + ngay(p.den_ngay) + ')' : '')).join(', ') + '.') : null,
     nhom(null, dong({ tieu: 'Điểm nhóm', phu: 'Xếp hạng 6 nhà theo chuyên cần và test đầu giờ', truoc: h('div', { class: 'bieu-tuong' }, bieuTuong('sao')), href: '#lich/diem-nhom' })),
     cc && cc.tong ? soLieu([
       { so: Math.round((cc.dung + cc.tre) / cc.tong * 100) + '%', ten: `Chuyên cần ${cc.dung + cc.tre}/${cc.tong}` },

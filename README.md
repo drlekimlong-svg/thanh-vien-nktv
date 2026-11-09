@@ -11,6 +11,7 @@ Kho này chỉ chứa giao diện và lược đồ cơ sở dữ liệu. Danh s
 | Không đăng nhập, quét mã trên thẻ | Thẻ của đúng người đó: họ tên, Generation, nhà, cấp, tình trạng |
 | Senior, Junior | Lịch, kho lịch, điểm nhóm, thông báo, xin nghỉ, làm post-test, hồ sơ và chuyên cần của chính mình |
 | Nhóm trưởng, nhóm phó | Thêm soạn và gửi lịch cho nhà mình |
+| Người được phân công soạn lịch | Thêm soạn và gửi lịch cho nhà được phân công, tới ngày hết hạn nếu có |
 | Phụ trách điểm danh | Thêm danh sách có tên, tạo buổi, quét mã, ghi tay, duyệt đơn xin nghỉ, soạn lịch cho mọi nhà |
 | Ban cố vấn | Gần đủ quyền quản trị: thêm thông báo, post-test, xác nhận năng lực; không phân quyền, không sửa danh sách, không cấp mã |
 | Quản trị | Toàn quyền, kể cả phân quyền, sửa danh sách thành viên, cấp mã kích hoạt |
@@ -29,6 +30,8 @@ Thành viên không cần email. Ban nhân sự cấp mã kích hoạt trong app
 - **Báo hiệu khi quét:** kết quả phủ lên khung camera (xanh: đúng giờ, vàng: trễ, xanh dương: đã điểm danh trước đó, đỏ: lỗi), kèm hai nốt nhạc, rung và giọng đọc “Đã điểm danh” nếu máy có giọng tiếng Việt. Cùng một mã đưa lại trong 8 giây thì bỏ qua.
 
 ## Soạn lịch sinh hoạt
+
+Ngoài nhóm trưởng, nhóm phó, quản trị và Ban cố vấn phân công thêm người soạn lịch cho từng nhà ở **Quản lý → Phân công soạn lịch** (bảng `phan_cong_lich`, hàm `dat_phan_cong_lich`). Phân công có thể kèm ngày hết hạn; qua ngày đó quyền tự gỡ.
 
 Nhóm trưởng, nhóm phó soạn lịch tuần hoặc chương trình đặc biệt cho nhà mình, xem trước ảnh theo mascot nhóm trực, tải PNG hoặc Excel. Bản nháp tự lưu và nhóm trưởng, nhóm phó cùng nhà soạn tiếp được. Khi gửi, lịch vào kho, tạo buổi ở tab Lịch để điểm danh và đăng một thông báo. Ảnh không lưu thành tệp: dữ liệu được giữ nguyên nên vẽ lại được bất cứ lúc nào.
 

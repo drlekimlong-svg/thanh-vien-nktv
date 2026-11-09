@@ -2,7 +2,7 @@
 import { S } from './state.js';
 import {
   h, dat, dong, nhom, moSheet, thu, toast, bieuTuong, gio, ngay, ngayGio, namHoc, soLieu, rong, dauNgay, oNhap, oChon, oBat, xacNhan,
-  DS_NHA, TT_DIEM_DANH, moTaTV, taiCSV, qrSvg, chuNhatToi, tuNhap, giaTriNgay, giaTriGio
+  DS_NHA, NHA, TT_DIEM_DANH, moTaTV, taiCSV, qrSvg, chuNhatToi, tuNhap, giaTriNgay, giaTriGio
 } from './ui.js';
 import { soanThongBao, linkThe } from './v-homnay.js';
 import { nhanDon } from './v-lich.js';
@@ -24,6 +24,7 @@ export async function tuyenQuanLy(vung, con) {
   if (a === 'thong-bao') return manThongBao(vung);
   if (a === 'kich-hoat') return manKichHoat(vung);
   if (a === 'phan-quyen') return manPhanQuyen(vung);
+  if (a === 'phan-cong-lich') return manPhanCongLich(vung);
   if (a === 'danh-muc') return manDanhMuc(vung);
   if (a === 'xac-nhan') return manXacNhan(vung);
   if (a === 'bao-cao') return manBaoCao(vung);
@@ -49,6 +50,7 @@ export async function manQuanLy(vung) {
       pt ? dong({ tieu: 'Đơn xin nghỉ', truoc: icon('don'), sau: so(don.length), href: '#quan-ly/don' }) : null,
       dong({ tieu: 'Báo cáo chuyên cần', truoc: icon('bieu_do'), href: '#quan-ly/bao-cao' }),
       dong({ tieu: 'Điểm nhóm', phu: 'Xếp hạng 6 nhà theo chuyên cần và test đầu giờ', truoc: icon('sao'), href: '#lich/diem-nhom' }),
+      qt ? dong({ tieu: 'Phân công soạn lịch', phu: 'Thêm người soạn lịch cho từng nhà', truoc: icon('lich'), href: '#quan-ly/phan-cong-lich' }) : null,
       qt ? dong({ tieu: 'Thông báo', truoc: icon('chuong'), href: '#quan-ly/thong-bao' }) : null),
     nhom('Thành viên',
       dong({ tieu: 'Danh sách thành viên', truoc: icon('nguoi'), href: '#quan-ly/thanh-vien' }),
@@ -153,6 +155,7 @@ const QUYEN = [
   ['Phụ trách điểm danh', 'Điểm danh mọi buổi, duyệt đơn xin nghỉ, tạo buổi, soạn lịch cho mọi nhà.'],
   ['Người được giao điểm danh', 'Quét mã và ghi tay cho đúng buổi được giao, tới khi buổi đóng. Giao ở trang của từng buổi (Quản lý → Buổi sinh hoạt).'],
   ['Nhóm trưởng, nhóm phó', 'Soạn và gửi lịch sinh hoạt cho nhà mình.'],
+  ['Người được phân công soạn lịch', 'Soạn và gửi lịch cho nhà được phân công, tới ngày hết hạn nếu có. Phân công ở Quản lý → Phân công soạn lịch.'],
   ['Senior, Junior', 'Chưa có quyền riêng: xem lịch, xin nghỉ, làm bài, cập nhật hồ sơ của mình.']
 ];
 
@@ -180,11 +183,12 @@ function suaQuyen(t, sauKhi) {
 }
 
 async function manPhanQuyen(vung) {
-  const [ds, tt] = await Promise.all([S.db.dsThanhVien(), S.db.tinhTrangKichHoat()]);
+  const [ds, tt, pc] = await Promise.all([S.db.dsThanhVien(), S.db.tinhTrangKichHoat(), S.db.dsPhanCongLich().catch(() => [])]);
   const daKH = new Set(tt.filter(x => x.da_kich_hoat).map(x => x.thanh_vien_id));
   const kh = ds.filter(t => daKH.has(t.id));
   const lai = () => manPhanQuyen(vung);
-  const hang = (t) => dong({ tieu: t.ho_ten, phu: [t.ma, t.vai_tro !== 'thanh_vien' ? VAI[t.vai_tro] : null, t.cap || 'Chưa ghi cấp', nhanChucVu(t)].filter(Boolean).join(' · '), onclick: () => suaQuyen(t, lai) });
+  const soanLich = (t) => { const x = pc.filter(p => p.thanh_vien_id === t.id && conPhanCong(p)).map(p => p.nha); return x.length ? 'Soạn lịch ' + x.join(', ') : null; };
+  const hang = (t) => dong({ tieu: t.ho_ten, phu: [t.ma, t.vai_tro !== 'thanh_vien' ? VAI[t.vai_tro] : null, t.cap || 'Chưa ghi cấp', nhanChucVu(t), soanLich(t)].filter(Boolean).join(' · '), onclick: () => suaQuyen(t, lai) });
   const nhomQ = (nhan, loc) => { const x = kh.filter(loc); return x.length ? nhom(`${nhan} · ${x.length}`, x.map(hang)) : null; };
   dat(vung, thanhNho('Phân quyền'),
     h('p', { class: 'tieu-de-phu', style: 'margin-top:4px;text-align:center' }, `${kh.length} tài khoản đã kích hoạt · chạm vào tên để đổi`),
@@ -195,6 +199,66 @@ async function manPhanQuyen(vung) {
     !kh.length ? rong('Chưa có tài khoản nào được kích hoạt.') : null,
     nhom('Mỗi vai trò làm được gì', QUYEN.map(([tieu, phu]) => dong({ tieu, phu }))),
     h('p', { class: 'chu-nhom' }, 'Một người có thể vừa là Senior vừa là nhóm trưởng. Người chưa kích hoạt thì đổi ở Danh sách thành viên.'));
+}
+
+/* ---------- Phân công soạn lịch (quản trị, Ban cố vấn) ---------- */
+// Thêm người soạn lịch cho từng nhà, ngoài nhóm trưởng, nhóm phó. Hết ngày hạn thì quyền tự gỡ.
+const conPhanCong = (p) => !p.den_ngay || p.den_ngay >= giaTriNgay(Date.now());
+
+async function manPhanCongLich(vung) {
+  const [ds, tt, pc] = await Promise.all([S.db.dsThanhVien(), S.db.tinhTrangKichHoat(), S.db.dsPhanCongLich()]);
+  const lai = () => manPhanCongLich(vung);
+  const daKH = new Set(tt.filter(x => x.da_kich_hoat).map(x => x.thanh_vien_id));
+  const theoId = new Map(ds.map(t => [t.id, t]));
+  const chuan = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
+  // Ai đã soạn được lịch cho mọi nhà thì không cần phân công.
+  const moiNha = (t) => t.vai_tro !== 'thanh_vien' || t.cap === 'Ban cố vấn';
+  const quanLyNha = (nha) => ds.filter(t => t.nha === nha && t.chuc_vu && !moiNha(t)).map(t => `${t.ho_ten} (${CHUC_VU[t.chuc_vu].toLowerCase()})`);
+  const dangGiao = (nha) => pc.filter(p => p.nha === nha && conPhanCong(p) && theoId.has(p.thanh_vien_id));
+  const nhanGiao = (p) => theoId.get(p.thanh_vien_id).ho_ten + (p.den_ngay ? ` (đến hết ${ngay(p.den_ngay)})` : '');
+
+  const sua = (nha) => {
+    const cu = dangGiao(nha);
+    const chon = new Set(cu.map(p => p.thanh_vien_id));
+    const ngayCu = [...new Set(cu.map(p => p.den_ngay || ''))];
+    const ung = ds.filter(t => daKH.has(t.id) && t.hoat_dong && !moiNha(t) && !(t.chuc_vu && t.nha === nha))
+      .sort((x, y) => (chon.has(y.id) - chon.has(x.id)) || ((y.nha === nha) - (x.nha === nha)) || x.ho_ten.localeCompare(y.ho_ten, 'vi'));
+    const hang = ung.map(t => {
+      const o = oBat(t.ho_ten, { checked: chon.has(t.id), onchange: (e) => { if (e.target.checked) chon.add(t.id); else chon.delete(t.id); } });
+      o.dataset.tim = chuan(t.ho_ten + ' ' + t.ma + ' ' + (t.nha || ''));
+      o.querySelector('span').append(h('small', { style: 'display:block;color:var(--chu-2);font-size:.8125rem' }, [t.ma, moTaTV(t)].join(' · ')));
+      return o;
+    });
+    const ql = quanLyNha(nha);
+    const oNgay = oNhap('Đến hết ngày (để trống nếu chưa định ngày gỡ)', { type: 'date', min: giaTriNgay(Date.now()), value: ngayCu.length === 1 ? ngayCu[0] : '' });
+    const s = moSheet({
+      tieuDe: 'Soạn lịch nhà ' + nha,
+      noiDung: h('div', null,
+        h('p', { class: 'chu-nho', style: 'margin-bottom:12px' },
+          `Người được chọn soạn và gửi được lịch cho nhà ${nha}, như nhóm trưởng và nhóm phó. `,
+          ql.length ? `Nhóm trưởng, nhóm phó hiện có: ${ql.join(', ')}.` : 'Nhà này chưa ghi nhóm trưởng, nhóm phó.',
+          ' Ban cố vấn và người phụ trách luôn soạn được nên không có trong danh sách.'),
+        h('div', { class: 'nhom' }, oNgay),
+        h('input', { class: 'tim', type: 'search', placeholder: 'Tìm tên, mã, nhà…', 'aria-label': 'Tìm người', oninput: (e) => { const k = chuan(e.target.value); hang.forEach(o => { o.hidden = !!k && !o.dataset.tim.includes(k); }); } }),
+        h('div', { class: 'nhom' }, hang.length ? hang : rong('Chưa có tài khoản nào để chọn.')),
+        h('button', { class: 'nut day', type: 'button', onclick: async () => {
+          const den = oNgay.querySelector('input').value || null;
+          const ok = await thu(() => S.db.datPhanCongLich(nha, [...chon], den), chon.size ? 'Đã lưu phân công' : 'Đã gỡ phân công');
+          if (ok) { s.dong(); lai(); }
+        } }, 'Lưu'))
+    });
+  };
+
+  dat(vung, thanhNho('Phân công soạn lịch'),
+    h('p', { class: 'tieu-de-phu', style: 'margin-top:4px;text-align:center' }, 'Chạm vào nhà để chọn người'),
+    nhom(null, DS_NHA.map(nha => {
+      const g = dangGiao(nha);
+      return dong({
+        tieu: nha, phu: g.length ? 'Được phân công: ' + g.map(nhanGiao).join(', ') : 'Chưa phân công thêm ai',
+        truoc: h('img', { class: 'anh-nha-nho', src: `img/${NHA[nha].anh}.webp`, alt: '' }), onclick: () => sua(nha)
+      });
+    })),
+    h('p', { class: 'chu-nhom' }, 'Nhóm trưởng, nhóm phó soạn được lịch cho nhà mình; Ban cố vấn và người phụ trách soạn được cho mọi nhà. Phân công ở đây thêm người ngoài các vai trò đó. Hết ngày hạn, quyền tự gỡ.'));
 }
 
 /* ---------- Buổi sinh hoạt ---------- */
