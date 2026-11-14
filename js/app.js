@@ -9,6 +9,7 @@ import { manDiemNhom } from './v-diemnhom.js';
 import { manPostTest, manLamBai, manKetQua } from './v-test.js';
 import { manHoSo } from './v-hoso.js';
 import { manQuanLy, tuyenQuanLy } from './v-quanly.js';
+import { manTuyenQuan } from './v-tuyenquan.js';
 
 const goc = $('#app');
 const q = new URLSearchParams(location.search);
@@ -17,6 +18,8 @@ const TAB = [
   { id: 'hom-nay', ten: 'Hôm nay', icon: 'hom_nay' },
   { id: 'lich', ten: 'Lịch', icon: 'lich' },
   { id: 'post-test', ten: 'Post-test', icon: 'test' },
+  // Hiện khi quản trị bật trong cài đặt tuyen_quan; quản trị luôn thấy để bật, tắt.
+  { id: 'tuyen-quan', ten: 'Tuyển quân', icon: 'phieu', dk: () => !!(S.caiDat.tuyen_quan && (S.caiDat.tuyen_quan.mo !== false || S.toi.la_quan_tri)) },
   { id: 'ho-so', ten: 'Hồ sơ', icon: 'ho_so' },
   { id: 'quan-ly', ten: 'Quản lý', icon: 'quan_ly', dk: () => S.toi.xem_duoc_ten }
 ];
@@ -45,7 +48,8 @@ async function tuyen() {
       if (con[0] === 'lam') await manLamBai(vung, con[1]);
       else if (con[0] === 'ket-qua') await manKetQua(vung, con[1]);
       else await manPostTest(vung);
-    } else if (tab === 'ho-so') await manHoSo(vung, con[0]);
+    } else if (tab === 'tuyen-quan') await manTuyenQuan(vung, con);
+    else if (tab === 'ho-so') await manHoSo(vung, con[0]);
     else if (tab === 'quan-ly') { if (con.length) await tuyenQuanLy(vung, con); else await manQuanLy(vung); }
     else await manHomNay(vung);
   } catch (e) {

@@ -49,6 +49,15 @@ Mỗi câu có thể kèm một hình (Thêm hình ở màn soạn đề; hình 
 
 Tab Lịch → Điểm nhóm. Mỗi buổi đã đóng và tính chuyên cần, mỗi nhà tối đa 100 điểm: chuyên cần 60 điểm (đúng giờ 1, trễ 0,5, vắng 0, vắng có phép không tính vào số người), test đầu giờ 40 điểm (trung bình của người có mặt, không làm tính 0). Buổi không có test thì chuyên cần quy về thang 100. Ban cố vấn không tính. Xếp hạng theo trung bình các buổi trong năm học. Cách tính nằm ở hàm `diem_nhom`.
 
+## Tuyển quân: đánh giá thí sinh
+
+Tab **Tuyển quân** hiện khi cài đặt `tuyen_quan` có `mo: true`. Quản trị bật, tắt ở cuối màn Tuyển quân và luôn thấy tab này.
+
+- **Danh sách thí sinh:** bảng `tq_thi_sinh` (mã thí sinh, họ tên, lớp, năm học), nhập bằng SQL riêng vì chứa họ tên. Không lưu SĐT, email, ngày sinh, MSSV của thí sinh.
+- **Ghi chú chuẩn bị:** mỗi người một ghi chú cho mỗi thí sinh, tự lưu khi ngừng gõ. Chỉ người viết đọc được, kể cả quản trị cũng không đọc được (bảng `tq_ghi_chu`).
+- **Phiếu đánh giá:** theo form Google “[TQ2026] ĐÁNH GIÁ VÒNG 3”, gồm phần A (thuyết trình), phần B (tác phong, phẩm chất) và phần C (nhận xét, kết luận). Tên người đánh giá lấy từ tài khoản; nhà được điền sẵn theo hồ sơ và đổi được. Mỗi người một phiếu cho mỗi thí sinh và sửa được. Phiếu đang soạn được lưu tạm trên máy. Gửi qua hàm `luu_danh_gia_tq`, hàm này kiểm tra đủ mục.
+- **Xem kết quả:** quản trị, Ban cố vấn, và những người có id trong cài đặt `tq_xem_ket_qua` (mảng) đọc được mọi phiếu và mở được **Tổng hợp**. Trang Tổng hợp có điểm trung bình phần A, phần B, số phiếu Phù hợp, Cân nhắc, Không phù hợp, và tải được CSV. Tệp CSV từng phiếu có cùng cột với bảng trả lời của form Google. Người khác chỉ thấy phiếu của chính mình.
+
 ## Các tệp
 
 | Đường dẫn | Nội dung |

@@ -40,6 +40,7 @@ const SVG = {
   sao: '<path d="m12 3 2.7 5.8 6.3.8-4.600 4.300 1.200 6.200L12 17.100 6.400 20.100l1.200-6.200L3 9.600l6.300-.8z" fill="currentColor"/>',
   khoa: '<path d="M7 10V7.500a5 5 0 0 1 10 0V10" stroke="currentColor" stroke-width="2" fill="none"/><rect x="4.500" y="10" width="15" height="11" rx="2.400" fill="currentColor"/>',
   bieu_do: '<path d="M5 20V12M12 20V5M19 20v-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none"/>',
+  phieu: '<path d="M9 2.8h6a1 1 0 0 1 1 1v1.6a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3.8a1 1 0 0 1 1-1Z" fill="currentColor"/><path d="M6.4 4.4h.6v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h.6A2.4 2.4 0 0 1 20 6.8v11.8a2.4 2.4 0 0 1-2.4 2.4H6.4A2.4 2.4 0 0 1 4 18.6V6.8a2.4 2.4 0 0 1 2.4-2.4Z" fill="currentColor"/><path d="m8 13.6 2 2 4.6-4.6" stroke="var(--tab-nen, #fff)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
   mui: '<path d="m1.500 1.500 5.500 5.500-5.500 5.500" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'
 };
 export function bieuTuong(ten) {

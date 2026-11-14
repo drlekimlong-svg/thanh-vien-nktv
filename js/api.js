@@ -164,5 +164,12 @@ export const api = {
   },
   luuBaiTest: (p) => rpc('luu_bai_test', { p }),
   xoaBaiTest: (id) => xoa('bai_test', id),
-  thongKeBai: (bai) => rpc('thong_ke_bai', { p_bai: bai })
+  thongKeBai: (bai) => rpc('thong_ke_bai', { p_bai: bai }),
+
+  // Tuyển quân: phiếu của người khác chỉ trả về khi tài khoản được xem kết quả (quy tắc ở bảng tq_danh_gia).
+  dsThiSinh: () => rest('tq_thi_sinh?select=id,ma_ts,stt,ho_ten,lop,nam&dot=eq.TQ2026&order=stt'),
+  dsDanhGiaTQ: () => rest('tq_danh_gia?select=*&order=gui_luc'),
+  luuDanhGiaTQ: (ts, p) => rpc('luu_danh_gia_tq', { p_ts: ts, p }),
+  ghiChuTQ: (tv) => rest(`tq_ghi_chu?select=thi_sinh_id,noi_dung,sua_luc&thanh_vien_id=eq.${tv}`),
+  luuGhiChuTQ: (ts, tv, noiDung) => rest('tq_ghi_chu', { method: 'POST', body: JSON.stringify({ thi_sinh_id: ts, thanh_vien_id: tv, noi_dung: noiDung, sua_luc: new Date().toISOString() }), headers: { Prefer: 'resolution=merge-duplicates' } })
 };

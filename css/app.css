@@ -84,6 +84,8 @@ a { color: var(--chinh); }
 }
 .tab:active { transform: scale(0.93); }
 .tab svg { width: 25px; height: 25px; }
+.tab > span:not(.cham) { white-space: nowrap; }
+@media (max-width: 400px) { .tab { font-size: 0.65rem; letter-spacing: -0.01em; } }
 .tab[aria-current="page"] { color: var(--chinh); }
 .cham {
   position: absolute; top: 1px; left: calc(50% + 7px); min-width: 17px; height: 17px; padding: 0 5px; border-radius: 9px; background: var(--vang); color: #fff;
@@ -426,3 +428,34 @@ button.dong:active, a.dong:active { background: var(--ke); transition: none; }
   :root { --ke: rgba(22, 32, 26, 0.32); --chu-2: #39423c; --chu-3: #4c544f; }
   .thanh-tab, .thanh-nho, .lam-bai-dau { background: var(--be-mat); -webkit-backdrop-filter: none; backdrop-filter: none; border-top: 1px solid var(--chu-2); }
 }
+
+/* ---------- Tuyển quân: danh sách thí sinh, phiếu đánh giá ---------- */
+.an-chu { position: absolute !important; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.tq-mo-ta { padding: 12px 16px; white-space: pre-line; font-size: 0.9375rem; line-height: 1.5; color: var(--chu-2); }
+.tq-stt { width: 26px; flex: none; text-align: center; font-weight: 600; color: var(--chu-3); font-variant-numeric: tabular-nums; }
+.tq-nhan { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none; }
+.tq-dau { padding: 6px 0 18px; }
+.tq-dau h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.018em; line-height: 1.2; }
+.tq-dau p { color: var(--chu-2); margin-top: 4px; }
+.tq-chuyen { display: flex; justify-content: space-between; gap: 10px; margin-top: 12px; }
+.tq-tt { padding: 0 16px 10px; }
+.tq-bao { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: -2px 0 10px; padding: 9px 12px; border-radius: 12px; font-size: 0.875rem;
+  background: color-mix(in srgb, var(--tre) 12%, transparent); color: var(--chu); }
+.tq-hang { border: 0; margin: 0; padding: 12px 16px 14px; position: relative; min-width: 0; }
+.tq-hang + .tq-hang::before, .o + .tq-hang::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; height: 0.5px; background: var(--ke); }
+.tq-hang legend { float: left; width: 100%; padding: 0; margin-bottom: 9px; font-weight: 500; line-height: 1.3; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.tq-bo { flex: none; padding: 0 2px; font-weight: 500; }
+.tq-muc { clear: both; display: grid; grid-template-columns: repeat(var(--cot, 5), minmax(0, 1fr)); gap: 6px; }
+.tq-muc label { position: relative; display: block; }
+.tq-muc input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.tq-muc span {
+  display: flex; align-items: center; justify-content: center; text-align: center; min-height: 42px; padding: 4px 3px; border-radius: 10px;
+  background: var(--be-mat-2); box-shadow: inset 0 0 0 1px var(--ke); font-size: 0.8125rem; font-weight: 500; line-height: 1.15; color: var(--chu-2);
+  transition: background-color 120ms ease-out, color 120ms ease-out, transform 100ms ease-out; pointer-events: none;
+}
+.tq-muc label:active span { transform: scale(0.95); }
+.tq-muc input:checked + span { background: var(--chinh); color: var(--chinh-chu); box-shadow: none; font-weight: 600; }
+.tq-muc input:focus-visible + span { outline: 2px solid var(--chinh); outline-offset: 2px; }
+.tq-hang.thieu legend, .o.thieu > span { color: var(--vang); }
+.tq-hang.thieu .tq-muc span { box-shadow: inset 0 0 0 1.5px var(--vang); }
+.o.thieu { box-shadow: inset 3px 0 0 var(--vang); }
