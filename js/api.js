@@ -94,7 +94,8 @@ export const api = {
   caiDat: async () => { const r = await rest('cai_dat?select=khoa,gia_tri'); const o = {}; r.forEach(x => { o[x.khoa] = x.gia_tri; }); return o; },
   datCaiDat: (khoa, gia_tri) => rest('cai_dat', { method: 'POST', body: JSON.stringify({ khoa, gia_tri }), headers: { Prefer: 'resolution=merge-duplicates' } }),
 
-  dsThanhVien: () => rest('thanh_vien?select=id,ma,ho_ten,gen,nha,cap,chuc_vu,hoat_dong,ghi_chu,khoa_qr,vai_tro,tham_gia_tu&order=ma'),
+  // loai=eq.thanh_vien để các màn quản lý CLB không lẫn học viên các đợt tập huấn (migration 0013).
+  dsThanhVien: () => rest('thanh_vien?select=id,ma,ho_ten,gen,nha,cap,chuc_vu,hoat_dong,ghi_chu,khoa_qr,vai_tro,tham_gia_tu&loai=eq.thanh_vien&order=ma'),
   themThanhVien: async (o) => (await them('thanh_vien', o))[0],
   suaThanhVien: (id, o) => sua('thanh_vien', id, o),
   tinhTrangKichHoat: () => rpc('tinh_trang_kich_hoat'),
@@ -165,6 +166,16 @@ export const api = {
   luuBaiTest: (p) => rpc('luu_bai_test', { p }),
   xoaBaiTest: (id) => xoa('bai_test', id),
   thongKeBai: (bai) => rpc('thong_ke_bai', { p_bai: bai }),
+
+  /* Đợt tập huấn và học viên (migration 0013). Danh sách học viên, hồ sơ và mã kích hoạt
+     chỉ đi qua hàm: hai bảng dot_hoc_vien, hv_ho_so không mở cho trình duyệt. */
+  dsDot: () => rpc('ds_dot'),
+  luuDot: (id, p) => rpc('luu_dot', { p_id: id, p }),
+  btcCuaDot: (dot) => rest(`dot_ban_to_chuc?select=thanh_vien_id,vai&dot_id=eq.${dot}`),
+  datBtcDot: (dot, p) => rpc('dat_btc_dot', { p_dot: dot, p }),
+  dsHocVienDot: (dot) => rpc('ds_hoc_vien_dot', { p_dot: dot }),
+  napDanhSachHV: (dot, ds, ghi) => rpc('nap_danh_sach_hv', { p_dot: dot, p_ds: ds, p_ghi: !!ghi }),
+  capMaKichHoatHV: (dot, ids) => rpc('cap_ma_kich_hoat_hv', { p_dot: dot, p_ids: ids }),
 
   // Tuyển quân: phiếu của người khác chỉ trả về khi tài khoản được xem kết quả (quy tắc ở bảng tq_danh_gia).
   dsThiSinh: () => rest('tq_thi_sinh?select=id,ma_ts,stt,ho_ten,lop,nam&dot=eq.TQ2026&order=stt'),

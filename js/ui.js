@@ -224,6 +224,8 @@ export const chuNhatToi = () => {
   return giaTriNgay(n);
 };
 export const soVN = (x, c = 2) => x === null || x === undefined ? '–' : Number(x).toLocaleString('vi-VN', { maximumFractionDigits: c });
+/** Bỏ dấu và viết thường, để tìm kiếm và dò tên cột không phụ thuộc cách gõ dấu. */
+export const boDau = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
 export const dinhDangTen = (s) => s;
 
 export const NHA = {

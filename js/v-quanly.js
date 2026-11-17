@@ -59,7 +59,14 @@ export async function manQuanLy(vung) {
     qt ? nhom('Học tập',
       dong({ tieu: 'Post-test và test đầu giờ', phu: 'Tải đề lên, xem điểm', truoc: icon('test'), href: '#quan-ly/post-test' }),
       dong({ tieu: 'Xác nhận năng lực và hoạt động', truoc: icon('sao'), sau: so(choXn), href: '#quan-ly/xac-nhan' }),
-      dong({ tieu: 'Danh mục năng lực', truoc: icon('don'), href: '#quan-ly/danh-muc' })) : null);
+      dong({ tieu: 'Danh mục năng lực', truoc: icon('don'), href: '#quan-ly/danh-muc' })) : null,
+    // Tuyển quân vào đây vì tab chỉ hiện khi đang mở; khóa rồi vẫn mở lại và xem lại kết quả được từ dòng này.
+    qt ? nhom('Chương trình',
+      dong({
+        tieu: 'Tuyển quân', truoc: icon('phieu'), href: '#tuyen-quan',
+        phu: S.caiDat.tuyen_quan && S.caiDat.tuyen_quan.mo === true ? 'Đang mở · thành viên thấy tab Tuyển quân' : 'Đã khóa · xem lại kết quả, bật lại khi cần'
+      }),
+      dong({ tieu: 'Tập huấn học viên', phu: 'Đợt, danh sách học viên, mã kích hoạt', truoc: icon('nguoi'), href: '#tap-huan' })) : null);
 }
 
 /* ---------- Thành viên ---------- */

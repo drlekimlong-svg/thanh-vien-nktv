@@ -10,6 +10,8 @@ import { manPostTest, manLamBai, manKetQua } from './v-test.js';
 import { manHoSo } from './v-hoso.js';
 import { manQuanLy, tuyenQuanLy } from './v-quanly.js';
 import { manTuyenQuan } from './v-tuyenquan.js';
+import { tuyenTapHuan } from './v-dot.js';
+import { tuyenHocVien } from './v-hocvien.js';
 
 const goc = $('#app');
 const q = new URLSearchParams(location.search);
@@ -18,11 +20,20 @@ const TAB = [
   { id: 'hom-nay', ten: 'Hôm nay', icon: 'hom_nay' },
   { id: 'lich', ten: 'Lịch', icon: 'lich' },
   { id: 'post-test', ten: 'Post-test', icon: 'test' },
-  // Hiện khi quản trị bật trong cài đặt tuyen_quan; quản trị luôn thấy để bật, tắt.
-  { id: 'tuyen-quan', ten: 'Tuyển quân', icon: 'phieu', dk: () => !!(S.caiDat.tuyen_quan && (S.caiDat.tuyen_quan.mo !== false || S.toi.la_quan_tri)) },
+  // Chỉ hiện khi quản trị bật trong cài đặt tuyen_quan. Khóa rồi vẫn mở lại được
+  // bằng dòng Tuyển quân trong tab Quản lý, nên không chiếm chỗ trên thanh tab cả năm.
+  { id: 'tuyen-quan', ten: 'Tuyển quân', icon: 'phieu', dk: () => !!(S.caiDat.tuyen_quan && S.caiDat.tuyen_quan.mo === true) },
+  // Ban tổ chức một đợt tập huấn, và quản trị.
+  { id: 'tap-huan', ten: 'Tập huấn', icon: 'nguoi', dk: () => S.toi.la_quan_tri || !!(S.toi.btc_dot && S.toi.btc_dot.length) },
   { id: 'ho-so', ten: 'Hồ sơ', icon: 'ho_so' },
   { id: 'quan-ly', ten: 'Quản lý', icon: 'quan_ly', dk: () => S.toi.xem_duoc_ten }
 ];
+// Học viên các đợt tập huấn dùng bộ tab riêng: không có lịch CLB, post-test, quản lý.
+const TAB_HV = [
+  { id: 'hom-nay', ten: 'Hôm nay', icon: 'hom_nay' },
+  { id: 'ho-so', ten: 'Hồ sơ', icon: 'ho_so' }
+];
+const laHocVien = () => S.toi && S.toi.loai === 'hoc_vien';
 
 export const denTrang = (duong) => { if (location.hash === '#' + duong) tuyen(); else location.hash = duong; };
 
@@ -30,7 +41,7 @@ async function tuyen() {
   donDep(); dongHetSheet();
   const [dau, ...con] = location.hash.replace(/^#\/?/, '').split('/');
   const tab = dau || 'hom-nay';
-  dat($('#khung-tab'), TAB.filter(t => !t.dk || t.dk()).map(t =>
+  dat($('#khung-tab'), (laHocVien() ? TAB_HV : TAB.filter(t => !t.dk || t.dk())).map(t =>
     h('button', { class: 'tab', type: 'button', 'aria-current': t.id === tab ? 'page' : null, onclick: () => denTrang(t.id) }, bieuTuong(t.icon), h('span', null, t.ten),
       t.id === 'quan-ly' && S.soCho ? h('span', { class: 'cham' }, S.soCho) : null)));
   const vung = $('#vung');
@@ -38,7 +49,8 @@ async function tuyen() {
   dat(vung, dangTai());
   window.scrollTo(0, 0);
   try {
-    if (tab === 'lich') {
+    if (laHocVien()) await tuyenHocVien(vung, tab);
+    else if (tab === 'lich') {
       if (con[0] === 'soan') await manSoanLich(vung, con[1], con[2]);
       else if (con[0] === 'kho') await manKhoLich(vung);
       else if (con[0] === 'diem-nhom') await manDiemNhom(vung);
@@ -49,6 +61,7 @@ async function tuyen() {
       else if (con[0] === 'ket-qua') await manKetQua(vung, con[1]);
       else await manPostTest(vung);
     } else if (tab === 'tuyen-quan') await manTuyenQuan(vung, con);
+    else if (tab === 'tap-huan') await tuyenTapHuan(vung, con);
     else if (tab === 'ho-so') await manHoSo(vung, con[0]);
     else if (tab === 'quan-ly') { if (con.length) await tuyenQuanLy(vung, con); else await manQuanLy(vung); }
     else await manHomNay(vung);
