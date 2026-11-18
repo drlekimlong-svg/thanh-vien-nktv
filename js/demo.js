@@ -101,7 +101,8 @@ export function demo(vai) {
   /* ---------- Tập huấn: đợt, Ban tổ chức, học viên ----------
      t0 (quản trị) là trưởng ban, t2 là thư ký của đợt đang mở, nên ?demo=tv cũng thử được màn thư ký. */
   const dot = [
-    { id: 'o1', ma: 'XQ2627', ten: 'Tập huấn X-quang bụng 2026–2027', nam_hoc: '2026–2027', mo_ta: 'Một buổi lý thuyết, ba buổi thực hành, ba buổi lượng giá.', bat_dau: ngayVN(nay + 10 * ngay), ket_thuc: ngayVN(nay + 40 * ngay), trang_thai: 'mo' },
+    { id: 'o1', ma: 'XQ2627', ten: 'Tập huấn X-quang bụng 2026–2027', nam_hoc: '2026–2027', mo_ta: 'Một buổi lý thuyết, ba buổi thực hành, ba buổi lượng giá.', bat_dau: ngayVN(nay + 10 * ngay), ket_thuc: ngayVN(nay + 40 * ngay), trang_thai: 'mo',
+      zalo_link: 'https://zalo.me/g/vidudientap', zalo_qr: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMjAnIGhlaWdodD0nMTIwJz48cmVjdCB3aWR0aD0nMTIwJyBoZWlnaHQ9JzEyMCcgZmlsbD0nI2ZmZicvPjxnIGZpbGw9JyMxMTEnPjxyZWN0IHg9JzEwJyB5PScxMCcgd2lkdGg9JzMwJyBoZWlnaHQ9JzMwJy8+PHJlY3QgeD0nMTgnIHk9JzE4JyB3aWR0aD0nMTQnIGhlaWdodD0nMTQnIGZpbGw9JyNmZmYnLz48cmVjdCB4PSc4MCcgeT0nMTAnIHdpZHRoPSczMCcgaGVpZ2h0PSczMCcvPjxyZWN0IHg9Jzg4JyB5PScxOCcgd2lkdGg9JzE0JyBoZWlnaHQ9JzE0JyBmaWxsPScjZmZmJy8+PHJlY3QgeD0nMTAnIHk9JzgwJyB3aWR0aD0nMzAnIGhlaWdodD0nMzAnLz48cmVjdCB4PScxOCcgeT0nODgnIHdpZHRoPScxNCcgaGVpZ2h0PScxNCcgZmlsbD0nI2ZmZicvPjxyZWN0IHg9JzUyJyB5PSc1Micgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJy8+PHJlY3QgeD0nNzAnIHk9JzYwJyB3aWR0aD0nMTAnIGhlaWdodD0nMTAnLz48cmVjdCB4PSc2MCcgeT0nODYnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCcvPjxyZWN0IHg9Jzg2JyB5PSc3MCcgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJy8+PHJlY3QgeD0nNTInIHk9JzE2JyB3aWR0aD0nMTAnIGhlaWdodD0nMTAnLz48cmVjdCB4PScxNicgeT0nNTInIHdpZHRoPScxMCcgaGVpZ2h0PScxMCcvPjwvZz48L3N2Zz4=' },
     { id: 'o2', ma: 'KHAU2526', ten: 'Tập huấn khâu cơ bản 2025–2026', nam_hoc: '2025–2026', mo_ta: null, bat_dau: ngayVN(nay - 300 * ngay), ket_thuc: ngayVN(nay - 270 * ngay), trang_thai: 'ket_thuc' },
     { id: 'o3', ma: 'CTBUNG27', ten: 'Tập huấn CT bụng 2027', nam_hoc: '2026–2027', mo_ta: null, bat_dau: null, ket_thuc: null, trang_thai: 'soan' }
   ];
@@ -117,9 +118,8 @@ export function demo(vai) {
     id: 'h' + i, ma: 'HV' + String(i + 1).padStart(5, '0'), ho_ten: ten, loai: 'hoc_vien', hoat_dong: true,
     // h7 đã học đợt KHAU2526 nên có tài khoản sẵn: nạp lại vào đợt mới thì giữ mật khẩu cũ.
     user_id: i < 5 || i === 7 ? 'u' + i : null, khoa_qr: 'hv' + String(i).padStart(14, '0'),
-    email: khongDau(ten) + '@sv.test', sdt: '09' + String(10000000 + i * 1111),
-    truong: i % 3 === 2 ? 'ĐH Y Dược TP.HCM' : 'ĐH Y Khoa Phạm Ngọc Thạch', nganh: 'Y khoa',
-    nam_hoc: 'Y' + (2 + (i % 4)), mssv: '21' + String(5001 + i), lop: 'Y' + (2021 + (i % 3)) + String.fromCharCode(65 + (i % 3)),
+    email: khongDau(ten) + '@sv.test',
+    mssv: '21' + String(5001 + i), lop: 'Y' + (2021 + (i % 3)) + String.fromCharCode(65 + (i % 3)),
     ma_con_han: i === 5 || i === 6
   }));
   let hvSo = hv.length;
@@ -161,14 +161,6 @@ export function demo(vai) {
   const BANG_MA = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   const maKichHoat = () => Array.from({ length: 8 }, () => BANG_MA[Math.floor(Math.random() * BANG_MA.length)]).join('');
   const chuanTenHV = (s) => String(s || '').trim().replace(/\s+/g, ' ').toLowerCase().replace(/(^|\s)(\p{L})/gu, (_, a, b) => a + b.toUpperCase()) || null;
-  const chuanSdtHV = (s) => {
-    let x = String(s || '').replace(/[^0-9+]/g, '');
-    if (!x) return null;
-    if (x.startsWith('+84')) x = '0' + x.slice(3);
-    else if (x.startsWith('84') && x.length >= 11) x = '0' + x.slice(2);
-    else if (!x.startsWith('0') && x.length >= 9 && x.length <= 10) x = '0' + x;
-    return x.replace(/\D/g, '');
-  };
   const emailHopLe = (e) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e);
   const xemDuocDot = () => { const t = me(); return t.vai_tro === 'quan_tri' || t.cap === 'Ban cố vấn' || dotBtc.some(b => b.thanh_vien_id === t.id); };
   const laBtcDot = (id) => { const t = me(); return t.vai_tro === 'quan_tri' || t.cap === 'Ban cố vấn' || dotBtc.some(b => b.dot_id === id && b.thanh_vien_id === t.id && (b.vai === 'truong_ban' || b.vai === 'thu_ky')); };
@@ -509,6 +501,7 @@ export function demo(vai) {
         so_hoc_vien: dotHv.filter(x => x.dot_id === d.id && x.trang_thai === 'ghi_danh').length,
         so_kich_hoat: dotHv.filter(x => x.dot_id === d.id && x.trang_thai === 'ghi_danh' && (hv.find(h => h.id === x.thanh_vien_id) || {}).user_id).length,
         cai_dat: d.cai_dat || {},
+        zalo_link: d.zalo_link || null, co_zalo_qr: !!d.zalo_qr,
         la_btc: laBtcDot(d.id)
       }));
     },
@@ -527,6 +520,8 @@ export function demo(vai) {
       const d = dot.find(x => x.id === id);
       if (!d) throw new Error('Không tìm thấy đợt');
       ['ten', 'nam_hoc', 'mo_ta', 'bat_dau', 'ket_thuc', 'trang_thai'].forEach(k => { if (p[k]) d[k] = p[k]; });
+      ['zalo_link', 'zalo_qr'].forEach(k => { if (k in p) d[k] = String(p[k] || '').trim() || null; });
+      if (d.zalo_link && !/^https?:\/\//i.test(d.zalo_link)) throw new Error('Link nhóm Zalo phải bắt đầu bằng https://');
       return id;
     },
     async btcCuaDot(id) { await gioi(); return dotBtc.filter(b => b.dot_id === id).map(b => ({ thanh_vien_id: b.thanh_vien_id, vai: b.vai })); },
@@ -543,7 +538,7 @@ export function demo(vai) {
       return dotHv.filter(x => x.dot_id === id && x.trang_thai === 'ghi_danh').map(x => {
         const t = hv.find(h => h.id === x.thanh_vien_id);
         const th = thuDaGui.filter(z => z.dot_id === id && z.thanh_vien_id === t.id && z.loai === 'ma_kich_hoat').slice(-1)[0];
-        return { id: t.id, ma: t.ma, ho_ten: t.ho_ten, email: t.email, sdt: t.sdt, truong: t.truong, nganh: t.nganh, nam_hoc: t.nam_hoc, mssv: t.mssv, lop: t.lop,
+        return { id: t.id, ma: t.ma, ho_ten: t.ho_ten, email: t.email, mssv: t.mssv, lop: t.lop,
           da_kich_hoat: !!t.user_id, ma_con_han: !!t.ma_con_han, trang_thai: x.trang_thai, ghi_danh_luc: x.ghi_danh_luc,
           thu_luc: th ? th.luc : null, thu_trang_thai: th ? th.trang_thai : null };
       }).sort((a, b) => a.ho_ten.localeCompare(b.ho_ten, 'vi'));
@@ -571,18 +566,18 @@ export function demo(vai) {
           if (tt === 'moi') {
             hvSo++;
             cu = { id: uid(), ma: 'HV' + String(hvSo).padStart(5, '0'), ho_ten: ten, loai: 'hoc_vien', hoat_dong: true, user_id: null, khoa_qr: uid(),
-              email, sdt: chuanSdtHV(r.sdt), truong: r.truong || null, nganh: r.nganh || null, nam_hoc: r.nam_hoc || null, mssv: r.mssv || null, lop: r.lop || null, ma_con_han: true };
+              email, mssv: r.mssv || null, lop: r.lop || null, ma_con_han: true };
             hv.push(cu);
             ma_kich_hoat = maKichHoat();
           } else {
             // Bổ sung ô còn trống, không ghi đè thông tin cũ.
-            ['sdt', 'truong', 'nganh', 'nam_hoc', 'mssv', 'lop'].forEach(k => { if (!cu[k] && r[k]) cu[k] = k === 'sdt' ? chuanSdtHV(r[k]) : r[k]; });
+            ['mssv', 'lop'].forEach(k => { if (!cu[k] && r[k]) cu[k] = r[k]; });
           }
           ma = cu.ma;
           dotHv.push({ dot_id: id, thanh_vien_id: cu.id, trang_thai: 'ghi_danh', ghi_danh_luc: new Date().toISOString(), ghi_chu: null });
         }
         dem[tt]++;
-        ket.push({ dong: r.dong || String(i + 1), ho_ten: ten || r.ho_ten || '', email, tinh_trang: tt, ly_do, ma, ma_kich_hoat });
+        ket.push({ dong: r.dong || String(i + 1), id: ghi && cu ? cu.id : null, ho_ten: ten || r.ho_ten || '', email, tinh_trang: tt, ly_do, ma, ma_kich_hoat });
       });
       return { da_ghi: !!ghi, dem, ds: ket };
     },
@@ -630,6 +625,17 @@ export function demo(vai) {
         const n = hv.find(z => z.id === x.thanh_vien_id);
         return Object.assign({}, x, { ho_ten: n ? n.ho_ten : null, ma: n ? n.ma : null, gui_boi: (tv.find(y => y.id === x.gui_boi) || {}).ho_ten || null });
       }).sort((a, b) => new Date(b.luc) - new Date(a.luc));
+    },
+    /* ---------- Nhóm Zalo của đợt (migration 0017) ---------- */
+    async zaloCuaDot(id) {
+      await gioi();
+      const d = dot.find(x => x.id === id);
+      if (!d) return null;
+      const toi = toiId();
+      const duoc = me().vai_tro === 'quan_tri' || dotBtc.some(b => b.dot_id === id && b.thanh_vien_id === toi)
+        || dotHv.some(g => g.dot_id === id && g.thanh_vien_id === toi && g.trang_thai === 'ghi_danh');
+      if (!duoc) return null;
+      return { link: d.zalo_link || null, qr: d.zalo_qr || null };
     },
     async dsThuGanDay() {
       await gioi();

@@ -58,6 +58,14 @@ Tab **Tuyển quân** hiện khi cài đặt `tuyen_quan` có `mo: true`. Quản
 - **Phiếu đánh giá:** theo form Google “[TQ2026] ĐÁNH GIÁ VÒNG 3”, gồm phần A (thuyết trình), phần B (tác phong, phẩm chất) và phần C (nhận xét, kết luận). Tên người đánh giá lấy từ tài khoản; nhà được điền sẵn theo hồ sơ và đổi được. Mỗi người một phiếu cho mỗi thí sinh và sửa được. Phiếu đang soạn được lưu tạm trên máy. Gửi qua hàm `luu_danh_gia_tq`, hàm này kiểm tra đủ mục.
 - **Xem kết quả:** quản trị, Ban cố vấn, và những người có id trong cài đặt `tq_xem_ket_qua` (mảng) đọc được mọi phiếu và mở được **Tổng hợp**. Trang Tổng hợp có điểm trung bình phần A, phần B, số phiếu Phù hợp, Cân nhắc, Không phù hợp, và tải được CSV. Tệp CSV từng phiếu có cùng cột với bảng trả lời của form Google. Người khác chỉ thấy phiếu của chính mình.
 
+## Thông tin học viên app thu thập
+
+App chỉ lưu **họ tên, email, MSSV và lớp** (anh Long chốt 18/11/2026). Bảng thư ký dán vào có thêm cột nào — số điện thoại, ngày sinh, giới tính, trường, ngành, năm học — app đọc qua rồi bỏ, không ghi vào cơ sở dữ liệu. Thu ít thì hồ sơ bảo vệ dữ liệu cá nhân nhẹ đi và rủi ro cũng nhẹ đi.
+
+## Nhóm Zalo của đợt
+
+Thư ký hoặc điều hành tạo nhóm Zalo **trước khi nạp danh sách**, rồi vào **Tập huấn › đợt › Nhóm Zalo** dán link và ảnh mã QR. Sau đó link và QR tự đi theo: trong thư báo mã kích hoạt (link trong thân thư, ảnh QR gửi kèm vì phần lớn hộp thư chặn ảnh nhúng), trên màn Hôm nay của học viên, và trên phiếu in. Đổi link thì các thư đã gửi vẫn mang link cũ.
+
 ## Gửi mã kích hoạt qua email
 
 App gửi được mã kích hoạt cho học viên qua email, thay cho việc thư ký chép bảng gửi tay. Thành viên CLB không có email trong danh sách nên không gửi thư cho thành viên.

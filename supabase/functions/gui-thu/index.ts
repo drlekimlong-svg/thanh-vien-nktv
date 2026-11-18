@@ -25,14 +25,28 @@ const BREVO = "https://api.brevo.com/v3/smtp/email";
 
 type Nguoi = { id: string; ma: string; ho_ten: string; email: string };
 type KetQua = { id: string | null; email: string; ok: boolean; loi?: string; loai?: string };
+type Zalo = { link: string | null; qr: string | null };
+type DinhKem = { name: string; content: string };
+
+/** Tách data URL "data:image/png;base64,AAA" thành tệp đính kèm Brevo. Không phải data URL thì bỏ. */
+function dinhKemTuAnh(ten: string, data: string | null): DinhKem | null {
+  if (!data) return null;
+  const m = /^data:image\/([a-z0-9.+-]+);base64,(.+)$/i.exec(data.trim());
+  if (!m) return null;
+  const duoi = m[1].toLowerCase() === "jpeg" ? "jpg" : m[1].toLowerCase();
+  return { name: `${ten}.${duoi}`, content: m[2] };
+}
 
 const thoat = (s: string) =>
   String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 /* ---------- Nội dung thư ---------- */
 
-function thuMaKichHoat(n: Nguoi, ma_kich_hoat: string, tenDot: string, appUrl: string) {
+function thuMaKichHoat(n: Nguoi, ma_kich_hoat: string, tenDot: string, appUrl: string, zalo: Zalo) {
   const tieuDe = `Mã kích hoạt app · ${tenDot}`;
+  const dongZalo = zalo.link
+    ? [``, `Nhóm Zalo của lớp: ${zalo.link}`, zalo.qr ? `(mã QR của nhóm đính kèm thư này)` : ``].filter(Boolean)
+    : [];
   const chu = [
     `Chào ${n.ho_ten},`,
     ``,
@@ -45,6 +59,7 @@ function thuMaKichHoat(n: Nguoi, ma_kich_hoat: string, tenDot: string, appUrl: s
     `1. Mở ${appUrl}`,
     `2. Chọn "Học viên tập huấn", rồi chọn "Kích hoạt bằng mã"`,
     `3. Điền hai mã ở trên, rồi tự đặt mật khẩu từ 8 ký tự`,
+    ...dongZalo,
     ``,
     `Mã kích hoạt dùng một lần và hết hạn sau 90 ngày. Mật khẩu do bạn tự đặt, không ai tra lại được;`,
     `quên thì xin Ban tổ chức cấp mã mới.`,
@@ -65,6 +80,7 @@ function thuMaKichHoat(n: Nguoi, ma_kich_hoat: string, tenDot: string, appUrl: s
 <li>Chọn <b>Học viên tập huấn</b>, rồi chọn <b>Kích hoạt bằng mã</b></li>
 <li>Điền hai mã ở trên, rồi tự đặt mật khẩu từ 8 ký tự</li>
 </ol>
+${zalo.link ? `<p><b>Nhóm Zalo của lớp:</b> <a href="${thoat(zalo.link)}" style="color:#1f6b45">${thoat(zalo.link)}</a>${zalo.qr ? '<br><span style="color:#5a6b61;font-size:14px">Mã QR của nhóm đính kèm thư này.</span>' : ''}</p>` : ""}
 <p style="color:#5a6b61;font-size:14px">Mã kích hoạt dùng một lần và hết hạn sau 90 ngày. Mật khẩu do bạn tự đặt, không ai tra lại được; quên thì xin Ban tổ chức cấp mã mới.</p>
 <p style="color:#5a6b61;font-size:14px">Thư này gửi tự động, bạn không cần trả lời.<br>CLB Ngoại Khoa Trưng Vương</p>
 </div>`;
@@ -96,6 +112,7 @@ async function guiMot(
   traLoi: string,
   den: { email: string; name?: string },
   thu: { tieuDe: string; chu: string; html: string },
+  dinhKem?: DinhKem | null,
 ): Promise<{ ok: boolean; loi?: string }> {
   const than: Record<string, unknown> = {
     sender: nguoiGui,
@@ -105,6 +122,8 @@ async function guiMot(
     htmlContent: thu.html,
   };
   if (traLoi) than.replyTo = { email: traLoi };
+  // Ảnh gửi kèm chứ không nhúng thẳng vào thân thư: phần lớn hộp thư chặn ảnh data: URL.
+  if (dinhKem) than.attachment = [dinhKem];
   try {
     const r = await fetch(BREVO, {
       method: "POST",
@@ -223,6 +242,11 @@ Deno.serve(async (req) => {
   const theoId = new Map<string, Nguoi>(((ds ?? []) as Nguoi[]).map((n) => [n.id, n]));
   const tenDot = String(quyen.ten_dot ?? "Lớp tập huấn");
 
+  // Nhóm Zalo của đợt: thư ký dán link và ảnh QR vào app trước khi nạp danh sách.
+  const { data: dotRow } = await quanTri.from("dot").select("zalo_link, zalo_qr").eq("id", dotId).maybeSingle();
+  const zalo: Zalo = { link: dotRow?.zalo_link ?? null, qr: dotRow?.zalo_qr ?? null };
+  const qrDinhKem = zalo.link ? dinhKemTuAnh("nhom-zalo", zalo.qr) : null;
+
   const ketQua = await guiNhieu(xin, async (x): Promise<KetQua> => {
     const n = theoId.get(x.id);
     if (!n) return { id: x.id, email: "", ok: false, loi: "Không có tên trong đợt này" };
@@ -230,7 +254,7 @@ Deno.serve(async (req) => {
     // Tài khoản diễn tập: không gửi thật, để khỏi tốn hạn mức và khỏi bị trả thư.
     if (/@dientap\.test$/i.test(n.email)) return { id: n.id, email: n.email, ok: false, loi: "Địa chỉ diễn tập, không gửi thật" };
     const r = await guiMot(khoa, nguoiGui, traLoi, { email: n.email, name: n.ho_ten },
-      thuMaKichHoat(n, x.ma_kich_hoat, tenDot, appUrl));
+      thuMaKichHoat(n, x.ma_kich_hoat, tenDot, appUrl, zalo), qrDinhKem);
     return { id: n.id, email: n.email, ok: r.ok, loi: r.loi };
   });
 

@@ -139,6 +139,12 @@ export async function manHVHomNay(vung) {
     ps.filter(p => p.mo && !p.toi_da_gui && (!p.han || new Date(p.han) > new Date()))
       .forEach(p => phieu.push(Object.assign({ dot_ma: d.ma }, p)));
   }
+  // Nhóm Zalo của từng đợt đang học (migration 0017): thư ký dán link và ảnh QR vào app.
+  const zalo = [];
+  for (const d of mo) {
+    const z = await S.db.zaloCuaDot(d.id).catch(() => null);
+    if (z && (z.link || z.qr)) zalo.push(Object.assign({ dot_ten: d.ten }, z));
+  }
   const nay = tc && tc.bay_gio ? new Date(tc.bay_gio).getTime() : Date.now() + (S.lech || 0);
   const buoiGan = (tc && tc.buoi_gan) || [];
   const canChon = (tc && tc.can_chon) || [];
@@ -203,6 +209,16 @@ export async function manHVHomNay(vung) {
       tieu: `${tc.thong_bao_moi} thông báo chưa đọc`, phu: 'Thông báo của đợt bạn đang học',
       truoc: icon('chuong'), onclick: () => moThongBaoHV(lai)
     })) : null,
+
+    zalo.length ? [
+      h('div', { class: 'nhan-nhom' }, 'Nhóm Zalo của lớp'),
+      zalo.map(z => h('div', { class: 'the-buoi' },
+        h('h2', null, z.dot_ten),
+        h('div', { class: 'chi-tiet' }, 'Vào nhóm để nhận thông báo nhanh từ Ban tổ chức.'),
+        z.qr ? h('img', { src: z.qr, alt: 'Mã QR nhóm Zalo', style: 'display:block;width:170px;height:auto;margin:12px auto 2px;border-radius:10px' }) : null,
+        z.link ? h('div', { class: 'hang-nut' },
+          h('a', { class: 'nut', href: z.link, target: '_blank', rel: 'noopener', style: 'text-decoration:none;text-align:center' }, 'Mở nhóm Zalo')) : null))
+    ] : null,
 
     mo.length ? nhom('Đợt đang học', mo.map(d => dong({
       tieu: d.ten, phu: `${d.ma} · ${khoang(d)}`,

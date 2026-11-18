@@ -24,6 +24,7 @@ export async function tuyenTapHuan(vung, con) {
   if (a && b === 'nap') return manNapDS(vung, a);
   if (a && b === 'hoc-vien') return manHocVien(vung, a);
   if (a && b === 'thu') return manThuDot(vung, a);
+  if (a && b === 'zalo') return manZaloDot(vung, a);
   if (a && b === 'buoi' && c) return manBuoiDot(vung, a, c);
   if (a && b === 'buoi') return manDsBuoiDot(vung, a);
   if (a && b === 'tai-lieu') return manTaiLieuDot(vung, a);
@@ -146,7 +147,11 @@ async function manMotDot(vung, id) {
       ql ? dong({ tieu: 'Nạp danh sách', phu: 'Dán bảng đăng ký, app xem trước rồi mới ghi', truoc: icon('don'), href: `#tap-huan/${id}/nap` }) : null,
       ql ? dong({ tieu: 'Danh sách học viên', phu: 'Xem, cấp mã kích hoạt, xuất bảng cho thư ký gửi', truoc: icon('nguoi'), href: `#tap-huan/${id}/hoc-vien` })
         : dong({ tieu: 'Danh sách học viên', phu: 'Chỉ trưởng ban, thư ký và quản trị xem được danh sách và thông tin học viên', truoc: icon('nguoi'), muiTen: false }),
-      ql ? dong({ tieu: 'Thư đã gửi', phu: 'Ai nhận được mã qua email, ai phải gửi tay', truoc: icon('chuong'), href: `#tap-huan/${id}/thu` }) : null),
+      ql ? dong({ tieu: 'Thư đã gửi', phu: 'Ai nhận được mã qua email, ai phải gửi tay', truoc: icon('chuong'), href: `#tap-huan/${id}/thu` }) : null,
+      ql ? dong({
+        tieu: 'Nhóm Zalo của đợt', truoc: icon('nguoi'), href: `#tap-huan/${id}/zalo`,
+        phu: d.zalo_link ? 'Đã có link' + (d.co_zalo_qr ? ' và mã QR' : ', chưa có mã QR') : 'Chưa có — dán vào trước khi nạp danh sách'
+      }) : null),
     nhom('Trong buổi',
       dong({ tieu: 'Buổi và điểm danh', truoc: icon('lich'), href: `#tap-huan/${id}/buoi`,
         phu: buoi.length ? `${buoi.length} buổi · ${buoi.filter(b => b.dong).length} đã đóng` : 'Chưa có buổi nào' }),
@@ -204,15 +209,11 @@ function phanVai(id, btc, tv, sauKhi) {
 }
 
 /* ---------- Nạp danh sách ---------- */
+/* App chỉ thu thập bốn ô này (anh Long chốt 18/11/2026, migration 0017). Cột khác trong bảng
+   dán vào — số điện thoại, ngày sinh, giới tính, trường, ngành, năm học — app bỏ qua, không lưu. */
 const COT = [
   ['ho_ten', 'Họ và tên', ['hoten', 'hovaten', 'ten', 'name', 'fullname']],
   ['email', 'Email', ['email', 'mail', 'thudientu', 'diachiemail', 'emailaddress']],
-  ['sdt', 'Số điện thoại', ['sdt', 'sodienthoai', 'dienthoai', 'phone', 'dt']],
-  ['ngay_sinh', 'Ngày sinh', ['ngaysinh', 'ns', 'dob', 'birthday']],
-  ['gioi_tinh', 'Giới tính', ['gioitinh', 'gender', 'phai']],
-  ['truong', 'Trường', ['truong', 'truonghoc', 'school']],
-  ['nganh', 'Ngành', ['nganh', 'nganhhoc', 'major']],
-  ['nam_hoc', 'Năm học', ['namhoc', 'nam', 'year', 'khoa']],
   ['mssv', 'MSSV', ['mssv', 'masinhvien', 'studentid', 'ma']],
   ['lop', 'Lớp', ['lop', 'class']]
 ];
@@ -335,13 +336,13 @@ async function manNapDS(vung, id) {
   dat(vung,
     thanh('Nạp danh sách', '#tap-huan/' + id, d.ma),
     h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:16px' }, d.ten),
-    h('div', { class: 'bang-tin xanh' }, 'Cột theo mẫu: ', COT.map(c => c[1]).join(' · '), '. App tự dò tên cột nên thứ tự khác vẫn được; chỉ email là bắt buộc.'),
+    h('div', { class: 'bang-tin xanh' }, 'Cột theo mẫu: ', COT.map(c => c[1]).join(' · '), '. App tự dò tên cột nên thứ tự khác vẫn được; chỉ email là bắt buộc. Cột khác trong bảng — số điện thoại, ngày sinh, trường, ngành — app bỏ qua, không lưu.'),
     h('div', { class: 'nhom' }, oDan),
     h('div', { class: 'hang-nut', style: 'margin-bottom:8px' },
       h('button', { class: 'nut phu', type: 'button', onclick: () => tep.click() }, 'Chọn tệp CSV'),
       h('button', { class: 'nut', type: 'button', onclick: xemTruoc }, 'Xem trước')),
     tep,
-    h('p', { class: 'chu-nho', style: 'margin-bottom:22px' }, 'Xem trước không ghi gì vào cơ sở dữ liệu. Tên tự viết hoa đầu chữ, email đổi thành chữ thường, số điện thoại chuẩn hóa về dạng 0…'),
+    h('p', { class: 'chu-nho', style: 'margin-bottom:22px' }, 'Xem trước không ghi gì vào cơ sở dữ liệu. Tên tự viết hoa đầu chữ, email đổi thành chữ thường.'),
     vungKQ);
 }
 
@@ -412,20 +413,25 @@ function hienMaHV(ds, d) {
   const coMa = co.filter(r => r.ma_kich_hoat && r.email);
   const ghiChu = (r) => r.ma_kich_hoat ? '' : 'Đã có tài khoản, dùng mật khẩu cũ';
   const appUrl = (window.NKTV_CONFIG && window.NKTV_CONFIG.appUrl) || location.origin + location.pathname;
-  const inPhieu = () => {
+  // Ảnh QR nhóm Zalo không đi kèm ds_dot vì nặng, nên lấy riêng ngay trước khi in.
+  const inPhieu = async () => {
+    const z = (d.zalo_link || d.co_zalo_qr) ? await S.db.zaloCuaDot(d.id).catch(() => null) : null;
     const the = h('div', { class: 'trang-in' }, h('div', { class: 'in-luoi', style: 'grid-template-columns:repeat(2,1fr)' }, co.map(r => h('div', { class: 'in-phieu' },
       h('b', null, r.ho_ten), h('br'), d.ten, h('br'),
       'Mã học viên: ', h('span', { class: 'ma' }, r.ma), h('br'),
       r.ma_kich_hoat ? ['Mã kích hoạt: ', h('span', { class: 'ma' }, r.ma_kich_hoat), h('br')] : ['Đã có tài khoản, dùng mật khẩu cũ.', h('br')],
       appUrl, h('br'),
-      r.ma_kich_hoat ? 'Mở trang, chọn kích hoạt bằng mã, tự đặt mật khẩu. Mã dùng một lần, hết hạn sau 90 ngày.' : 'Mở trang và đăng nhập như đợt trước.'))));
+      r.ma_kich_hoat ? 'Mở trang, chọn kích hoạt bằng mã, tự đặt mật khẩu. Mã dùng một lần, hết hạn sau 90 ngày.' : 'Mở trang và đăng nhập như đợt trước.',
+      z && z.link ? [h('br'), 'Nhóm Zalo: ', z.link] : null,
+      z && z.qr ? h('img', { src: z.qr, alt: 'Mã QR nhóm Zalo', style: 'display:block;width:96px;height:auto;margin-top:6px' }) : null))));
     document.body.append(the); window.print(); setTimeout(() => the.remove(), 500);
   };
   const chepTin = async () => {
     const chu = co.map(r => r.ma_kich_hoat
       ? `${r.ho_ten} · ${r.email}\nMã học viên: ${r.ma}\nMã kích hoạt: ${r.ma_kich_hoat}`
       : `${r.ho_ten} · ${r.email}\nMã học viên: ${r.ma}\nĐã có tài khoản, dùng mật khẩu cũ.`).join('\n\n');
-    const tron = `${d.ten}\nMở ${appUrl}, chọn "Kích hoạt bằng mã", tự đặt mật khẩu.\n\n${chu}`;
+    const zalo = d.zalo_link ? `\nNhóm Zalo của lớp: ${d.zalo_link}` : '';
+    const tron = `${d.ten}\nMở ${appUrl}, chọn "Kích hoạt bằng mã", tự đặt mật khẩu.${zalo}\n\n${chu}`;
     try { await navigator.clipboard.writeText(tron); toast('Đã chép ' + co.length + ' dòng'); }
     catch (_) { toast('Không chép được. Dùng Tải CSV.', true); }
   };
@@ -484,12 +490,12 @@ async function manHocVien(vung, id) {
         : loc === 'ma' ? !x.da_kich_hoat && x.ma_con_han
         : loc === 'thu' ? !x.da_kich_hoat && x.thu_trang_thai !== 'da_gui'
         : !x.da_kich_hoat && !x.ma_con_han)
-      && (!k || boDau([x.ho_ten, x.ma, x.email, x.truong, x.mssv].join(' ')).includes(k)));
+      && (!k || boDau([x.ho_ten, x.ma, x.email, x.mssv, x.lop].join(' ')).includes(k)));
     dat(vungDs,
       h('div', { class: 'nhan-nhom' }, theoLoc.length + ' người'),
       theoLoc.length ? h('div', { class: 'nhom' }, theoLoc.map(x => dong({
         tieu: x.ho_ten,
-        phu: [x.ma, x.email, nhanThu(x) || x.truong, x.nam_hoc].filter(Boolean).join(' · '),
+        phu: [x.ma, x.email, nhanThu(x) || x.lop, x.mssv].filter(Boolean).join(' · '),
         sau: x.da_kich_hoat ? h('span', { class: 'the-nhan dung' }, 'Đã kích hoạt')
           : x.ma_con_han ? h('span', { class: 'the-nhan tre' }, 'Đã cấp mã') : h('span', { class: 'the-nhan' }, 'Chưa cấp mã'),
         onclick: () => moHV(x)
@@ -503,10 +509,6 @@ async function manHocVien(vung, id) {
         h('div', { class: 'nhom' },
           dong({ tieu: 'Mã học viên', sau: x.ma, muiTen: false }),
           dong({ tieu: 'Email', sau: x.email, muiTen: false }),
-          x.sdt ? dong({ tieu: 'Số điện thoại', sau: x.sdt, muiTen: false }) : null,
-          x.truong ? dong({ tieu: 'Trường', sau: x.truong, muiTen: false }) : null,
-          x.nganh ? dong({ tieu: 'Ngành', sau: x.nganh, muiTen: false }) : null,
-          x.nam_hoc ? dong({ tieu: 'Năm học', sau: x.nam_hoc, muiTen: false }) : null,
           x.mssv ? dong({ tieu: 'MSSV', sau: x.mssv, muiTen: false }) : null,
           x.lop ? dong({ tieu: 'Lớp', sau: x.lop, muiTen: false }) : null,
           dong({ tieu: 'Tài khoản', sau: x.da_kich_hoat ? 'Đã kích hoạt' : x.ma_con_han ? 'Đã cấp mã, chưa dùng' : 'Chưa cấp mã', muiTen: false }),
@@ -550,8 +552,8 @@ async function manHocVien(vung, id) {
     } }, `Cấp mã mới và gửi email cho ${chuaNhanThu.length} người chưa nhận thư`) : null,
     hv.length ? h('div', { class: 'hang-nut', style: 'margin-bottom:12px' },
       h('button', { class: 'nut phu', type: 'button', onclick: () => taiCSV(`hoc-vien-${d.ma}.csv`,
-        [['Mã học viên', 'Họ và tên', 'Email', 'Số điện thoại', 'Trường', 'Ngành', 'Năm học', 'MSSV', 'Lớp', 'Tài khoản', 'Thư báo mã'],
-          ...hv.map(x => [x.ma, x.ho_ten, x.email, x.sdt, x.truong, x.nganh, x.nam_hoc, x.mssv, x.lop,
+        [['Mã học viên', 'Họ và tên', 'Email', 'MSSV', 'Lớp', 'Tài khoản', 'Thư báo mã'],
+          ...hv.map(x => [x.ma, x.ho_ten, x.email, x.mssv, x.lop,
             x.da_kich_hoat ? 'Đã kích hoạt' : x.ma_con_han ? 'Đã cấp mã, chưa dùng' : 'Chưa cấp mã',
             nhanThu(x) || 'Chưa gửi'])]) }, 'Xuất CSV')) : null,
     hv.length ? h('input', { class: 'tim', type: 'search', placeholder: 'Tìm tên, mã, email, trường…', 'aria-label': 'Tìm học viên', oninput: (e) => { tim = e.target.value; ve(); } }) : null,
@@ -596,6 +598,71 @@ async function manThuDot(vung, id) {
       tieu: x.ho_ten || x.email, phu: [x.email, ngayGio(x.luc)].filter(Boolean).join(' · '),
       sau: h('span', { class: 'the-nhan dung' }, 'Đã gửi'), muiTen: false
     }))) : null);
+}
+
+/* ---------- Nhóm Zalo của đợt (migration 0017) ----------
+
+   Thư ký hoặc điều hành tạo nhóm Zalo trước khi nạp danh sách, rồi dán link và ảnh QR vào đây.
+   Link và QR đi kèm thư báo mã kích hoạt, hiện trên màn Hôm nay của học viên và in lên phiếu. */
+
+/** Thu nhỏ ảnh QR về PNG rộng tối đa 600 px, nền trắng để quét được. */
+async function nenQR(tep) {
+  const u = URL.createObjectURL(tep);
+  try {
+    const anh = await new Promise((ok, loi) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => loi(new Error('Không đọc được hình này.')); i.src = u; });
+    const k = Math.min(1, 600 / Math.max(anh.naturalWidth, anh.naturalHeight));
+    const cv = document.createElement('canvas');
+    cv.width = Math.round(anh.naturalWidth * k); cv.height = Math.round(anh.naturalHeight * k);
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+    ctx.drawImage(anh, 0, 0, cv.width, cv.height);
+    const kq = cv.toDataURL('image/png');
+    if (kq.length > 1400000) throw new Error('Ảnh quá lớn. Cắt gọn quanh mã QR rồi thử lại.');
+    return kq;
+  } finally { URL.revokeObjectURL(u); }
+}
+
+async function manZaloDot(vung, id) {
+  const dsDot = await S.db.dsDot();
+  const d = dsDot.find(x => x.id === id);
+  if (!d) return dat(vung, thanh('Nhóm Zalo', '#tap-huan'), rong('Không tìm thấy đợt này.'));
+  if (!laBtcQuanLy(id)) return dat(vung, thanh('Nhóm Zalo', '#tap-huan/' + id, d.ma),
+    rong('Chỉ trưởng ban, thư ký của đợt và quản trị đặt được nhóm Zalo.'));
+  const z = (await S.db.zaloCuaDot(id)) || {};
+  const lai = () => manZaloDot(vung, id);
+  let qr = z.qr || null;
+
+  const khungQR = h('div', { class: 'hinh-soan' });
+  const chonAnh = h('input', { type: 'file', accept: 'image/*', hidden: true, onchange: async (e) => {
+    const t = e.target.files[0]; e.target.value = ''; if (!t) return;
+    const kq = await thu(() => nenQR(t));
+    if (kq) { qr = kq; veQR(); }
+  } });
+  const veQR = () => dat(khungQR,
+    qr ? h('img', { src: qr, alt: 'Mã QR nhóm Zalo' }) : null, chonAnh,
+    h('button', { class: 'nut-chu', type: 'button', onclick: () => chonAnh.click() }, qr ? 'Đổi ảnh QR' : 'Chọn ảnh QR'),
+    qr ? h('button', { class: 'nut-chu', type: 'button', style: 'color:var(--vang)', onclick: () => { qr = null; veQR(); } }, 'Bỏ ảnh') : null);
+  veQR();
+
+  const f = h('form', {
+    onsubmit: async (e) => {
+      e.preventDefault();
+      const link = e.target.link.value.trim();
+      if (link && !/^https?:\/\//i.test(link)) return toast('Link nhóm Zalo phải bắt đầu bằng https://', true);
+      if (await thu(() => S.db.luuDot(id, { zalo_link: link, zalo_qr: qr || '' }), 'Đã lưu nhóm Zalo')) lai();
+    }
+  },
+    h('div', { class: 'nhom' }, oNhap('Link nhóm Zalo', { name: 'link', value: z.link || '', placeholder: 'https://zalo.me/g/…', type: 'url' })),
+    h('div', { class: 'nhan-nhom' }, 'Ảnh mã QR của nhóm'),
+    khungQR,
+    h('button', { class: 'nut day', type: 'submit', style: 'margin-top:14px' }, 'Lưu'));
+
+  dat(vung,
+    thanh('Nhóm Zalo', '#tap-huan/' + id, d.ma),
+    h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:16px' }, d.ten),
+    h('div', { class: 'bang-tin xanh' }, 'Tạo nhóm Zalo trước khi nạp danh sách. Link và mã QR ở đây sẽ đi kèm thư báo mã kích hoạt, hiện trên màn Hôm nay của học viên và in lên phiếu.'),
+    f,
+    h('p', { class: 'chu-nho', style: 'margin-top:14px' }, 'Trong Zalo: mở nhóm → Tùy chọn → Link tham gia nhóm. Chép link và lưu ảnh QR về máy, rồi dán vào đây. Đổi link thì các thư đã gửi vẫn mang link cũ.'));
 }
 
 /* ============================================================ Buổi của đợt (migration 0014)

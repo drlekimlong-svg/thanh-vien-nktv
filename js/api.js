@@ -246,6 +246,9 @@ export const api = {
   dsThuDaGui: (dot) => rpc('ds_thu_da_gui', { p_dot: dot }),
   dsThuGanDay: () => rpc('ds_thu_gan_day'),
 
+  // Nhóm Zalo của đợt (migration 0017): ảnh QR nặng nên để riêng, không đi kèm ds_dot.
+  zaloCuaDot: (dot) => rpc('zalo_cua_dot', { p_dot: dot }),
+
   // Tuyển quân: phiếu của người khác chỉ trả về khi tài khoản được xem kết quả (quy tắc ở bảng tq_danh_gia).
   dsThiSinh: () => rest('tq_thi_sinh?select=id,ma_ts,stt,ho_ten,lop,nam&dot=eq.TQ2026&order=stt'),
   dsDanhGiaTQ: () => rest('tq_danh_gia?select=*&order=gui_luc'),
