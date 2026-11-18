@@ -349,6 +349,16 @@ button.dong:active, a.dong:active { background: var(--ke); transition: none; }
 .noi-dung-tb { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
 .tuy-nhap { position: fixed; top: calc(var(--dem-dau) + 6px); left: 50%; transform: translateX(-50%); z-index: 70; background: var(--tre); color: #fff; font-size: 0.75rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; pointer-events: none; }
 
+/* ---------- Câu hỏi trong giờ ---------- */
+.cot-cau-hoi { display: grid; gap: 10px; margin-bottom: 20px; }
+.the-cau-hoi { background: var(--be-mat); border-radius: 16px; box-shadow: var(--bong); padding: 13px 14px; }
+.the-cau-hoi.an { opacity: 0.62; }
+.the-cau-hoi .noi-dung { font-size: 1rem; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.the-cau-hoi .chu-nho { margin-top: 4px; }
+.the-cau-hoi .tra-loi { margin-top: 9px; padding: 9px 11px; border-radius: 12px; background: var(--be-mat-2); font-size: 0.9375rem; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.hang-nut.nho { margin-top: 10px; gap: 8px; }
+.hang-nut.nho > .vien { flex: none; min-width: 0; }
+
 /* ---------- In ---------- */
 .trang-in { display: none; }
 @media print {
@@ -361,6 +371,14 @@ button.dong:active, a.dong:active { background: var(--ke); transition: none; }
   .in-the b { display: block; font-size: 9.5pt; margin-top: 1.5mm; }
   .in-phieu { border: 0.3mm dashed #666; padding: 4mm; break-inside: avoid; font-size: 10pt; line-height: 1.4; }
   .in-phieu .ma { font: 700 14pt ui-monospace, Consolas, monospace; letter-spacing: 0.04em; }
+  /* Checklist in ra giấy: ô vuông để tích bằng bút. */
+  .in-ck { font-size: 11pt; line-height: 1.5; }
+  .in-ck h2 { font-size: 14pt; margin: 0 0 2mm; }
+  .in-ck h3 { font-size: 11.5pt; margin: 5mm 0 1.5mm; }
+  .in-ck p { margin: 0 0 2mm; }
+  .in-ck ul { margin: 0; padding: 0; }
+  .in-ck li { list-style: none; position: relative; padding-left: 7mm; margin-bottom: 2mm; break-inside: avoid; }
+  .in-ck li::before { content: ''; position: absolute; left: 0; top: 0.8mm; width: 4mm; height: 4mm; border: 0.3mm solid #333; border-radius: 0.8mm; }
   @page { margin: 12mm; }
 }
 

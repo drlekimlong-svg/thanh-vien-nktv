@@ -1,10 +1,13 @@
-// Tập huấn: đợt, Ban tổ chức, nạp danh sách học viên, cấp mã kích hoạt.
-// Mọi việc đi qua hàm trong Postgres (migration 0013); trình duyệt không đọc thẳng bảng học viên.
+// Tập huấn: đợt, Ban tổ chức, nạp danh sách học viên, cấp mã kích hoạt (migration 0013);
+// buổi của đợt, điểm danh vào và ra, đăng ký chỗ, tài liệu, checklist, câu hỏi, thông báo (0014).
+// Mọi việc đi qua hàm trong Postgres; trình duyệt không đọc thẳng bảng học viên.
 import { S } from './state.js';
 import {
-  h, dat, dong, nhom, moSheet, thu, toast, bieuTuong, ngay, soLieu, rong, oNhap, xacNhan,
-  taiCSV, boDau, giaTriNgay, moTaTV
+  h, dat, dong, nhom, moSheet, thu, toast, bieuTuong, gio, ngay, ngayGio, soLieu, rong,
+  oNhap, oChon, oBat, xacNhan, taiCSV, boDau, giaTriNgay, giaTriGio, tuNhap, dauNgay, moTaTV
 } from './ui.js';
+import { manMotBuoi } from './v-quanly.js';
+import { manCauHoi, docMucChecklist, vietMucChecklist, soMucChecklist, moChecklist, hangTaiLieu } from './v-tronggio.js';
 
 const icon = (t) => h('div', { class: 'bieu-tuong' }, bieuTuong(t));
 const thanh = (tieu, href = '#tap-huan', nhan = 'Tập huấn', phai = null) =>
@@ -23,11 +26,24 @@ const khoang = (d) => {
 };
 const laBtcQuanLy = (dot) => S.toi.la_quan_tri ||
   (S.toi.btc_dot || []).some(b => b.dot_id === dot && VAI_QUAN_LY.includes(b.vai));
+const coVai = (dot, vai) => S.toi.la_quan_tri || (S.toi.btc_dot || []).some(b => b.dot_id === dot && vai.includes(b.vai));
+// Tài liệu, checklist, câu hỏi: trưởng ban, thư ký và tập huấn viên. Điểm danh: thêm phụ trách điểm danh.
+const laGiangVien = (dot) => coVai(dot, ['truong_ban', 'thu_ky', 'giang_vien']);
+const laDiemDanh = (dot) => coVai(dot, ['truong_ban', 'thu_ky', 'diem_danh']);
+const thayDuocDot = (dot) => coVai(dot, Object.keys(VAI));
+
+export const PHAN = { ly_thuyet: 'Lý thuyết', thuc_hanh: 'Thực hành', luong_gia: 'Lượng giá', khac: 'Khác' };
 
 export async function tuyenTapHuan(vung, con) {
-  const [a, b] = con;
+  const [a, b, c] = con;
   if (a && b === 'nap') return manNapDS(vung, a);
   if (a && b === 'hoc-vien') return manHocVien(vung, a);
+  if (a && b === 'buoi' && c) return manBuoiDot(vung, a, c);
+  if (a && b === 'buoi') return manDsBuoiDot(vung, a);
+  if (a && b === 'tai-lieu') return manTaiLieuDot(vung, a);
+  if (a && b === 'checklist') return manChecklistDot(vung, a);
+  if (a && b === 'thong-bao') return manThongBaoDot(vung, a);
+  if (a && b === 'cau-hoi') return manCauHoiDot(vung, a, c);
   if (a) return manMotDot(vung, a);
   return manTapHuan(vung);
 }
@@ -85,15 +101,25 @@ async function manMotDot(vung, id) {
   if (!d) return dat(vung, thanh('Đợt', '#tap-huan'), rong('Không tìm thấy đợt này, hoặc bạn không còn trong Ban tổ chức.'));
   const lai = () => manMotDot(vung, id);
   const ql = laBtcQuanLy(id);
-  const [btc, tv] = await Promise.all([
+  const [btc, tv, buoi] = await Promise.all([
     S.db.btcCuaDot(id).catch(() => []),
-    S.toi.xem_duoc_ten ? S.db.dsThanhVien().catch(() => []) : []
+    S.toi.xem_duoc_ten ? S.db.dsThanhVien().catch(() => []) : [],
+    S.db.dsBuoiDot(id).catch(() => [])
   ]);
-  const tenCua = (tvId) => { const t = tv.find(x => x.id === tvId); return t ? t.ho_ten : 'Thành viên'; };
+  // Người không được xem danh sách thành viên thì chỉ thấy số người giữ vai, không thấy tên.
+  const tenCua = (tvId) => { const t = tv.find(x => x.id === tvId); return t ? t.ho_ten : null; };
   const theoVai = Object.keys(VAI).map(v => {
     const nguoi = btc.filter(b => b.vai === v);
-    return nguoi.length ? `${VAI[v]}: ${nguoi.map(b => tenCua(b.thanh_vien_id)).join(', ')}` : null;
+    if (!nguoi.length) return null;
+    const ten = nguoi.map(b => tenCua(b.thanh_vien_id)).filter(Boolean);
+    return `${VAI[v]}: ${ten.length ? ten.join(', ') : nguoi.length + ' người'}`;
   }).filter(Boolean);
+
+  const nay = Date.now() + (S.lech || 0);
+  const gan = buoi.filter(b => !b.dong
+    && nay >= new Date(b.bat_dau).getTime() - 3600e3
+    && nay <= new Date(b.ket_thuc || new Date(b.bat_dau).getTime() + 4 * 3600e3).getTime() + 3600e3)
+    .sort((x, y) => new Date(x.bat_dau) - new Date(y.bat_dau))[0];
 
   const doiTrangThai = async () => {
     const chon = { soan: 'mo', mo: 'ket_thuc', ket_thuc: 'mo' }[d.trang_thai];
@@ -113,6 +139,15 @@ async function manMotDot(vung, id) {
       { so: d.so_kich_hoat, ten: 'Đã kích hoạt', lop: 'dung' },
       { so: d.so_hoc_vien - d.so_kich_hoat, ten: 'Chưa kích hoạt', lop: d.so_hoc_vien - d.so_kich_hoat ? 'tre' : '' }
     ]),
+    // Buổi đang tới gần: từ 1 giờ trước giờ bắt đầu tới 1 giờ sau giờ kết thúc, để Ban tổ chức
+    // vào thẳng việc đang phải làm chứ không phải đi tìm trong danh sách.
+    gan ? h('div', { class: 'the-buoi' },
+      h('div', { class: 'nhan' }, 'Buổi đang tới gần'),
+      h('h2', null, gan.ten),
+      h('div', { class: 'chi-tiet' }, [ngayGio(gan.bat_dau), gan.phan ? PHAN[gan.phan] : null, gan.dia_diem].filter(Boolean).join(' · ')),
+      h('div', { class: 'hang-nut' },
+        laDiemDanh(id) ? h('a', { class: 'nut', href: `#tap-huan/${id}/buoi/${gan.id}` }, bieuTuong('quet'), 'Điểm danh') : null,
+        h('a', { class: 'nut phu', href: `#tap-huan/${id}/cau-hoi/${gan.id}` }, 'Câu hỏi trong giờ'))) : null,
     d.trang_thai === 'ket_thuc' ? h('div', { class: 'bang-tin' }, 'Đợt đã kết thúc: tài khoản học viên chỉ còn xem lại kết quả và giấy chứng nhận.') : null,
     // Chỉ trưởng ban, thư ký và quản trị đọc được danh sách học viên (hàm ds_hoc_vien_dot).
     // Người giữ vai khác thấy dòng giải thích, không thấy danh sách rỗng rồi tưởng đợt chưa có ai.
@@ -120,6 +155,13 @@ async function manMotDot(vung, id) {
       ql ? dong({ tieu: 'Nạp danh sách', phu: 'Dán bảng đăng ký, app xem trước rồi mới ghi', truoc: icon('don'), href: `#tap-huan/${id}/nap` }) : null,
       ql ? dong({ tieu: 'Danh sách học viên', phu: 'Xem, cấp mã kích hoạt, xuất bảng cho thư ký gửi', truoc: icon('nguoi'), href: `#tap-huan/${id}/hoc-vien` })
         : dong({ tieu: 'Danh sách học viên', phu: 'Chỉ trưởng ban, thư ký và quản trị xem được danh sách và thông tin học viên', truoc: icon('nguoi'), muiTen: false })),
+    nhom('Trong buổi',
+      dong({ tieu: 'Buổi và điểm danh', truoc: icon('lich'), href: `#tap-huan/${id}/buoi`,
+        phu: buoi.length ? `${buoi.length} buổi · ${buoi.filter(b => b.dong).length} đã đóng` : 'Chưa có buổi nào' }),
+      dong({ tieu: 'Câu hỏi trong giờ', phu: 'Học viên gửi câu hỏi, có thể ẩn tên trên màn hình', truoc: icon('don'), href: `#tap-huan/${id}/cau-hoi` }),
+      laGiangVien(id) ? dong({ tieu: 'Tài liệu', phu: 'Đường dẫn Drive, mở theo giờ hoặc sau khi điểm danh', truoc: icon('test'), href: `#tap-huan/${id}/tai-lieu` }) : null,
+      laGiangVien(id) ? dong({ tieu: 'Checklist', phu: 'Học viên tick trong giờ, in ra PDF được', truoc: icon('phieu'), href: `#tap-huan/${id}/checklist` }) : null,
+      ql ? dong({ tieu: 'Thông báo của đợt', phu: 'Chỉ học viên trong đợt và Ban tổ chức thấy', truoc: icon('chuong'), href: `#tap-huan/${id}/thong-bao` }) : null),
     nhom('Ban tổ chức',
       dong({ tieu: 'Phân vai', phu: theoVai.length ? theoVai.join(' · ') : 'Chưa phân vai ai', truoc: icon('khoa'),
         onclick: S.toi.la_quan_tri || (S.toi.btc_dot || []).some(b => b.dot_id === id && b.vai === 'truong_ban') ? () => phanVai(id, btc, tv, lai) : undefined,
@@ -429,4 +471,330 @@ async function manHocVien(vung, id) {
     hv.length ? h('div', { class: 'chon-ngang' }, vien('Tất cả', 'tat'), vien('Đã kích hoạt', 'da'), vien('Đã cấp mã', 'ma'), vien('Chưa cấp mã', 'chua')) : null,
     vungDs);
   if (hv.length) ve();
+}
+
+/* ============================================================ Buổi của đợt (migration 0014)
+
+   luu_buoi_dot nhận cả object nên mọi lần lưu đều gửi đủ các ô; goiBuoi dựng object đó
+   từ dòng ds_buoi_dot, chỉ thay những ô cần đổi. */
+
+const goiBuoi = (dot, b, ghiDe) => Object.assign({
+  dot_id: dot, ten: b.ten, bat_dau: b.bat_dau, ket_thuc: b.ket_thuc, dia_diem: b.dia_diem,
+  noi_dung: b.noi_dung, phan: b.phan, nhom_chon: b.nhom_chon, can_dang_ky: b.can_dang_ky,
+  suc_chua: b.suc_chua, mo_dang_ky_tu: b.mo_dang_ky_tu, han_dang_ky: b.han_dang_ky,
+  tre_sau_phut: b.tre_sau_phut, ra_sau_phut: b.ra_sau_phut, tinh_chuyen_can: b.tinh_chuyen_can, dong: b.dong
+}, ghiDe || {});
+
+const coGioRa = (b) => b.ra_sau_phut !== null && b.ra_sau_phut !== undefined;
+const moTaBuoi = (b) => [b.phan ? PHAN[b.phan] : null, b.dia_diem,
+  b.can_dang_ky ? `${b.so_dang_ky}${b.suc_chua ? '/' + b.suc_chua : ''} đã đăng ký` : null,
+  b.so_diem_danh ? `${b.so_diem_danh} đã điểm danh` : null,
+  coGioRa(b) ? 'Có giờ ra' : null,
+  b.dong ? 'Đã đóng' : null].filter(Boolean).join(' · ');
+
+function suaBuoiDot(dot, b, sauKhi) {
+  const canDK = h('div');
+  const veDK = (bat) => dat(canDK, bat ? h('div', { class: 'nhom' },
+    oNhap('Sức chứa (để trống là không giới hạn)', { name: 'sc', type: 'number', min: 1, inputmode: 'numeric', value: b && b.suc_chua ? b.suc_chua : '' }),
+    oNhap('Nhóm ca (các ca cùng nhóm thì chỉ chọn một)', { name: 'nc', value: b ? b.nhom_chon || '' : '', placeholder: 'Thực hành tuần 1' }),
+    oNhap('Mở đăng ký từ ngày', { name: 'mdn', type: 'date', value: b && b.mo_dang_ky_tu ? giaTriNgay(b.mo_dang_ky_tu) : '' }),
+    oNhap('Giờ mở đăng ký', { name: 'mdg', type: 'time', value: b && b.mo_dang_ky_tu ? giaTriGio(b.mo_dang_ky_tu) : '' }),
+    oNhap('Hạn đăng ký đến ngày', { name: 'hdn', type: 'date', value: b && b.han_dang_ky ? giaTriNgay(b.han_dang_ky) : '' }),
+    oNhap('Giờ hết hạn', { name: 'hdg', type: 'time', value: b && b.han_dang_ky ? giaTriGio(b.han_dang_ky) : '' })) : null);
+
+  const f = h('form', {
+    onsubmit: async (e) => {
+      e.preventDefault();
+      const x = f.elements;
+      if (!x.ten.value.trim() || !x.ngay.value || !x.gio.value) return toast('Cần có tên, ngày và giờ bắt đầu.', true);
+      const bat = x.dk.checked;
+      const o = goiBuoi(dot, b || {}, {
+        ten: x.ten.value.trim(),
+        bat_dau: tuNhap(x.ngay.value, x.gio.value),
+        ket_thuc: x.ket.value ? tuNhap(x.ngay.value, x.ket.value) : '',
+        dia_diem: x.dd.value.trim(), noi_dung: x.nd.value.trim(), phan: x.phan.value,
+        tre_sau_phut: Number(x.tre.value) || 0,
+        ra_sau_phut: x.ra.value === '' ? '' : Number(x.ra.value),
+        tinh_chuyen_can: x.cc.checked,
+        can_dang_ky: bat,
+        suc_chua: bat && x.sc.value ? Number(x.sc.value) : '',
+        nhom_chon: bat ? x.nc.value.trim() : '',
+        mo_dang_ky_tu: bat && x.mdn.value ? tuNhap(x.mdn.value, x.mdg.value || '00:00') : '',
+        han_dang_ky: bat && x.hdn.value ? tuNhap(x.hdn.value, x.hdg.value || '23:59') : ''
+      });
+      const id = await thu(() => S.db.luuBuoiDot(b ? b.id : null, o), b ? 'Đã lưu buổi' : 'Đã thêm buổi');
+      if (id) { s.dong(); sauKhi(); }
+    }
+  },
+    h('div', { class: 'nhom' },
+      oNhap('Tên buổi', { name: 'ten', value: b ? b.ten : '', required: true, placeholder: 'Lý thuyết X-quang bụng' }),
+      oChon('Phần', [['', 'Chưa ghi'], ...Object.entries(PHAN)], b ? b.phan || '' : '', { name: 'phan' }),
+      oNhap('Ngày', { name: 'ngay', type: 'date', value: b ? giaTriNgay(b.bat_dau) : giaTriNgay(Date.now()), required: true }),
+      oNhap('Giờ bắt đầu', { name: 'gio', type: 'time', value: b ? giaTriGio(b.bat_dau) : '08:00', required: true }),
+      oNhap('Giờ kết thúc (nếu có)', { name: 'ket', type: 'time', value: b && b.ket_thuc ? giaTriGio(b.ket_thuc) : '' }),
+      oNhap('Địa điểm', { name: 'dd', value: b ? b.dia_diem || '' : '' }),
+      oNhap('Nội dung', { the: 'textarea', name: 'nd', value: b ? b.noi_dung || '' : '', rows: 3 })),
+    h('div', { class: 'nhom' },
+      oNhap('Tính trễ sau bao nhiêu phút', { name: 'tre', type: 'number', min: 0, inputmode: 'numeric', value: b ? b.tre_sau_phut : 10 }),
+      oNhap('Quét lại sau bao nhiêu phút là giờ ra (để trống nếu buổi không điểm danh ra)',
+        { name: 'ra', type: 'number', min: 0, inputmode: 'numeric', value: b && coGioRa(b) ? b.ra_sau_phut : '' }),
+      oBat('Tính vào chuyên cần của đợt', { name: 'cc', checked: b ? b.tinh_chuyen_can : true }),
+      oBat('Học viên phải đăng ký chỗ', { name: 'dk', checked: b ? b.can_dang_ky : false, onchange: (e) => veDK(e.target.checked) })),
+    canDK,
+    h('p', { class: 'chu-nho', style: 'margin-bottom:14px' }, 'Buổi phải đăng ký thì danh sách điểm danh chỉ gồm người đã đăng ký. Buổi không đăng ký thì cả đợt đều có tên.'),
+    h('button', { class: 'nut day', type: 'submit' }, b ? 'Lưu' : 'Thêm buổi'),
+    b ? h('button', {
+      class: 'nut nguy day', type: 'button', style: 'margin-top:10px',
+      onclick: async () => {
+        if (!await xacNhan({ tieuDe: 'Xóa buổi này?', chu: 'Chỉ xóa được khi buổi chưa có ai điểm danh.', nut: 'Xóa buổi', nguy: true })) return;
+        if (await thu(() => S.db.xoaBuoiDot(b.id), 'Đã xóa buổi')) { s.dong(); location.hash = `tap-huan/${dot}/buoi`; }
+      }
+    }, 'Xóa buổi') : null);
+  veDK(b ? b.can_dang_ky : false);
+  const s = moSheet({ tieuDe: b ? 'Sửa buổi' : 'Buổi mới', noiDung: f });
+}
+
+/* ---------- Xếp ca: dùng khi học viên không tự chọn được ---------- */
+async function xepCa(dot, b, sauKhi) {
+  const [hv, dk] = await Promise.all([S.db.dsHocVienDot(dot), S.db.dsDangKyBuoi(b.id)]);
+  if (!hv.length) return toast('Đợt chưa có học viên nào.', true);
+  const chon = new Set(dk.map(x => x.thanh_vien_id));
+  const demEl = h('b', null, String(chon.size));
+  const hang = hv.slice().sort((x, y) => x.ho_ten.localeCompare(y.ho_ten, 'vi')).map(x => {
+    const o = oBat(x.ho_ten, { checked: chon.has(x.id), onchange: (e) => {
+      if (e.target.checked) chon.add(x.id); else chon.delete(x.id);
+      demEl.textContent = String(chon.size);
+    } });
+    o.querySelector('span').append(h('small', { style: 'display:block;color:var(--chu-2);font-size:.8125rem' }, x.ma));
+    o.dataset.tim = boDau(x.ho_ten + ' ' + x.ma);
+    return o;
+  });
+  const s = moSheet({
+    tieuDe: 'Xếp ca',
+    noiDung: h('div', null,
+      h('p', { class: 'chu-nho', style: 'margin-bottom:12px' }, b.ten, '. Đã chọn ', demEl, b.suc_chua ? ` trên sức chứa ${b.suc_chua}` : '', '. Người đã điểm danh thì app giữ lại dù bạn bỏ tick.'),
+      h('input', { class: 'tim', type: 'search', placeholder: 'Tìm tên hoặc mã học viên', 'aria-label': 'Tìm học viên', oninput: (e) => { const k = boDau(e.target.value); hang.forEach(o => { o.hidden = !!k && !o.dataset.tim.includes(k); }); } }),
+      h('div', { class: 'nhom' }, hang),
+      h('button', { class: 'nut day', type: 'button', onclick: async () => {
+        if (b.suc_chua && chon.size > b.suc_chua && !await xacNhan({ tieuDe: 'Quá sức chứa?', chu: `Ca này ghi sức chứa ${b.suc_chua} nhưng bạn chọn ${chon.size} người.`, nut: 'Vẫn lưu' })) return;
+        if (await thu(() => S.db.datDangKyBuoi(b.id, [...chon]), 'Đã xếp ca')) { s.dong(); sauKhi(); }
+      } }, 'Lưu'))
+  });
+}
+
+/* ---------- Danh sách buổi của đợt ---------- */
+async function manDsBuoiDot(vung, dot) {
+  const dsDot = await S.db.dsDot();
+  const d = dsDot.find(x => x.id === dot);
+  if (!d) return dat(vung, thanh('Buổi', '#tap-huan'), rong('Không tìm thấy đợt này.'));
+  if (!thayDuocDot(dot)) return dat(vung, thanh('Buổi', '#tap-huan/' + dot, d.ma), rong('Chỉ Ban tổ chức của đợt xem được buổi học.'));
+  const ds = await S.db.dsBuoiDot(dot);
+  const ql = laBtcQuanLy(dot);
+  const lai = () => manDsBuoiDot(vung, dot);
+  const nay = Date.now() + (S.lech || 0);
+  const hang = (b) => dong({
+    truoc: dauNgay(b.bat_dau), tieu: b.ten,
+    phu: [gio(b.bat_dau), moTaBuoi(b)].filter(Boolean).join(' · '),
+    href: `#tap-huan/${dot}/buoi/${b.id}`
+  });
+  const sap = ds.filter(b => new Date(b.bat_dau).getTime() >= nay - 12 * 3600e3);
+  const qua = ds.filter(b => new Date(b.bat_dau).getTime() < nay - 12 * 3600e3).reverse();
+  dat(vung,
+    thanh('Buổi của đợt', '#tap-huan/' + dot, d.ma, ql ? h('button', { class: 'nut-lui', type: 'button', onclick: () => suaBuoiDot(dot, null, lai) }, 'Thêm') : null),
+    h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:16px' }, d.ten),
+    sap.length ? nhom('Sắp tới', sap.map(hang)) : rong(ql ? 'Chưa có buổi nào sắp tới. Bấm Thêm để tạo buổi.' : 'Chưa có buổi nào sắp tới.'),
+    qua.length ? nhom('Đã qua', qua.map(hang)) : null,
+    ql && ds.some(b => b.can_dang_ky) ? nhom('Xếp ca', ds.filter(b => b.can_dang_ky).map(b => dong({
+      tieu: b.ten, phu: `${b.so_dang_ky}${b.suc_chua ? '/' + b.suc_chua : ''} đã đăng ký · ${gio(b.bat_dau)} ${ngay(b.bat_dau)}`,
+      onclick: () => xepCa(dot, b, lai), muiTen: false
+    }))) : null);
+}
+
+/* ---------- Một buổi của đợt: dùng lại máy quét của buổi sinh hoạt CLB ---------- */
+async function manBuoiDot(vung, dot, buoiId) {
+  const dsDot = await S.db.dsDot();
+  const d = dsDot.find(x => x.id === dot);
+  if (!d) return dat(vung, thanh('Buổi', '#tap-huan'), rong('Không tìm thấy đợt này.'));
+  if (!thayDuocDot(dot)) return dat(vung, thanh('Buổi', '#tap-huan/' + dot, d.ma), rong('Chỉ Ban tổ chức của đợt xem được buổi học.'));
+  const ds = await S.db.dsBuoiDot(dot);
+  const b = ds.find(x => x.id === buoiId);
+  if (!b) return dat(vung, thanh('Buổi', `#tap-huan/${dot}/buoi`, 'Buổi'), rong('Không tìm thấy buổi này.'));
+  const lai = () => manBuoiDot(vung, dot, buoiId);
+  await manMotBuoi(vung, buoiId, {
+    b, quanLy: laBtcQuanLy(dot), diemDanhDuoc: laDiemDanh(dot),
+    lui: `#tap-huan/${dot}/buoi`, luiNhan: 'Buổi', lai,
+    sua: () => suaBuoiDot(dot, b, lai),
+    dongBuoi: (moi) => S.db.luuBuoiDot(buoiId, goiBuoi(dot, b, { dong: moi }))
+  });
+  vung.append(
+    h('div', { class: 'hang-nut', style: 'margin-top:12px' },
+      h('a', { class: 'nut phu', href: `#tap-huan/${dot}/cau-hoi/${buoiId}`, style: 'text-decoration:none;text-align:center' }, 'Câu hỏi trong giờ'),
+      b.can_dang_ky && laBtcQuanLy(dot) ? h('button', { class: 'nut phu', type: 'button', onclick: () => xepCa(dot, b, lai) }, 'Xếp ca') : null),
+    h('p', { class: 'chu-nho giua-chu', style: 'margin:14px 0 22px' },
+      'Buổi của đợt ', d.ma, '. Danh sách là ', b.can_dang_ky ? 'học viên đã đăng ký ca này' : 'học viên của cả đợt', '.'));
+}
+
+/* ============================================================ Tài liệu của đợt */
+async function manTaiLieuDot(vung, dot) {
+  const dsDot = await S.db.dsDot();
+  const d = dsDot.find(x => x.id === dot);
+  if (!d) return dat(vung, thanh('Tài liệu', '#tap-huan'), rong('Không tìm thấy đợt này.'));
+  if (!laGiangVien(dot)) return dat(vung, thanh('Tài liệu', '#tap-huan/' + dot, d.ma),
+    rong('Chỉ trưởng ban, thư ký và tập huấn viên của đợt soạn được tài liệu.'));
+  const [ds, buoi] = await Promise.all([S.db.dsTaiLieuDot(dot), S.db.dsBuoiDot(dot)]);
+  const lai = () => manTaiLieuDot(vung, dot);
+
+  const sua = (x) => {
+    const f = h('form', { onsubmit: async (e) => {
+      e.preventDefault();
+      const v = f.elements;
+      if (!v.ten.value.trim()) return toast('Cần tên tài liệu.', true);
+      if (!/^https?:\/\//i.test(v.lk.value.trim())) return toast('Đường dẫn phải bắt đầu bằng http:// hoặc https://', true);
+      const o = {
+        dot_id: dot, ten: v.ten.value.trim(), mo_ta: v.mt.value.trim(), lien_ket: v.lk.value.trim(),
+        buoi_id: v.buoi.value, thu_tu: Number(v.tt.value) || 0,
+        mo_tu: v.mn.value ? tuNhap(v.mn.value, v.mg.value || '00:00') : '',
+        can_diem_danh: v.dd.checked
+      };
+      if (await thu(() => S.db.luuTaiLieuDot(x ? x.id : null, o), x ? 'Đã lưu' : 'Đã thêm tài liệu')) { s.dong(); lai(); }
+    } },
+      h('div', { class: 'nhom' },
+        oNhap('Tên tài liệu', { name: 'ten', value: x ? x.ten : '', required: true }),
+        oNhap('Đường dẫn trên Drive', { name: 'lk', type: 'url', value: x ? x.lien_ket || '' : '', placeholder: 'https://drive.google.com/...', required: true }),
+        oNhap('Mô tả', { name: 'mt', value: x ? x.mo_ta || '' : '' }),
+        oChon('Gắn với buổi', [['', 'Không gắn buổi nào'], ...buoi.map(b => [b.id, `${ngay(b.bat_dau)} · ${b.ten}`])], x ? x.buoi_id || '' : '', { name: 'buoi' }),
+        oNhap('Thứ tự hiện', { name: 'tt', type: 'number', inputmode: 'numeric', value: x ? x.thu_tu : 0 })),
+      h('div', { class: 'nhom' },
+        oNhap('Mở từ ngày (để trống là mở ngay)', { name: 'mn', type: 'date', value: x && x.mo_tu ? giaTriNgay(x.mo_tu) : '' }),
+        oNhap('Giờ mở', { name: 'mg', type: 'time', value: x && x.mo_tu ? giaTriGio(x.mo_tu) : '' }),
+        oBat('Chỉ mở sau khi học viên điểm danh buổi đã gắn', { name: 'dd', checked: x ? x.can_diem_danh : false })),
+      h('p', { class: 'chu-nho', style: 'margin-bottom:14px' }, 'App chỉ giữ đường dẫn, không giữ tệp. Quyền xem tệp vẫn do Drive quyết định, nhớ đặt quyền cho người có đường dẫn.'),
+      h('button', { class: 'nut day', type: 'submit' }, x ? 'Lưu' : 'Thêm'),
+      x ? h('button', { class: 'nut nguy day', type: 'button', style: 'margin-top:10px', onclick: async () => {
+        if (!await xacNhan({ tieuDe: 'Xóa tài liệu?', chu: 'Chỉ xóa dòng trong app, tệp trên Drive không đổi.', nut: 'Xóa', nguy: true })) return;
+        if (await thu(() => S.db.xoaTaiLieuDot(x.id), 'Đã xóa')) { s.dong(); lai(); }
+      } }, 'Xóa tài liệu') : null);
+    const s = moSheet({ tieuDe: x ? 'Sửa tài liệu' : 'Tài liệu mới', noiDung: f });
+  };
+
+  dat(vung,
+    thanh('Tài liệu', '#tap-huan/' + dot, d.ma, h('button', { class: 'nut-lui', type: 'button', onclick: () => sua(null) }, 'Thêm')),
+    h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:16px' }, d.ten),
+    ds.length ? nhom(null, ds.map(x => hangTaiLieu(x, { quanLy: true, sua }))) : rong('Chưa có tài liệu nào. Bấm Thêm để dán đường dẫn Drive.'),
+    ds.length ? h('p', { class: 'chu-nho', style: 'margin-bottom:22px' }, 'Ban tổ chức luôn mở được mọi tài liệu. Dòng nào ghi điều kiện thì điều kiện đó chỉ áp cho học viên.') : null);
+}
+
+/* ============================================================ Checklist của đợt */
+async function manChecklistDot(vung, dot) {
+  const dsDot = await S.db.dsDot();
+  const d = dsDot.find(x => x.id === dot);
+  if (!d) return dat(vung, thanh('Checklist', '#tap-huan'), rong('Không tìm thấy đợt này.'));
+  if (!laGiangVien(dot)) return dat(vung, thanh('Checklist', '#tap-huan/' + dot, d.ma),
+    rong('Chỉ trưởng ban, thư ký và tập huấn viên của đợt soạn được checklist.'));
+  const [ds, buoi] = await Promise.all([S.db.dsChecklistDot(dot), S.db.dsBuoiDot(dot)]);
+  const lai = () => manChecklistDot(vung, dot);
+
+  const sua = (x) => {
+    const f = h('form', { onsubmit: async (e) => {
+      e.preventDefault();
+      const v = f.elements;
+      if (!v.ten.value.trim()) return toast('Cần tên checklist.', true);
+      const muc = docMucChecklist(v.muc.value);
+      if (!muc.length) return toast('Chưa có mục nào.', true);
+      const o = { dot_id: dot, ten: v.ten.value.trim(), mo_ta: v.mt.value.trim(), buoi_id: v.buoi.value, thu_tu: Number(v.tt.value) || 0, muc };
+      if (await thu(() => S.db.luuChecklistDot(x ? x.id : null, o), x ? 'Đã lưu' : 'Đã thêm checklist')) { s.dong(); lai(); }
+    } },
+      h('div', { class: 'nhom' },
+        oNhap('Tên checklist', { name: 'ten', value: x ? x.ten : '', required: true, placeholder: 'Rửa tay vô khuẩn' }),
+        oNhap('Mô tả', { name: 'mt', value: x ? x.mo_ta || '' : '' }),
+        oChon('Gắn với buổi', [['', 'Không gắn buổi nào'], ...buoi.map(b => [b.id, `${ngay(b.bat_dau)} · ${b.ten}`])], x ? x.buoi_id || '' : '', { name: 'buoi' }),
+        oNhap('Thứ tự hiện', { name: 'tt', type: 'number', inputmode: 'numeric', value: x ? x.thu_tu : 0 }),
+        oNhap('Các mục', { the: 'textarea', name: 'muc', rows: 12, value: x ? vietMucChecklist(x.muc) : '# Chuẩn bị\nRửa tay\nMặc áo mổ\n\n# Thực hiện\n' })),
+      h('p', { class: 'chu-nho', style: 'margin-bottom:14px' }, 'Mỗi dòng là một mục. Dòng bắt đầu bằng dấu thăng là tên nhóm. Dòng trống bị bỏ qua.'),
+      h('button', { class: 'nut day', type: 'submit' }, x ? 'Lưu' : 'Thêm'),
+      x ? h('button', { class: 'nut nguy day', type: 'button', style: 'margin-top:10px', onclick: async () => {
+        if (!await xacNhan({ tieuDe: 'Xóa checklist?', nut: 'Xóa', nguy: true })) return;
+        if (await thu(() => S.db.xoaChecklistDot(x.id), 'Đã xóa')) { s.dong(); lai(); }
+      } }, 'Xóa checklist') : null);
+    const s = moSheet({ tieuDe: x ? 'Sửa checklist' : 'Checklist mới', noiDung: f });
+  };
+
+  dat(vung,
+    thanh('Checklist', '#tap-huan/' + dot, d.ma, h('button', { class: 'nut-lui', type: 'button', onclick: () => sua(null) }, 'Thêm')),
+    h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:16px' }, d.ten),
+    ds.length ? nhom(null, ds.map(x => dong({
+      tieu: x.ten, phu: [x.buoi_ten, soMucChecklist(x) + ' mục'].filter(Boolean).join(' · '),
+      truoc: icon('phieu'), onclick: () => sua(x)
+    }))) : rong('Chưa có checklist nào.'),
+    ds.length ? nhom('Xem như học viên', ds.map(x => dong({
+      tieu: x.ten, phu: 'Mở bản tick và in thử', truoc: icon('test'), onclick: () => moChecklist(x, d.ten)
+    }))) : null,
+    h('p', { class: 'chu-nho', style: 'margin-bottom:22px' }, 'Học viên tick ngay trên máy của mình; app không lưu cái đã tick nên không có bảng theo dõi ai tick gì. Bản in có ô vuông để tích bằng bút.'));
+}
+
+/* ============================================================ Thông báo của đợt */
+async function manThongBaoDot(vung, dot) {
+  const dsDot = await S.db.dsDot();
+  const d = dsDot.find(x => x.id === dot);
+  if (!d) return dat(vung, thanh('Thông báo', '#tap-huan'), rong('Không tìm thấy đợt này.'));
+  if (!laBtcQuanLy(dot)) return dat(vung, thanh('Thông báo', '#tap-huan/' + dot, d.ma),
+    rong('Chỉ trưởng ban, thư ký của đợt và quản trị đăng được thông báo.'));
+  const ds = await S.db.thongBaoDot(dot);
+  const lai = () => manThongBaoDot(vung, dot);
+
+  const soan = (cu) => {
+    const f = h('form', { onsubmit: async (e) => {
+      e.preventDefault();
+      const v = f.elements;
+      if (!v.td.value.trim()) return toast('Cần tiêu đề.', true);
+      const o = { dot_id: dot, tieu_de: v.td.value.trim(), noi_dung: v.nd.value.trim(), ghim: v.g.checked };
+      if (await thu(() => S.db.luuThongBaoDot(cu ? cu.id : null, o), cu ? 'Đã lưu' : 'Đã đăng thông báo')) { s.dong(); lai(); }
+    } },
+      h('div', { class: 'nhom' },
+        oNhap('Tiêu đề', { name: 'td', value: cu ? cu.tieu_de : '', required: true }),
+        oNhap('Nội dung', { the: 'textarea', name: 'nd', value: cu ? cu.noi_dung || '' : '', rows: 6 }),
+        oBat('Ghim lên đầu', { name: 'g', checked: cu ? cu.ghim : false })),
+      h('p', { class: 'chu-nho', style: 'margin-bottom:14px' }, 'Thông báo này chỉ học viên trong đợt và Ban tổ chức thấy. Thành viên CLB khác không thấy.'),
+      h('button', { class: 'nut day', type: 'submit' }, cu ? 'Lưu' : 'Đăng'),
+      cu ? h('button', { class: 'nut nguy day', type: 'button', style: 'margin-top:10px', onclick: async () => {
+        if (!await xacNhan({ tieuDe: 'Xóa thông báo?', nut: 'Xóa', nguy: true })) return;
+        if (await thu(() => S.db.xoaThongBaoDot(cu.id), 'Đã xóa')) { s.dong(); lai(); }
+      } }, 'Xóa thông báo') : null);
+    const s = moSheet({ tieuDe: cu ? 'Sửa thông báo' : 'Thông báo mới', noiDung: f });
+  };
+
+  dat(vung,
+    thanh('Thông báo của đợt', '#tap-huan/' + dot, d.ma, h('button', { class: 'nut-lui', type: 'button', onclick: () => soan(null) }, 'Đăng')),
+    h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:16px' }, d.ten),
+    ds.length ? nhom(null, ds.map(x => dong({
+      tieu: x.tieu_de, phu: [ngayGio(x.dang_luc), x.ghim ? 'Đã ghim' : null].filter(Boolean).join(' · '),
+      truoc: icon('chuong'), onclick: () => soan(x)
+    }))) : rong('Chưa có thông báo nào cho đợt này.'));
+}
+
+/* ============================================================ Câu hỏi trong giờ: chọn buổi rồi xem */
+async function manCauHoiDot(vung, dot, buoiId) {
+  const dsDot = await S.db.dsDot();
+  const d = dsDot.find(x => x.id === dot);
+  if (!d) return dat(vung, thanh('Câu hỏi', '#tap-huan'), rong('Không tìm thấy đợt này.'));
+  if (!thayDuocDot(dot)) return dat(vung, thanh('Câu hỏi', '#tap-huan/' + dot, d.ma), rong('Chỉ Ban tổ chức của đợt xem được câu hỏi.'));
+  const ds = await S.db.dsBuoiDot(dot);
+  if (buoiId) {
+    const b = ds.find(x => x.id === buoiId);
+    if (!b) return dat(vung, thanh('Câu hỏi', `#tap-huan/${dot}/cau-hoi`, 'Câu hỏi'), rong('Không tìm thấy buổi này.'));
+    return manCauHoi(vung, {
+      buoi: b, quanLy: laGiangVien(dot), guiDuoc: false,
+      lui: `#tap-huan/${dot}/cau-hoi`, luiNhan: 'Chọn buổi',
+      lai: () => manCauHoiDot(vung, dot, buoiId)
+    });
+  }
+  const nay = Date.now() + (S.lech || 0);
+  const theoGan = ds.slice().sort((x, y) => Math.abs(new Date(x.bat_dau) - nay) - Math.abs(new Date(y.bat_dau) - nay));
+  dat(vung,
+    thanh('Câu hỏi trong giờ', '#tap-huan/' + dot, d.ma),
+    h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:16px' }, 'Chọn buổi để xem câu hỏi học viên gửi. Buổi gần giờ này nằm trên.'),
+    ds.length ? nhom(null, theoGan.map(b => dong({
+      truoc: dauNgay(b.bat_dau), tieu: b.ten, phu: [gio(b.bat_dau), b.phan ? PHAN[b.phan] : null].filter(Boolean).join(' · '),
+      href: `#tap-huan/${dot}/cau-hoi/${b.id}`
+    }))) : rong('Đợt chưa có buổi nào.'));
 }

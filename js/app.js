@@ -31,6 +31,8 @@ const TAB = [
 // Học viên các đợt tập huấn dùng bộ tab riêng: không có lịch CLB, post-test, quản lý.
 const TAB_HV = [
   { id: 'hom-nay', ten: 'Hôm nay', icon: 'hom_nay' },
+  { id: 'lich', ten: 'Lịch học', icon: 'lich' },
+  { id: 'tai-lieu', ten: 'Tài liệu', icon: 'test' },
   { id: 'ho-so', ten: 'Hồ sơ', icon: 'ho_so' }
 ];
 const laHocVien = () => S.toi && S.toi.loai === 'hoc_vien';
@@ -49,7 +51,7 @@ async function tuyen() {
   dat(vung, dangTai());
   window.scrollTo(0, 0);
   try {
-    if (laHocVien()) await tuyenHocVien(vung, tab);
+    if (laHocVien()) await tuyenHocVien(vung, tab, con);
     else if (tab === 'lich') {
       if (con[0] === 'soan') await manSoanLich(vung, con[1], con[2]);
       else if (con[0] === 'kho') await manKhoLich(vung);

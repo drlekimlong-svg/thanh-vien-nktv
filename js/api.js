@@ -101,7 +101,8 @@ export const api = {
   tinhTrangKichHoat: () => rpc('tinh_trang_kich_hoat'),
   capMaKichHoat: (ids) => rpc('cap_ma_kich_hoat', { p_ids: ids }),
 
-  dsBuoi: (tu, den) => rest(`buoi?select=*${tu ? `&bat_dau=gte.${encodeURIComponent(tu)}` : ''}${den ? `&bat_dau=lte.${encodeURIComponent(den)}` : ''}&order=bat_dau`),
+  // dot_id=is.null để lịch và điểm danh của CLB không lẫn buổi của các đợt tập huấn (migration 0014).
+  dsBuoi: (tu, den) => rest(`buoi?select=*&dot_id=is.null${tu ? `&bat_dau=gte.${encodeURIComponent(tu)}` : ''}${den ? `&bat_dau=lte.${encodeURIComponent(den)}` : ''}&order=bat_dau`),
   themBuoi: async (o) => (await them('buoi', o))[0],
   suaBuoi: (id, o) => sua('buoi', id, o),
   xoaBuoi: (id) => xoa('buoi', id),
@@ -126,7 +127,7 @@ export const api = {
   xuLyDon: (id, duyet, phanHoi) => rpc('xu_ly_xin_nghi', { p_id: id, p_duyet: duyet, p_phan_hoi: phanHoi || null }),
   ghiVangPhep: (buoi, tv, lyDo) => rpc('ghi_vang_phep', { p_buoi: buoi, p_tv: tv, p_ly_do: lyDo }),
 
-  dsThongBao: () => rest('thong_bao?select=*&order=ghim.desc,dang_luc.desc&limit=60'),
+  dsThongBao: () => rest('thong_bao?select=*&dot_id=is.null&order=ghim.desc,dang_luc.desc&limit=60'),
   daDoc: async (tv) => (await rest(`thong_bao_da_doc?select=thong_bao_id&thanh_vien_id=eq.${tv}`)).map(x => x.thong_bao_id),
   danhDauDoc: (id, tv) => rest('thong_bao_da_doc', { method: 'POST', body: JSON.stringify({ thong_bao_id: id, thanh_vien_id: tv }), headers: { Prefer: 'resolution=ignore-duplicates' } }),
   themThongBao: (o) => them('thong_bao', o),
@@ -176,6 +177,33 @@ export const api = {
   dsHocVienDot: (dot) => rpc('ds_hoc_vien_dot', { p_dot: dot }),
   napDanhSachHV: (dot, ds, ghi) => rpc('nap_danh_sach_hv', { p_dot: dot, p_ds: ds, p_ghi: !!ghi }),
   capMaKichHoatHV: (dot, ids) => rpc('cap_ma_kich_hoat_hv', { p_dot: dot, p_ids: ids }),
+
+  /* Trong đợt (migration 0014): buổi của đợt, đăng ký chỗ, giờ ra, tài liệu, checklist,
+     câu hỏi trong giờ, thông báo theo đợt. Bảng dang_ky_buoi, dot_tai_lieu, dot_checklist,
+     cau_hoi_buoi không mở cho trình duyệt nên tất cả đi qua hàm. */
+  dsBuoiDot: (dot) => rpc('ds_buoi_dot', { p_dot: dot }),
+  luuBuoiDot: (id, p) => rpc('luu_buoi_dot', { p_id: id, p }),
+  xoaBuoiDot: (id) => rpc('xoa_buoi_dot', { p_id: id }),
+  chonBuoi: (buoi) => rpc('chon_buoi', { p_buoi: buoi }),
+  boChonBuoi: (buoi) => rpc('bo_chon_buoi', { p_buoi: buoi }),
+  dsDangKyBuoi: (buoi) => rpc('ds_dang_ky_buoi', { p_buoi: buoi }),
+  datDangKyBuoi: (buoi, ids) => rpc('dat_dang_ky_buoi', { p_buoi: buoi, p_ids: ids }),
+  datGioRa: (buoi, tv, luc) => rpc('dat_gio_ra', { p_buoi: buoi, p_tv: tv, p_luc: luc ?? null }),
+  dsTaiLieuDot: (dot) => rpc('ds_tai_lieu_dot', { p_dot: dot }),
+  luuTaiLieuDot: (id, p) => rpc('luu_tai_lieu_dot', { p_id: id, p }),
+  xoaTaiLieuDot: (id) => rpc('xoa_tai_lieu_dot', { p_id: id }),
+  dsChecklistDot: (dot) => rpc('ds_checklist_dot', { p_dot: dot }),
+  luuChecklistDot: (id, p) => rpc('luu_checklist_dot', { p_id: id, p }),
+  xoaChecklistDot: (id) => rpc('xoa_checklist_dot', { p_id: id }),
+  guiCauHoiBuoi: (buoi, nd, anTen) => rpc('gui_cau_hoi_buoi', { p_buoi: buoi, p_noi_dung: nd, p_an_ten: !!anTen }),
+  dsCauHoiBuoi: (buoi) => rpc('ds_cau_hoi_buoi', { p_buoi: buoi }),
+  quanTamCauHoi: (id, bat) => rpc('quan_tam_cau_hoi', { p_id: id, p_bat: !!bat }),
+  traLoiCauHoiBuoi: (id, tl) => rpc('tra_loi_cau_hoi_buoi', { p_id: id, p_tra_loi: tl }),
+  anCauHoiBuoi: (id, an) => rpc('an_cau_hoi_buoi', { p_id: id, p_an: !!an }),
+  thongBaoDot: (dot) => rest(`thong_bao?select=*&dot_id=eq.${dot}&order=ghim.desc,dang_luc.desc&limit=60`),
+  luuThongBaoDot: (id, p) => rpc('luu_thong_bao_dot', { p_id: id, p }),
+  xoaThongBaoDot: (id) => rpc('xoa_thong_bao_dot', { p_id: id }),
+  hvTrangChu: () => rpc('hv_trang_chu'),
 
   // Tuyển quân: phiếu của người khác chỉ trả về khi tài khoản được xem kết quả (quy tắc ở bảng tq_danh_gia).
   dsThiSinh: () => rest('tq_thi_sinh?select=id,ma_ts,stt,ho_ten,lop,nam&dot=eq.TQ2026&order=stt'),

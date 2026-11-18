@@ -93,7 +93,7 @@ export async function manHomNay(vung) {
       h('div', { class: 'chi-tiet' }, ngayGio(toi.bat_dau), toi.dia_diem ? ' · ' + toi.dia_diem : ''),
       h('div', { class: 'hang-nut' },
         S.toi.la_phu_trach || (S.toi.buoi_diem_danh || []).includes(toi.id) ? h('a', { class: 'nut', href: '#quan-ly/buoi/' + toi.id }, bieuTuong('quet'), 'Điểm danh') : null,
-        Math.abs(new Date(toi.bat_dau) - Date.now()) < 4 * 3600e3 ? h('button', { class: 'nut' + (S.toi.la_phu_trach ? ' phu' : ''), type: 'button', onclick: moMaCuaToi }, bieuTuong('qr'), 'Mã điểm danh') : null,
+        Math.abs(new Date(toi.bat_dau) - Date.now()) < 4 * 3600e3 ? h('button', { class: 'nut' + (S.toi.la_phu_trach ? ' phu' : ''), type: 'button', onclick: moMaCuaToi }, bieuTuong('qr'), 'Mã điểm danh') : null,
         h('button', { class: 'nut phu', type: 'button', onclick: () => suKienBuoi(toi) }, 'Chi tiết, xin nghỉ')))
       : h('div', { class: 'the-buoi' }, h('div', { class: 'chi-tiet' }, 'Chưa có buổi sinh hoạt nào sắp tới.')),
     baiMo.length ? nhom('Bài cần làm', baiMo.map(b => dong({

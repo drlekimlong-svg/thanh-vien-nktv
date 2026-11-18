@@ -335,31 +335,52 @@ async function manDsBuoi(vung) {
     h('p', { class: 'chu-nhom' }, 'Mã trên app đổi sau mỗi 20 giây nên ảnh chụp gửi cho bạn không dùng được. Khi bật, mã trên thẻ in và ảnh chụp mã không quét được; ai quên điện thoại thì người quét nhìn mặt rồi ghi tay.')] : null);
 }
 
-async function manMotBuoi(vung, id) {
-  const ds = await S.db.dsBuoi();
-  let b = ds.find(x => x.id === id);
+/* Một buổi và máy quét.
+   Buổi sinh hoạt CLB: gọi manMotBuoi(vung, id), không truyền tc.
+   Buổi của đợt tập huấn: v-dot.js truyền tc để đổi phần khác nhau, còn máy quét,
+   hàng chờ khi mất mạng, giọng nói và bảng danh sách dùng chung một bản mã.
+   tc = { b, quanLy, diemDanhDuoc, lui, luiNhan, sua, dongBuoi, lai } */
+export async function manMotBuoi(vung, id, tc) {
+  let b = tc ? tc.b : (await S.db.dsBuoi()).find(x => x.id === id);
   if (!b) throw new Error('Không tìm thấy buổi này.');
   let bang = await S.db.bangDiemDanh(id);
-  const pt = S.toi.la_phu_trach;
+  const pt = tc ? !!tc.quanLy : S.toi.la_phu_trach;
   // Người được giao điểm danh buổi này quét và ghi tay được tới khi buổi đóng.
-  const duocGiao = (S.toi.buoi_diem_danh || []).includes(id);
+  const duocGiao = tc ? !!tc.diemDanhDuoc : (S.toi.buoi_diem_danh || []).includes(id);
   const coThe = (pt || duocGiao) && (!b.dong || S.toi.la_quan_tri);
-  const tv = pt ? await S.db.dsThanhVien() : [];
+  // Buổi của đợt: không tra danh sách thành viên CLB, nên mã cố định đi thẳng lên máy chủ.
+  const tv = !tc && pt ? await S.db.dsThanhVien() : [];
   const theoKhoa = new Map(tv.map(t => [t.khoa_qr, t]));
-  const giao = S.toi.la_quan_tri ? await S.db.nguoiDiemDanh(id).catch(() => []) : [];
+  const giao = !tc && S.toi.la_quan_tri ? await S.db.nguoiDiemDanh(id).catch(() => []) : [];
+  const coGioRa = b.ra_sau_phut !== null && b.ra_sau_phut !== undefined;
   let loc = 'tat', timChu = '';
-  const lai = () => manMotBuoi(vung, id);
+  const lai = () => (tc ? tc.lai() : manMotBuoi(vung, id));
 
   const chuan = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase();
   const nhanTT = (r) => r.trang_thai === 'vang' && !b.dong ? 'chua' : r.trang_thai;
   const dem = () => { const o = { dung: 0, tre: 0, phep: 0, vang: 0 }; bang.forEach(r => { o[r.trang_thai]++; }); return o; };
   const vungSo = h('div'), vungDs = h('div');
-  const veSo = () => { const o = dem(); demMat.textContent = `Có mặt ${o.dung + o.tre}/${bang.length}`; dat(vungSo, soLieu([{ so: o.dung + o.tre, ten: `Có mặt / ${bang.length}`, lop: 'dung' }, { so: o.tre, ten: 'Trễ', lop: 'tre' }, { so: o.phep, ten: 'Có phép', lop: 'phep' }, { so: o.vang, ten: b.dong ? 'Vắng' : 'Chưa điểm danh', lop: 'vang' }])); };
+  const veSo = () => {
+    const o = dem();
+    demMat.textContent = `Có mặt ${o.dung + o.tre}/${bang.length}`;
+    dat(vungSo, soLieu([
+      { so: o.dung + o.tre, ten: `Có mặt / ${bang.length}`, lop: 'dung' },
+      { so: o.tre, ten: 'Trễ', lop: 'tre' },
+      // Dấu cách không ngắt trong "điểm danh" để ô hẹp không tách từ ghép xuống hàng.
+      coGioRa ? { so: bang.filter(r => r.ra_luc).length, ten: 'Đã ra', lop: 'phep' } : null,
+      { so: o.phep, ten: 'Có phép', lop: 'phep' },
+      { so: o.vang, ten: b.dong ? 'Vắng' : 'Chưa điểm danh', lop: 'vang' }
+    ].filter(Boolean)));
+  };
   const veDs = () => {
     const k = chuan(timChu);
     const kq = bang.filter(r => (loc === 'tat' || (loc === 'mat' ? (r.trang_thai === 'dung' || r.trang_thai === 'tre') : r.trang_thai === loc)) && (!k || chuan(r.ho_ten + ' ' + r.ma).includes(k)));
     dat(vungDs, kq.length ? h('div', { class: 'nhom' }, kq.slice(0, 300).map(r => dong({
-      tieu: r.ho_ten, phu: moTaTV(r) + (r.luc && r.cach !== 'bo_sung' ? ' · ' + gio(r.luc) : '') + (r.cach === 'bo_sung' ? ' · Ghi bổ sung sau buổi' : '') + (r.ly_do && r.trang_thai === 'phep' ? ' · ' + r.ly_do : ''),
+      tieu: r.ho_ten, phu: [moTaTV(r) || (tc ? r.ma : ''),
+        r.luc && r.cach !== 'bo_sung' ? (coGioRa ? 'vào ' : '') + gio(r.luc) : null,
+        coGioRa && r.ra_luc ? 'ra ' + gio(r.ra_luc) : null,
+        r.cach === 'bo_sung' ? 'Ghi bổ sung sau buổi' : null,
+        r.ly_do && r.trang_thai === 'phep' ? r.ly_do : null].filter(Boolean).join(' · '),
       sau: h('span', { class: 'the-nhan ' + nhanTT(r) }, TT_DIEM_DANH[nhanTT(r)] + (r.tre_phut ? ` ${r.tre_phut}′` : '')),
       onclick: coThe ? () => suaLuot(r) : null, muiTen: false
     }))) : rong('Không có ai khớp.'));
@@ -373,9 +394,11 @@ async function manMotBuoi(vung, id) {
     const s = moSheet({
       tieuDe: r.ho_ten,
       noiDung: h('div', null,
-        h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:14px' }, moTaTV(r), ' · ', TT_DIEM_DANH[nhanTT(r)]),
+        h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:14px' }, [moTaTV(r) || r.ma, TT_DIEM_DANH[nhanTT(r)]].filter(Boolean).join(' · ')),
         h('div', { class: 'hang-nut', style: 'flex-direction:column' },
           !coMat ? h('button', { class: 'nut', type: 'button', onclick: async () => { const ok = await thu(() => S.db.ghiDiemDanh({ buoi: id, tv: r.thanh_vien_id, luc: new Date(Date.now() + (S.lech || 0)).toISOString(), cach: 'tay' }), 'Đã ghi có mặt'); if (ok) { s.dong(); taiLai(); } } }, 'Ghi có mặt') : null,
+          coGioRa && coMat && !r.ra_luc ? h('button', { class: 'nut', type: 'button', onclick: async () => { const ok = await thu(() => S.db.datGioRa(id, r.thanh_vien_id, new Date(Date.now() + (S.lech || 0)).toISOString()), 'Đã ghi giờ ra'); if (ok) { s.dong(); taiLai(); } } }, 'Ghi giờ ra bây giờ') : null,
+          coGioRa && r.ra_luc ? h('button', { class: 'nut phu', type: 'button', onclick: async () => { const ok = await thu(() => S.db.datGioRa(id, r.thanh_vien_id, null), 'Đã xóa giờ ra'); if (ok) { s.dong(); taiLai(); } } }, 'Xóa giờ ra ' + gio(r.ra_luc)) : null,
           r.trang_thai !== 'phep' && !coMat ? h('button', { class: 'nut phu', type: 'button', onclick: () => { s.dong(); ghiPhep(r); } }, 'Ghi vắng có phép') : null,
           coMat ? h('button', { class: 'nut nguy', type: 'button', onclick: async () => { const ok = await thu(() => S.db.xoaDiemDanh(id, r.thanh_vien_id), 'Đã xóa lượt điểm danh'); if (ok) { s.dong(); taiLai(); } } }, 'Xóa lượt điểm danh') : null))
     });
@@ -455,18 +478,35 @@ async function manMotBuoi(vung, id) {
       ? hienKQ('tre', x.ho_ten, 'Đã ngừng hoạt động. Lượt này vẫn được ghi.', 'Đã điểm danh')
       : hienKQ(tre_ ? 'tre' : 'ok', x.ho_ten, [moTaTV(x), tre_ ? `Trễ ${tre_} phút` : 'Đúng giờ'].filter(Boolean).join(' · '), tre_ ? 'Đã điểm danh, trễ' : 'Đã điểm danh');
     let hoanTac = null;
+    let quetRa = false;
     if (t) {
       const r = bang.find(x => x.thanh_vien_id === t.thanh_vien_id);
-      if (r && (r.trang_thai === 'dung' || r.trang_thai === 'tre')) return hienKQ('roi', r.ho_ten, `Đã điểm danh lúc ${gio(r.luc)}.`, 'Đã điểm danh rồi');
-      // Biết người này: báo ngay, gửi lên máy chủ phía sau; mất mạng thì lượt nằm trong hàng chờ.
-      baoXong(t, laTre ? tre : null);
-      hoanTac = ghiVaoBang(t, laTre, tre, luc, cach);
+      if (r && (r.trang_thai === 'dung' || r.trang_thai === 'tre')) {
+        // Buổi không tính giờ ra: quét lại là quét trùng. Buổi có giờ ra: để máy chủ quyết định.
+        if (!coGioRa) return hienKQ('roi', r.ho_ten, `Đã điểm danh lúc ${gio(r.luc)}.`, 'Đã điểm danh rồi');
+        if (r.ra_luc) return hienKQ('roi', r.ho_ten, `Đã vào ${gio(r.luc)}, ra ${gio(r.ra_luc)}.`, 'Đã vào và ra');
+        quetRa = true;
+        hienKQ('cho', r.ho_ten, 'Đang ghi giờ ra…', null);
+      } else {
+        // Biết người này: báo ngay, gửi lên máy chủ phía sau; mất mạng thì lượt nằm trong hàng chờ.
+        baoXong(t, laTre ? tre : null);
+        hoanTac = ghiVaoBang(t, laTre, tre, luc, cach);
+      }
     } else hienKQ('cho', 'Đang kiểm tra…', null, null);
     try {
       const kq = await S.db.ghiDiemDanh({ buoi: id, khoa, luc, cach });
       if (kq && kq.ok === false) {
         if (hoanTac) hoanTac();
         return hienKQ('loi', kq.ho_ten || (t && t.ho_ten) || 'Không ghi được', kq.loi, kq.het_han ? 'Mã hết hạn' : kq.ma_cu ? 'Mã cũ' : 'Không hợp lệ');
+      }
+      // Buổi có giờ ra: quét lần hai ghi giờ ra, hoặc báo còn mấy phút nữa mới được ra.
+      if (kq && kq.ok && coGioRa && (kq.ra || kq.con_phut)) {
+        const r = bang.find(x => x.thanh_vien_id === kq.id);
+        if (r) { r.ra_luc = kq.ra_luc; r.luc = kq.luc; capNhat(); }
+        else { ghiVaoBang(kq, !!kq.tre_phut, kq.tre_phut, kq.luc, kq.cach); const x = bang.find(y => y.thanh_vien_id === kq.id); if (x) { x.ra_luc = kq.ra_luc; capNhat(); } }
+        return kq.ra
+          ? hienKQ('ok', kq.ho_ten, `Vào ${gio(kq.luc)} · ra ${gio(kq.ra_luc)}`, 'Đã điểm danh ra')
+          : hienKQ('tre', kq.ho_ten, `Đã vào lúc ${gio(kq.luc)}. Quét lại sau ${kq.con_phut} phút nữa để điểm danh ra.`, 'Chưa tới giờ ra');
       }
       if (!t && kq) {
         const r = bang.find(x => x.thanh_vien_id === kq.id);
@@ -475,7 +515,8 @@ async function manMotBuoi(vung, id) {
         baoXong(kq, kq.tre_phut);
       }
     } catch (e) {
-      if (/mạng|máy chủ đang/i.test(e.message) && t) { hangCho.them({ buoi: id, khoa, luc, cach }); capNhatCho(); }
+      // Lượt quét ra không xếp vào hàng chờ: hàng chờ gửi lại như lượt vào nên dễ sai giờ.
+      if (/mạng|máy chủ đang/i.test(e.message) && t && !quetRa) { hangCho.them({ buoi: id, khoa, luc, cach }); capNhatCho(); }
       else { if (hoanTac) hoanTac(); hienKQ('loi', t ? t.ho_ten : 'Không ghi được', e.message, 'Không ghi được'); }
     }
   }
@@ -505,10 +546,13 @@ async function manMotBuoi(vung, id) {
   const tenGiao = giao.map(g => (tv.find(t => t.id === g.thanh_vien_id) || {}).ho_ten).filter(Boolean);
 
   dat(vung,
-    thanhNho(b.ten, S.toi.xem_duoc_ten ? '#quan-ly/buoi' : '#hom-nay', S.toi.xem_duoc_ten ? 'Buổi' : 'Hôm nay', pt ? h('button', { class: 'nut-lui', type: 'button', onclick: () => suaBuoi(b, lai) }, 'Sửa') : null),
-    h('p', { class: 'tieu-de-phu', style: 'margin-top:4px;text-align:center' }, ngayGio(b.bat_dau), ` · Trễ sau ${b.tre_sau_phut} phút`, b.dong ? ' · Đã đóng' : ''),
+    tc
+      ? thanhNho(b.ten, tc.lui, tc.luiNhan, pt ? h('button', { class: 'nut-lui', type: 'button', onclick: tc.sua }, 'Sửa') : null)
+      : thanhNho(b.ten, S.toi.xem_duoc_ten ? '#quan-ly/buoi' : '#hom-nay', S.toi.xem_duoc_ten ? 'Buổi' : 'Hôm nay', pt ? h('button', { class: 'nut-lui', type: 'button', onclick: () => suaBuoi(b, lai) }, 'Sửa') : null),
+    h('p', { class: 'tieu-de-phu', style: 'margin-top:4px;text-align:center' }, ngayGio(b.bat_dau), ` · Trễ sau ${b.tre_sau_phut} phút`,
+      coGioRa ? ` · Quét lại sau ${b.ra_sau_phut} phút là giờ ra` : '', b.dong ? ' · Đã đóng' : ''),
     vungSo,
-    S.toi.la_quan_tri ? nhom(null, dong({ tieu: 'Người điểm danh buổi này', phu: tenGiao.length ? tenGiao.join(', ') : 'Chưa giao ai. Ban cố vấn và người phụ trách luôn điểm danh được.', onclick: giaoQuyen })) : null,
+    !tc && S.toi.la_quan_tri ? nhom(null, dong({ tieu: 'Người điểm danh buổi này', phu: tenGiao.length ? tenGiao.join(', ') : 'Chưa giao ai. Ban cố vấn và người phụ trách luôn điểm danh được.', onclick: giaoQuyen })) : null,
     coThe ? h('div', null,
       h('div', { class: 'khung-quet' }, video, h('div', { class: 'ngam' }), baoCam, demMat, lop),
       ketQua, baoCho, nhapAnh,
@@ -518,10 +562,10 @@ async function manMotBuoi(vung, id) {
     h('div', { class: 'chon-ngang' }, vien('Tất cả', 'tat'), vien('Có mặt', 'mat'), vien('Trễ', 'tre'), vien('Có phép', 'phep'), vien(b.dong ? 'Vắng' : 'Chưa điểm danh', 'vang')),
     vungDs,
     h('div', { class: 'hang-nut', style: 'margin-top:4px' },
-      h('button', { class: 'nut phu', type: 'button', onclick: () => taiCSV(`diem-danh-${giaTriNgay(b.bat_dau)}.csv`, [['Mã', 'Họ và tên', 'Generation', 'Nhà', 'Cấp', 'Trạng thái', 'Giờ', 'Trễ (phút)', 'Lý do'], ...bang.map(r => [r.ma, r.ho_ten, r.gen, r.nha, r.cap, TT_DIEM_DANH[nhanTT(r)], r.luc ? gio(r.luc) : '', r.tre_phut, r.ly_do])]) }, 'Xuất CSV'),
+      h('button', { class: 'nut phu', type: 'button', onclick: () => taiCSV(`diem-danh-${giaTriNgay(b.bat_dau)}.csv`, [['Mã', 'Họ và tên', 'Generation', 'Nhà', 'Cấp', 'Trạng thái', 'Giờ vào', 'Giờ ra', 'Trễ (phút)', 'Lý do'], ...bang.map(r => [r.ma, r.ho_ten, r.gen, r.nha, r.cap, TT_DIEM_DANH[nhanTT(r)], r.luc ? gio(r.luc) : '', r.ra_luc ? gio(r.ra_luc) : '', r.tre_phut, r.ly_do])]) }, 'Xuất CSV'),
       pt ? h('button', { class: 'nut ' + (b.dong ? 'phu' : ''), type: 'button', disabled: b.dong && !S.toi.la_quan_tri, onclick: async () => {
         if (!b.dong && !await xacNhan({ tieuDe: 'Đóng buổi?', chu: 'Người chưa điểm danh sẽ tính là vắng và buổi được tính vào chuyên cần.', nut: 'Đóng buổi' })) return;
-        const ok = await thu(() => S.db.suaBuoi(id, { dong: !b.dong }), b.dong ? 'Đã mở lại buổi' : 'Đã đóng buổi');
+        const ok = await thu(() => (tc ? tc.dongBuoi(!b.dong) : S.db.suaBuoi(id, { dong: !b.dong })), b.dong ? 'Đã mở lại buổi' : 'Đã đóng buổi');
         if (ok) lai();
       } }, b.dong ? 'Mở lại buổi' : 'Đóng buổi') : null));
   capNhat(); capNhatCho();
