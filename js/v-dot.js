@@ -23,6 +23,7 @@ export async function tuyenTapHuan(vung, con) {
   const [a, b, c] = con;
   if (a && b === 'nap') return manNapDS(vung, a);
   if (a && b === 'hoc-vien') return manHocVien(vung, a);
+  if (a && b === 'thu') return manThuDot(vung, a);
   if (a && b === 'buoi' && c) return manBuoiDot(vung, a, c);
   if (a && b === 'buoi') return manDsBuoiDot(vung, a);
   if (a && b === 'tai-lieu') return manTaiLieuDot(vung, a);
@@ -144,7 +145,8 @@ async function manMotDot(vung, id) {
     nhom('Học viên',
       ql ? dong({ tieu: 'Nạp danh sách', phu: 'Dán bảng đăng ký, app xem trước rồi mới ghi', truoc: icon('don'), href: `#tap-huan/${id}/nap` }) : null,
       ql ? dong({ tieu: 'Danh sách học viên', phu: 'Xem, cấp mã kích hoạt, xuất bảng cho thư ký gửi', truoc: icon('nguoi'), href: `#tap-huan/${id}/hoc-vien` })
-        : dong({ tieu: 'Danh sách học viên', phu: 'Chỉ trưởng ban, thư ký và quản trị xem được danh sách và thông tin học viên', truoc: icon('nguoi'), muiTen: false })),
+        : dong({ tieu: 'Danh sách học viên', phu: 'Chỉ trưởng ban, thư ký và quản trị xem được danh sách và thông tin học viên', truoc: icon('nguoi'), muiTen: false }),
+      ql ? dong({ tieu: 'Thư đã gửi', phu: 'Ai nhận được mã qua email, ai phải gửi tay', truoc: icon('chuong'), href: `#tap-huan/${id}/thu` }) : null),
     nhom('Trong buổi',
       dong({ tieu: 'Buổi và điểm danh', truoc: icon('lich'), href: `#tap-huan/${id}/buoi`,
         phu: buoi.length ? `${buoi.length} buổi · ${buoi.filter(b => b.dong).length} đã đóng` : 'Chưa có buổi nào' }),
@@ -343,10 +345,71 @@ async function manNapDS(vung, id) {
     vungKQ);
 }
 
+/* ---------- Gửi mã kích hoạt qua email (migration 0016, Edge Function gui-thu) ----------
+
+   Mã kích hoạt bản rõ chỉ nằm trong trí nhớ của trang này, đóng bảng là mất. Trình duyệt gửi
+   lên id học viên và mã; địa chỉ nhận do máy chủ tra trong hồ sơ, nên thư không thể đi lạc.
+   Gửi theo từng lượt nhỏ để người bấm thấy tiến độ và để Edge Function không chạy quá lâu. */
+
+const MOI_LUOT = 40;
+export const batGuiThu = () => !!(S.caiDat && S.caiDat.thu && S.caiDat.thu.bat);
+
+async function guiMaQuaEmail(d, hang, nut) {
+  let ds = (hang || []).filter(r => r.ma_kich_hoat && r.email);
+  if (!ds.length) return toast('Không có mã nào để gửi.', true);
+  // Dòng từ màn Nạp danh sách không kèm id, tra lại theo email trong danh sách học viên của đợt.
+  if (ds.some(r => !r.id)) {
+    const hv = await S.db.dsHocVienDot(d.id).catch(() => []);
+    const theoEmail = new Map(hv.map(x => [String(x.email || '').toLowerCase(), x.id]));
+    ds = ds.map(r => Object.assign({}, r, { id: r.id || theoEmail.get(String(r.email || '').toLowerCase()) }))
+      .filter(r => r.id);
+    if (!ds.length) return toast('Không tra được học viên để gửi. Vào Danh sách học viên gửi lại.', true);
+  }
+  const tenCua = new Map(ds.map(r => [r.id, r.ho_ten || r.email]));
+  const chuCu = nut.textContent;
+  nut.disabled = true;
+  const ra = [];
+  try {
+    for (let i = 0; i < ds.length; i += MOI_LUOT) {
+      const lo = ds.slice(i, i + MOI_LUOT);
+      nut.textContent = `Đang gửi ${Math.min(i + lo.length, ds.length)}/${ds.length}…`;
+      const kq = await S.db.guiThu({
+        viec: 'ma_kich_hoat', dot_id: d.id,
+        ds: lo.map(r => ({ id: r.id, ma_kich_hoat: r.ma_kich_hoat }))
+      });
+      (kq.ds || []).forEach(r => ra.push(Object.assign({ ho_ten: tenCua.get(r.id) }, r)));
+    }
+  } catch (e) {
+    nut.disabled = false; nut.textContent = chuCu;
+    return toast(e.message, true);
+  }
+  nut.disabled = false;
+  nut.textContent = chuCu;
+  const thanhCong = ra.filter(r => r.ok);
+  const hong = ra.filter(r => !r.ok);
+  if (!hong.length) return toast(`Đã gửi thư cho ${thanhCong.length} người`);
+  moSheet({
+    tieuDe: `Gửi xong · ${thanhCong.length} thành, ${hong.length} chưa`,
+    noiDung: h('div', null,
+      h('div', { class: 'bang-tin vang' }, 'Những người dưới đây chưa nhận được thư. Gửi tay cho họ bằng bảng đã tải về, mã vẫn còn dùng được.'),
+      h('div', { class: 'nhom' }, hong.map(r => dong({
+        tieu: r.ho_ten || r.email || 'Không rõ', phu: r.email || null,
+        sau: h('span', { class: 'the-nhan vang' }, r.loi || 'Lỗi'), muiTen: false
+      }))))
+  });
+}
+
+const nutGuiEmail = (d, layHang, nhan) => h('button', {
+  class: 'nut phu', type: 'button',
+  onclick: (e) => guiMaQuaEmail(d, layHang(), e.currentTarget)
+}, nhan);
+
 /* ---------- Bảng gửi học viên: mã kích hoạt chỉ hiện một lần ---------- */
 function hienMaHV(ds, d) {
   const co = (ds || []).filter(r => r.tinh_trang === 'moi' || r.tinh_trang === 'da_co_tai_khoan');
   if (!co.length) return;
+  // Người đã có tài khoản dùng mật khẩu cũ nên không có mã để gửi.
+  const coMa = co.filter(r => r.ma_kich_hoat && r.email);
   const ghiChu = (r) => r.ma_kich_hoat ? '' : 'Đã có tài khoản, dùng mật khẩu cũ';
   const appUrl = (window.NKTV_CONFIG && window.NKTV_CONFIG.appUrl) || location.origin + location.pathname;
   const inPhieu = () => {
@@ -370,6 +433,12 @@ function hienMaHV(ds, d) {
     tieuDe: `Bảng gửi học viên · ${co.length} người`,
     noiDung: h('div', null,
       h('div', { class: 'bang-tin' }, 'Mã kích hoạt chỉ hiện một lần này. Tải tệp hoặc in phiếu ngay. Cần mã mới thì vào Danh sách học viên cấp lại.'),
+      coMa.length && batGuiThu() ? h('button', {
+        class: 'nut day', type: 'button', style: 'margin-bottom:12px',
+        onclick: (e) => guiMaQuaEmail(d, coMa, e.currentTarget)
+      }, `Gửi email cho ${coMa.length} người`) : null,
+      coMa.length && !batGuiThu() ? h('p', { class: 'chu-nho', style: 'margin-bottom:12px' },
+        'Gửi thư tự động đang tắt. Quản trị bật ở Quản lý › Gửi thư, rồi quay lại cấp mã là gửi được.') : null,
       h('div', { class: 'hang-nut', style: 'margin-bottom:16px' },
         h('button', { class: 'nut phu', type: 'button', onclick: inPhieu }, 'In phiếu'),
         h('button', { class: 'nut phu', type: 'button', onclick: chepTin }, 'Chép tất cả'),
@@ -400,18 +469,27 @@ async function manHocVien(vung, id) {
   const daKH = hv.filter(x => x.da_kich_hoat);
   const chuaCapMa = hv.filter(x => !x.da_kich_hoat && !x.ma_con_han);
   const daCapMa = hv.filter(x => !x.da_kich_hoat && x.ma_con_han);
+  // Chưa nhận thư: chưa gửi lần nào, hoặc lần gửi gần nhất bị lỗi. Người đã kích hoạt rồi thì thôi.
+  const chuaNhanThu = hv.filter(x => !x.da_kich_hoat && x.thu_trang_thai !== 'da_gui');
+  const nhanThu = (x) => x.thu_luc
+    ? (x.thu_trang_thai === 'da_gui' ? 'Đã gửi thư ' + ngay(x.thu_luc) : 'Thư lỗi ' + ngay(x.thu_luc))
+    : null;
 
   const vungDs = h('div');
   const ve = () => {
     const k = boDau(tim);
     const theoLoc = hv.filter(x =>
-      (loc === 'tat' || (loc === 'da' ? x.da_kich_hoat : loc === 'ma' ? !x.da_kich_hoat && x.ma_con_han : !x.da_kich_hoat && !x.ma_con_han))
+      (loc === 'tat' ? true
+        : loc === 'da' ? x.da_kich_hoat
+        : loc === 'ma' ? !x.da_kich_hoat && x.ma_con_han
+        : loc === 'thu' ? !x.da_kich_hoat && x.thu_trang_thai !== 'da_gui'
+        : !x.da_kich_hoat && !x.ma_con_han)
       && (!k || boDau([x.ho_ten, x.ma, x.email, x.truong, x.mssv].join(' ')).includes(k)));
     dat(vungDs,
       h('div', { class: 'nhan-nhom' }, theoLoc.length + ' người'),
       theoLoc.length ? h('div', { class: 'nhom' }, theoLoc.map(x => dong({
         tieu: x.ho_ten,
-        phu: [x.ma, x.email, x.truong, x.nam_hoc].filter(Boolean).join(' · '),
+        phu: [x.ma, x.email, nhanThu(x) || x.truong, x.nam_hoc].filter(Boolean).join(' · '),
         sau: x.da_kich_hoat ? h('span', { class: 'the-nhan dung' }, 'Đã kích hoạt')
           : x.ma_con_han ? h('span', { class: 'the-nhan tre' }, 'Đã cấp mã') : h('span', { class: 'the-nhan' }, 'Chưa cấp mã'),
         onclick: () => moHV(x)
@@ -431,11 +509,16 @@ async function manHocVien(vung, id) {
           x.nam_hoc ? dong({ tieu: 'Năm học', sau: x.nam_hoc, muiTen: false }) : null,
           x.mssv ? dong({ tieu: 'MSSV', sau: x.mssv, muiTen: false }) : null,
           x.lop ? dong({ tieu: 'Lớp', sau: x.lop, muiTen: false }) : null,
-          dong({ tieu: 'Tài khoản', sau: x.da_kich_hoat ? 'Đã kích hoạt' : x.ma_con_han ? 'Đã cấp mã, chưa dùng' : 'Chưa cấp mã', muiTen: false })),
+          dong({ tieu: 'Tài khoản', sau: x.da_kich_hoat ? 'Đã kích hoạt' : x.ma_con_han ? 'Đã cấp mã, chưa dùng' : 'Chưa cấp mã', muiTen: false }),
+          dong({ tieu: 'Thư báo mã', sau: x.thu_luc
+            ? (x.thu_trang_thai === 'da_gui' ? 'Đã gửi ' + ngayGio(x.thu_luc) : 'Lỗi ' + ngayGio(x.thu_luc))
+            : 'Chưa gửi', muiTen: false })),
+        batGuiThu() && !x.da_kich_hoat ? h('p', { class: 'chu-nho', style: 'margin-bottom:10px' },
+          'Mã cũ đã băm nên không gửi lại được. Cấp mã mới rồi app cho gửi email ngay sau đó.') : null,
         h('button', { class: 'nut day', type: 'button', onclick: async () => {
           if (x.da_kich_hoat && !await xacNhan({ tieuDe: 'Cấp lại mã?', chu: 'Mật khẩu cũ vẫn dùng được cho đến khi bạn ấy đặt mật khẩu mới bằng mã.', nut: 'Cấp lại' })) return;
           const kq = await thu(() => S.db.capMaKichHoatHV(id, [x.id]));
-          if (kq) { s.dong(); hienMaHV(kq.map(r => ({ ho_ten: r.ho_ten, email: r.email, ma: r.ma, ma_kich_hoat: r.ma_kich_hoat, tinh_trang: 'moi' })), d); lai(); }
+          if (kq) { s.dong(); hienMaHV(kq.map(r => ({ id: r.id, ho_ten: r.ho_ten, email: r.email, ma: r.ma, ma_kich_hoat: r.ma_kich_hoat, tinh_trang: 'moi' })), d); lai(); }
         } }, x.da_kich_hoat ? 'Cấp lại mã kích hoạt' : 'Cấp mã kích hoạt'))
     });
   };
@@ -456,17 +539,63 @@ async function manHocVien(vung, id) {
     chuaCapMa.length ? h('button', { class: 'nut day', type: 'button', style: 'margin-bottom:18px', onclick: async () => {
       if (!await xacNhan({ tieuDe: `Cấp mã cho ${chuaCapMa.length} người?`, chu: 'Mã chỉ hiện một lần ngay sau bước này.', nut: 'Cấp mã' })) return;
       const kq = await thu(() => S.db.capMaKichHoatHV(id, chuaCapMa.map(x => x.id)));
-      if (kq) { hienMaHV(kq.map(r => ({ ho_ten: r.ho_ten, email: r.email, ma: r.ma, ma_kich_hoat: r.ma_kich_hoat, tinh_trang: 'moi' })), d); lai(); }
+      if (kq) { hienMaHV(kq.map(r => ({ id: r.id, ho_ten: r.ho_ten, email: r.email, ma: r.ma, ma_kich_hoat: r.ma_kich_hoat, tinh_trang: 'moi' })), d); lai(); }
     } }, `Cấp mã cho ${chuaCapMa.length} người chưa có`) : null,
+    // Mã cũ chỉ còn bản băm nên muốn gửi lại thì phải cấp mã mới. Nút này làm liền hai việc đó.
+    batGuiThu() && chuaNhanThu.length ? h('button', { class: 'nut phu day', type: 'button', style: 'margin-bottom:18px', onclick: async () => {
+      if (!await xacNhan({ tieuDe: `Cấp mã mới và gửi email cho ${chuaNhanThu.length} người?`,
+        chu: 'Mã cũ của những người này hết dùng được. Ai đã kích hoạt rồi thì không nằm trong danh sách.', nut: 'Cấp và gửi' })) return;
+      const kq = await thu(() => S.db.capMaKichHoatHV(id, chuaNhanThu.map(x => x.id)));
+      if (kq) { hienMaHV(kq.map(r => ({ id: r.id, ho_ten: r.ho_ten, email: r.email, ma: r.ma, ma_kich_hoat: r.ma_kich_hoat, tinh_trang: 'moi' })), d); lai(); }
+    } }, `Cấp mã mới và gửi email cho ${chuaNhanThu.length} người chưa nhận thư`) : null,
     hv.length ? h('div', { class: 'hang-nut', style: 'margin-bottom:12px' },
       h('button', { class: 'nut phu', type: 'button', onclick: () => taiCSV(`hoc-vien-${d.ma}.csv`,
-        [['Mã học viên', 'Họ và tên', 'Email', 'Số điện thoại', 'Trường', 'Ngành', 'Năm học', 'MSSV', 'Lớp', 'Tài khoản'],
+        [['Mã học viên', 'Họ và tên', 'Email', 'Số điện thoại', 'Trường', 'Ngành', 'Năm học', 'MSSV', 'Lớp', 'Tài khoản', 'Thư báo mã'],
           ...hv.map(x => [x.ma, x.ho_ten, x.email, x.sdt, x.truong, x.nganh, x.nam_hoc, x.mssv, x.lop,
-            x.da_kich_hoat ? 'Đã kích hoạt' : x.ma_con_han ? 'Đã cấp mã, chưa dùng' : 'Chưa cấp mã'])]) }, 'Xuất CSV')) : null,
+            x.da_kich_hoat ? 'Đã kích hoạt' : x.ma_con_han ? 'Đã cấp mã, chưa dùng' : 'Chưa cấp mã',
+            nhanThu(x) || 'Chưa gửi'])]) }, 'Xuất CSV')) : null,
     hv.length ? h('input', { class: 'tim', type: 'search', placeholder: 'Tìm tên, mã, email, trường…', 'aria-label': 'Tìm học viên', oninput: (e) => { tim = e.target.value; ve(); } }) : null,
-    hv.length ? h('div', { class: 'chon-ngang' }, vien('Tất cả', 'tat'), vien('Đã kích hoạt', 'da'), vien('Đã cấp mã', 'ma'), vien('Chưa cấp mã', 'chua')) : null,
+    hv.length ? h('div', { class: 'chon-ngang' }, vien('Tất cả', 'tat'), vien('Đã kích hoạt', 'da'), vien('Đã cấp mã', 'ma'), vien('Chưa cấp mã', 'chua'),
+      batGuiThu() ? vien('Chưa nhận thư', 'thu') : null) : null,
     vungDs);
   if (hv.length) ve();
+}
+
+/* ---------- Thư đã gửi của đợt (migration 0016) ---------- */
+async function manThuDot(vung, id) {
+  const dsDot = await S.db.dsDot();
+  const d = dsDot.find(x => x.id === id);
+  if (!d) return dat(vung, thanh('Thư đã gửi', '#tap-huan'), rong('Không tìm thấy đợt này.'));
+  if (!laBtcQuanLy(id)) return dat(vung, thanh('Thư đã gửi', '#tap-huan/' + id, d.ma),
+    rong('Chỉ trưởng ban, thư ký của đợt và quản trị xem được nhật ký thư.'));
+  const ds = await S.db.dsThuDaGui(id);
+  const thanhCong = ds.filter(x => x.trang_thai === 'da_gui');
+  const hong = ds.filter(x => x.trang_thai === 'loi');
+
+  dat(vung,
+    thanh('Thư đã gửi', '#tap-huan/' + id, d.ma),
+    h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:16px' }, d.ten),
+    !ds.length ? rong(batGuiThu()
+      ? 'Chưa gửi thư nào. Vào Danh sách học viên, cấp mã rồi bấm gửi email.'
+      : 'Chưa gửi thư nào, và gửi thư tự động đang tắt. Quản trị bật ở Quản lý › Gửi thư.') : null,
+    ds.length ? soLieu([
+      { so: thanhCong.length, ten: 'Đã gửi', lop: 'dung' },
+      { so: hong.length, ten: 'Chưa gửi được', lop: hong.length ? 'vang' : '' }
+    ]) : null,
+    ds.length ? h('div', { class: 'bang-tin' }, 'Nhật ký chỉ ghi gửi được hay không, không ghi nội dung mã. Thư đã gửi vẫn có thể rơi vào hộp Spam của người nhận.') : null,
+    ds.length ? h('div', { class: 'hang-nut', style: 'margin:12px 0 16px' },
+      h('button', { class: 'nut phu', type: 'button', onclick: () => taiCSV(`thu-da-gui-${d.ma}.csv`,
+        [['Lúc', 'Họ và tên', 'Mã học viên', 'Email', 'Kết quả', 'Lý do', 'Người gửi'],
+          ...ds.map(x => [ngayGio(x.luc), x.ho_ten || '', x.ma || '', x.email,
+            x.trang_thai === 'da_gui' ? 'Đã gửi' : 'Lỗi', x.loi || '', x.gui_boi || ''])]) }, 'Xuất CSV')) : null,
+    hong.length ? nhom('Chưa gửi được', hong.map(x => dong({
+      tieu: x.ho_ten || x.email, phu: [x.email, ngayGio(x.luc)].filter(Boolean).join(' · '),
+      sau: h('span', { class: 'the-nhan vang' }, x.loi || 'Lỗi'), muiTen: false
+    }))) : null,
+    thanhCong.length ? nhom('Đã gửi', thanhCong.map(x => dong({
+      tieu: x.ho_ten || x.email, phu: [x.email, ngayGio(x.luc)].filter(Boolean).join(' · '),
+      sau: h('span', { class: 'the-nhan dung' }, 'Đã gửi'), muiTen: false
+    }))) : null);
 }
 
 /* ============================================================ Buổi của đợt (migration 0014)

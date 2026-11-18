@@ -238,6 +238,14 @@ export const api = {
     method: 'POST', headers: { apikey: C.supabaseKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_ma: ma })
   }),
 
+  /* Gửi thư (migration 0016). Mã kích hoạt bản rõ chỉ đi từ trình duyệt sang Edge Function
+     rồi vào thư, không lưu lại ở đâu. Địa chỉ nhận do máy chủ tra, trình duyệt chỉ gửi id. */
+  guiThu: async (than) => goiFetch(`${C.supabaseUrl}/functions/v1/gui-thu`, {
+    method: 'POST', headers: await dauDe(), body: JSON.stringify(than)
+  }),
+  dsThuDaGui: (dot) => rpc('ds_thu_da_gui', { p_dot: dot }),
+  dsThuGanDay: () => rpc('ds_thu_gan_day'),
+
   // Tuyển quân: phiếu của người khác chỉ trả về khi tài khoản được xem kết quả (quy tắc ở bảng tq_danh_gia).
   dsThiSinh: () => rest('tq_thi_sinh?select=id,ma_ts,stt,ho_ten,lop,nam&dot=eq.TQ2026&order=stt'),
   dsDanhGiaTQ: () => rest('tq_danh_gia?select=*&order=gui_luc'),

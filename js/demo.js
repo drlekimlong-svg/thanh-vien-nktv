@@ -54,7 +54,10 @@ export function demo(vai) {
   ];
   const lam = [3, 5, 6, 7, 10, 13].map((i, k) => ({ id: 'l' + i, bai_id: 'p3', thanh_vien_id: 't' + i, lan: 1, han_luc: buoi[0].bat_dau, nop_luc: buoi[0].bat_dau, tra_loi: {}, so_dung: k % 3 ? 1 : 0, tong: 1, diem: k % 3 ? 10 : 0 }));
   const giao = [{ buoi_id: 'b2', thanh_vien_id: 't2' }];
+  // Gửi thư (migration 0016): bản chạy thử bật sẵn để thấy nút, nhưng không gửi thư thật đi đâu cả.
+  const thuDaGui = [];
   const caiDat = { danh_muc_da_duyet: false, chi_nhan_ma_dong: true,
+    thu: { bat: true, ten_nguoi_gui: 'CLB Ngoại Khoa Trưng Vương', dia_chi_gui: 'clb@vi-du.test', tra_loi_toi: '', app_url: 'https://vi-du.test/app' },
     tuyen_quan: { mo: false, ten: 'Tuyển quân 2026 · Gen12', vong: 'Vòng 3 · Phỏng vấn', mo_ta: 'Thuyết trình ngắn kết hợp phỏng vấn, ứng xử tình huống giả định.\nPhòng 302, 303.\n17:30–20:30 thứ Bảy 14/11/2026 và 7:30–11:30 Chủ nhật 15/11/2026.' } };
   // Tuyển quân: thí sinh giả; người t0 (quản trị) và t5 đã chấm vài phiếu.
   const thiSinh = Array.from({ length: 12 }, (_, i) => ({ id: 'ts' + i, ma_ts: String(2601 + i), stt: i + 1, ho_ten: ['Thí sinh Mẫu', 'Ứng viên Thử', 'Bạn Giả Định'][i % 3] + ' ' + String.fromCharCode(65 + i), lop: ['Y2025A', 'Y2026C', 'Y2024B'][i % 3], nam: [2, 1, 3][i % 3] }));
@@ -539,8 +542,10 @@ export function demo(vai) {
       if (!laBtcDot(id)) return [];
       return dotHv.filter(x => x.dot_id === id && x.trang_thai === 'ghi_danh').map(x => {
         const t = hv.find(h => h.id === x.thanh_vien_id);
+        const th = thuDaGui.filter(z => z.dot_id === id && z.thanh_vien_id === t.id && z.loai === 'ma_kich_hoat').slice(-1)[0];
         return { id: t.id, ma: t.ma, ho_ten: t.ho_ten, email: t.email, sdt: t.sdt, truong: t.truong, nganh: t.nganh, nam_hoc: t.nam_hoc, mssv: t.mssv, lop: t.lop,
-          da_kich_hoat: !!t.user_id, ma_con_han: !!t.ma_con_han, trang_thai: x.trang_thai, ghi_danh_luc: x.ghi_danh_luc };
+          da_kich_hoat: !!t.user_id, ma_con_han: !!t.ma_con_han, trang_thai: x.trang_thai, ghi_danh_luc: x.ghi_danh_luc,
+          thu_luc: th ? th.luc : null, thu_trang_thai: th ? th.trang_thai : null };
       }).sort((a, b) => a.ho_ten.localeCompare(b.ho_ten, 'vi'));
     },
     async napDanhSachHV(id, ds, ghi) {
@@ -588,6 +593,53 @@ export function demo(vai) {
         .filter(t => t && dotHv.some(g => g.dot_id === id && g.thanh_vien_id === t.id && g.trang_thai === 'ghi_danh'))
         .sort((a, b) => a.ma.localeCompare(b.ma))
         .map(t => { t.ma_con_han = true; return { id: t.id, ma: t.ma, ho_ten: t.ho_ten, email: t.email, ma_kich_hoat: maKichHoat() }; });
+    },
+
+    /* ---------- Gửi thư (migration 0016) ----------
+       Không có thư nào rời máy. Cứ người thứ hai thì báo lỗi để thấy nhánh "chưa gửi được". */
+    async guiThu(than) {
+      await gioi(400);
+      const t = me();
+      if (than.viec === 'kiem') {
+        if (t.vai_tro !== 'quan_tri') throw new Error('Chỉ quản trị làm được việc này.');
+        return { ok: true, co_khoa: true, co_dia_chi: !!caiDat.thu.dia_chi_gui, bat: caiDat.thu.bat === true,
+          ten_nguoi_gui: caiDat.thu.ten_nguoi_gui, dia_chi_gui: caiDat.thu.dia_chi_gui, tra_loi_toi: caiDat.thu.tra_loi_toi, app_url: caiDat.thu.app_url };
+      }
+      if (than.viec === 'thu') {
+        if (t.vai_tro !== 'quan_tri') throw new Error('Chỉ quản trị làm được việc này.');
+        thuDaGui.push({ id: uid(), dot_id: null, thanh_vien_id: null, email: than.email, loai: 'thu_thu', trang_thai: 'da_gui', loi: null, luc: new Date().toISOString(), gui_boi: t.id });
+        return { ok: true };
+      }
+      if (!laBtcDot(than.dot_id)) throw new Error('Chỉ trưởng ban, thư ký của đợt và quản trị được gửi thư.');
+      if (caiDat.thu.bat !== true) throw new Error('Gửi thư đang tắt. Quản trị bật ở Quản lý › Gửi thư.');
+      const ds = (than.ds || []).map((x, i) => {
+        const n = hv.find(z => z.id === x.id);
+        const trong = n && dotHv.some(g => g.dot_id === than.dot_id && g.thanh_vien_id === n.id && g.trang_thai === 'ghi_danh');
+        if (!trong) return { id: x.id, email: '', ok: false, loi: 'Không có tên trong đợt này' };
+        const hong = i % 2 === 1;
+        return { id: n.id, email: n.email, ok: !hong, loi: hong ? 'Hộp thư không nhận được' : undefined };
+      });
+      ds.forEach(r => thuDaGui.push({ id: uid(), dot_id: than.dot_id, thanh_vien_id: r.id, email: r.email, loai: 'ma_kich_hoat',
+        trang_thai: r.ok ? 'da_gui' : 'loi', loi: r.loi || null, luc: new Date().toISOString(), gui_boi: t.id }));
+      return { ok: true, da_gui: ds.filter(r => r.ok).length, loi: ds.filter(r => !r.ok).length, ds };
+    },
+    async dsThuDaGui(id) {
+      await gioi();
+      if (!laBtcDot(id)) return [];
+      return thuDaGui.filter(x => x.dot_id === id).map(x => {
+        const n = hv.find(z => z.id === x.thanh_vien_id);
+        return Object.assign({}, x, { ho_ten: n ? n.ho_ten : null, ma: n ? n.ma : null, gui_boi: (tv.find(y => y.id === x.gui_boi) || {}).ho_ten || null });
+      }).sort((a, b) => new Date(b.luc) - new Date(a.luc));
+    },
+    async dsThuGanDay() {
+      await gioi();
+      if (me().vai_tro !== 'quan_tri') return [];
+      return thuDaGui.map(x => {
+        const n = hv.find(z => z.id === x.thanh_vien_id);
+        return Object.assign({}, x, { ho_ten: n ? n.ho_ten : '—', ma: n ? n.ma : null,
+          ten_dot: (dot.find(d => d.id === x.dot_id) || {}).ten || null,
+          gui_boi: (tv.find(y => y.id === x.gui_boi) || {}).ho_ten || null });
+      }).sort((a, b) => new Date(b.luc) - new Date(a.luc)).slice(0, 200);
     },
 
     /* ---------- Trong đợt (migration 0014) ---------- */

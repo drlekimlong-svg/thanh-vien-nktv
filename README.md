@@ -58,6 +58,21 @@ Tab **Tuyển quân** hiện khi cài đặt `tuyen_quan` có `mo: true`. Quản
 - **Phiếu đánh giá:** theo form Google “[TQ2026] ĐÁNH GIÁ VÒNG 3”, gồm phần A (thuyết trình), phần B (tác phong, phẩm chất) và phần C (nhận xét, kết luận). Tên người đánh giá lấy từ tài khoản; nhà được điền sẵn theo hồ sơ và đổi được. Mỗi người một phiếu cho mỗi thí sinh và sửa được. Phiếu đang soạn được lưu tạm trên máy. Gửi qua hàm `luu_danh_gia_tq`, hàm này kiểm tra đủ mục.
 - **Xem kết quả:** quản trị, Ban cố vấn, và những người có id trong cài đặt `tq_xem_ket_qua` (mảng) đọc được mọi phiếu và mở được **Tổng hợp**. Trang Tổng hợp có điểm trung bình phần A, phần B, số phiếu Phù hợp, Cân nhắc, Không phù hợp, và tải được CSV. Tệp CSV từng phiếu có cùng cột với bảng trả lời của form Google. Người khác chỉ thấy phiếu của chính mình.
 
+## Gửi mã kích hoạt qua email
+
+App gửi được mã kích hoạt cho học viên qua email, thay cho việc thư ký chép bảng gửi tay. Thành viên CLB không có email trong danh sách nên không gửi thư cho thành viên.
+
+**Nối dịch vụ gửi thư** (làm một lần, quản trị): tạo tài khoản Brevo (gói miễn phí 300 thư mỗi ngày) → xác minh một địa chỉ gửi ở *Senders & IP* → tạo khóa API v3 ở *SMTP & API* → đặt secret `BREVO_API_KEY` cho dự án Supabase → vào **Quản lý › Gửi thư**, điền tên và địa chỉ người gửi, gửi một thư thử, rồi bật công tắc. Khóa API không nằm trong kho mã nguồn và không nằm trong cơ sở dữ liệu.
+
+**Cách dùng:** Ban tổ chức cấp mã ở *Danh sách học viên* → bảng mã hiện ra kèm nút **Gửi email**. App gửi theo từng lượt 40 người, xong thì báo ai nhận được, ai không. Người không nhận được vẫn gửi tay bằng bảng CSV, mã vẫn dùng được.
+
+**Những điều đã cố ý làm như vậy:**
+
+- Địa chỉ nhận do máy chủ tra trong hồ sơ, trình duyệt chỉ gửi lên id học viên và mã. Thư vì thế không thể đi tới địa chỉ lạ.
+- Mã kích hoạt bản rõ không lưu ở đâu cả; nhật ký `thu_da_gui` chỉ ghi gửi được hay lỗi. Muốn gửi lại thì phải cấp mã mới — có nút làm liền hai việc đó cho những người chưa nhận thư.
+- Tài khoản có email đuôi `@dientap.test` thì app không gửi thật, để gói diễn tập khỏi tốn hạn mức.
+- Gửi từ địa chỉ `@gmail.com` qua dịch vụ ngoài thì một phần thư rơi vào Spam. Có tên miền riêng thì hết.
+
 ## Các tệp
 
 | Đường dẫn | Nội dung |
@@ -69,6 +84,7 @@ Tab **Tuyển quân** hiện khi cài đặt `tuyen_quan` có `mo: true`. Quản
 | `lib/` | qrcode-generator của Kazuhiko Arase (MIT), jsQR của Cosmo Wolfe (Apache-2.0, tệp `LICENSE-jsQR.txt`) |
 | `supabase/migrations/` | Lược đồ, quyền, các hàm phía máy chủ |
 | `supabase/functions/kich-hoat/` | Hàm kích hoạt tài khoản |
+| `supabase/functions/gui-thu/` | Hàm gửi thư cho học viên; giữ khóa API của dịch vụ gửi thư |
 | `tools/nhap_thanh_vien.py` | Tạo lệnh SQL nhập danh sách từ CSV; tệp SQL tạo ra chứa họ tên nên không đưa lên kho |
 
 ## Chạy thử trên máy

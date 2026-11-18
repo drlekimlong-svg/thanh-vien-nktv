@@ -31,6 +31,7 @@ export async function tuyenQuanLy(vung, con) {
   if (a === 'post-test' && b === 'tk') return manThongKeBai(vung, c);
   if (a === 'post-test' && b) return manSoanBai(vung, b === 'moi' ? null : b);
   if (a === 'post-test') return manDsBai(vung);
+  if (a === 'gui-thu') return manGuiThu(vung);
   return manQuanLy(vung);
 }
 
@@ -66,7 +67,110 @@ export async function manQuanLy(vung) {
         tieu: 'Tuyển quân', truoc: icon('phieu'), href: '#tuyen-quan',
         phu: S.caiDat.tuyen_quan && S.caiDat.tuyen_quan.mo === true ? 'Đang mở · thành viên thấy tab Tuyển quân' : 'Đã khóa · xem lại kết quả, bật lại khi cần'
       }),
-      dong({ tieu: 'Tập huấn học viên', phu: 'Đợt, danh sách học viên, mã kích hoạt', truoc: icon('nguoi'), href: '#tap-huan' })) : null);
+      dong({ tieu: 'Tập huấn học viên', phu: 'Đợt, danh sách học viên, mã kích hoạt', truoc: icon('nguoi'), href: '#tap-huan' }),
+      dong({
+        tieu: 'Gửi thư', truoc: icon('chuong'), href: '#quan-ly/gui-thu',
+        phu: S.caiDat.thu && S.caiDat.thu.bat === true ? 'Đang bật · app gửi mã kích hoạt cho học viên qua email' : 'Đang tắt · mã kích hoạt do thư ký gửi tay'
+      })) : null);
+}
+
+/* ---------- Gửi thư (migration 0016) ----------
+
+   Khóa API của dịch vụ gửi thư nằm trong secret của Edge Function, không ở đây và không ở
+   cơ sở dữ liệu. Màn này chỉ đặt tên, địa chỉ người gửi và công tắc bật tắt — những thứ
+   mọi thành viên đăng nhập đều đọc được vì bảng cai_dat mở cho cả nhà. */
+
+async function manGuiThu(vung) {
+  if (!S.toi.la_quan_tri) return dat(vung, thanhNho('Gửi thư'), rong('Chỉ quản trị và Ban cố vấn vào được màn này.'));
+  const lai = () => manGuiThu(vung);
+  const cd = Object.assign({ bat: false, ten_nguoi_gui: 'CLB Ngoại Khoa Trưng Vương', dia_chi_gui: '', tra_loi_toi: '', app_url: '' }, S.caiDat.thu || {});
+  const [tt, nhatKy] = await Promise.all([
+    S.db.guiThu({ viec: 'kiem' }).catch(e => ({ loi: e.message })),
+    S.db.dsThuGanDay().catch(() => [])
+  ]);
+  const sanSang = tt && tt.co_khoa && tt.co_dia_chi;
+
+  const luu = async (moi) => {
+    const gt = Object.assign({}, cd, moi);
+    if (await thu(() => S.db.datCaiDat('thu', gt), 'Đã lưu')) { S.caiDat.thu = gt; return true; }
+    return false;
+  };
+
+  const oThu = h('input', { type: 'email', placeholder: 'dia-chi@vi-du.com', 'aria-label': 'Địa chỉ nhận thư thử', class: 'tim', style: 'margin-bottom:10px' });
+
+  dat(vung,
+    thanhNho('Gửi thư'),
+    h('div', { class: 'bang-tin ' + (sanSang ? 'xanh' : 'vang') },
+      !tt || tt.loi ? 'Không hỏi được máy chủ: ' + ((tt && tt.loi) || 'lỗi lạ')
+        : sanSang ? 'Đã nối dịch vụ gửi thư. Gửi một thư thử trước khi bật.'
+          : !tt.co_khoa ? 'Chưa có khóa API. Đặt secret BREVO_API_KEY cho dự án Supabase rồi mở lại màn này.'
+            : 'Đã có khóa API nhưng chưa có địa chỉ người gửi. Điền bên dưới, dùng đúng địa chỉ đã xác minh ở Brevo.'),
+
+    nhom('Trạng thái',
+      dong({ tieu: 'Khóa API', sau: h('span', { class: 'the-nhan ' + (tt && tt.co_khoa ? 'dung' : 'vang') }, tt && tt.co_khoa ? 'Đã có' : 'Chưa có'), muiTen: false }),
+      dong({ tieu: 'Địa chỉ người gửi', sau: h('span', { class: 'the-nhan ' + (tt && tt.co_dia_chi ? 'dung' : 'vang') }, tt && tt.co_dia_chi ? 'Đã có' : 'Chưa có'), muiTen: false }),
+      dong({ tieu: 'Gửi thư tự động', sau: h('span', { class: 'the-nhan ' + (cd.bat ? 'dung' : '') }, cd.bat ? 'Đang bật' : 'Đang tắt'), muiTen: false })),
+
+    h('form', {
+      onsubmit: async (e) => {
+        e.preventDefault();
+        const f = e.target;
+        if (await luu({
+          ten_nguoi_gui: f.ten.value.trim() || 'CLB Ngoại Khoa Trưng Vương',
+          dia_chi_gui: f.dc.value.trim().toLowerCase(),
+          tra_loi_toi: f.tl.value.trim().toLowerCase(),
+          app_url: f.url.value.trim() || cd.app_url
+        })) lai();
+      }
+    },
+      nhom('Người gửi',
+        oNhap('Tên hiện trong hộp thư người nhận', { name: 'ten', value: cd.ten_nguoi_gui, maxlength: 80 }),
+        oNhap('Địa chỉ gửi (phải là địa chỉ đã xác minh ở Brevo)', { name: 'dc', type: 'email', value: cd.dia_chi_gui, placeholder: 'clb@vi-du.com' }),
+        oNhap('Địa chỉ nhận thư trả lời (để trống thì không nhận)', { name: 'tl', type: 'email', value: cd.tra_loi_toi }),
+        oNhap('Địa chỉ app in trong thư', { name: 'url', value: cd.app_url, placeholder: 'https://…' })),
+      h('button', { class: 'nut day', type: 'submit', style: 'margin-bottom:22px' }, 'Lưu người gửi')),
+
+    nhom('Thư thử', oThu,
+      h('button', {
+        class: 'nut phu day', type: 'button', disabled: !sanSang,
+        onclick: async (e) => {
+          const dc = oThu.value.trim();
+          if (!dc) return toast('Điền địa chỉ nhận đã.', true);
+          const n = e.currentTarget; const cu = n.textContent;
+          n.disabled = true; n.textContent = 'Đang gửi…';
+          const r = await thu(() => S.db.guiThu({ viec: 'thu', email: dc }), 'Đã gửi thư thử. Xem cả hộp Spam.');
+          n.disabled = false; n.textContent = cu;
+          if (r) lai();
+        }
+      }, 'Gửi thư thử')),
+    h('p', { class: 'chu-nho', style: 'margin:-6px 0 22px' }, 'Gửi thư thử chạy được cả khi công tắc đang tắt, để thử xong mới bật.'),
+
+    nhom('Công tắc', oBat('Cho app gửi mã kích hoạt cho học viên qua email', {
+      checked: cd.bat === true,
+      disabled: !sanSang,
+      onchange: async (e) => {
+        const bat = e.target.checked;
+        if (!await luu({ bat })) { e.target.checked = !bat; return; }
+        toast(bat ? 'Đã bật gửi thư' : 'Đã tắt gửi thư');
+        lai();
+      }
+    })),
+    h('p', { class: 'chu-nho', style: 'margin:-6px 0 22px' },
+      'Tắt thì mọi thứ chạy như cũ: Ban tổ chức cấp mã rồi tự gửi bằng bảng app xuất ra. Bật hay tắt đều không ảnh hưởng tài khoản đã kích hoạt.'),
+
+    nhom('Cách nối dịch vụ gửi thư',
+      dong({ tieu: '1. Tạo tài khoản Brevo', phu: 'brevo.com, gói miễn phí 300 thư mỗi ngày', muiTen: false }),
+      dong({ tieu: '2. Xác minh địa chỉ gửi', phu: 'Senders & IP › Senders. Dùng Gmail được, nhưng thư dễ vào Spam hơn tên miền riêng', muiTen: false }),
+      dong({ tieu: '3. Tạo khóa API', phu: 'SMTP & API › API keys, chép khóa v3', muiTen: false }),
+      dong({ tieu: '4. Đặt secret', phu: 'Supabase › Edge Functions › Secrets, tên BREVO_API_KEY', muiTen: false }),
+      dong({ tieu: '5. Quay lại màn này', phu: 'Điền địa chỉ gửi, gửi thư thử, rồi bật công tắc', muiTen: false })),
+
+    nhatKy.length ? nhom('200 thư gần nhất', nhatKy.slice(0, 50).map(x => dong({
+      tieu: x.loai === 'thu_thu' ? 'Thư thử' : (x.ho_ten || x.email),
+      phu: [x.email, x.ten_dot, ngayGio(x.luc)].filter(Boolean).join(' · '),
+      sau: h('span', { class: 'the-nhan ' + (x.trang_thai === 'da_gui' ? 'dung' : 'vang') }, x.trang_thai === 'da_gui' ? 'Đã gửi' : (x.loi || 'Lỗi')),
+      muiTen: false
+    }))) : null);
 }
 
 /* ---------- Thành viên ---------- */

@@ -1,0 +1,249 @@
+// Gửi thư cho học viên (phần D). Ba việc:
+//   { viec: 'kiem' }                                           quản trị xem đã nối dịch vụ chưa
+//   { viec: 'thu', email }                                     quản trị gửi một thư thử
+//   { viec: 'ma_kich_hoat', dot_id, ds: [{ id, ma_kich_hoat }] } Ban tổ chức gửi mã cho học viên
+//
+// Hai điều quan trọng về an toàn:
+//   * Địa chỉ nhận KHÔNG lấy từ trình duyệt. Trình duyệt chỉ gửi lên id học viên và mã vừa cấp;
+//     hàm này tra địa chỉ trong cơ sở dữ liệu. Thư vì vậy chỉ đi tới đúng địa chỉ đã lưu.
+//   * Mã kích hoạt bản rõ không lưu ở đâu cả — gửi xong là quên. Nhật ký chỉ ghi được hay lỗi.
+//
+// Khóa API nằm ở secret BREVO_API_KEY của dự án Supabase, không nằm trong kho mã nguồn.
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+const tra = (o: unknown, status = 200) =>
+  new Response(JSON.stringify(o), { status, headers: { ...CORS, "Content-Type": "application/json" } });
+
+const MOI_LAN = 60;        // mỗi lượt gọi nhận tối đa chừng này người
+const CUNG_LUC = 4;        // số thư gửi song song
+const BREVO = "https://api.brevo.com/v3/smtp/email";
+
+type Nguoi = { id: string; ma: string; ho_ten: string; email: string };
+type KetQua = { id: string | null; email: string; ok: boolean; loi?: string; loai?: string };
+
+const thoat = (s: string) =>
+  String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/* ---------- Nội dung thư ---------- */
+
+function thuMaKichHoat(n: Nguoi, ma_kich_hoat: string, tenDot: string, appUrl: string) {
+  const tieuDe = `Mã kích hoạt app · ${tenDot}`;
+  const chu = [
+    `Chào ${n.ho_ten},`,
+    ``,
+    `Bạn đã có tài khoản trên app của CLB Ngoại Khoa Trưng Vương để theo dõi lớp "${tenDot}".`,
+    ``,
+    `Mã học viên: ${n.ma}`,
+    `Mã kích hoạt: ${ma_kich_hoat}`,
+    ``,
+    `Cách dùng:`,
+    `1. Mở ${appUrl}`,
+    `2. Chọn "Học viên tập huấn", rồi chọn "Kích hoạt bằng mã"`,
+    `3. Điền hai mã ở trên, rồi tự đặt mật khẩu từ 8 ký tự`,
+    ``,
+    `Mã kích hoạt dùng một lần và hết hạn sau 90 ngày. Mật khẩu do bạn tự đặt, không ai tra lại được;`,
+    `quên thì xin Ban tổ chức cấp mã mới.`,
+    ``,
+    `Thư này gửi tự động, bạn không cần trả lời.`,
+    `CLB Ngoại Khoa Trưng Vương`,
+  ].join("\n");
+
+  const html = `<div style="font:16px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1b2a22;max-width:520px">
+<p>Chào <b>${thoat(n.ho_ten)}</b>,</p>
+<p>Bạn đã có tài khoản trên app của CLB Ngoại Khoa Trưng Vương để theo dõi lớp <b>${thoat(tenDot)}</b>.</p>
+<table style="border-collapse:collapse;margin:18px 0"><tbody>
+<tr><td style="padding:6px 16px 6px 0;color:#5a6b61">Mã học viên</td><td style="padding:6px 0;font:600 17px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em">${thoat(n.ma)}</td></tr>
+<tr><td style="padding:6px 16px 6px 0;color:#5a6b61">Mã kích hoạt</td><td style="padding:6px 0;font:600 17px ui-monospace,Menlo,Consolas,monospace;letter-spacing:.04em">${thoat(ma_kich_hoat)}</td></tr>
+</tbody></table>
+<ol style="padding-left:20px">
+<li>Mở <a href="${thoat(appUrl)}" style="color:#1f6b45">${thoat(appUrl)}</a></li>
+<li>Chọn <b>Học viên tập huấn</b>, rồi chọn <b>Kích hoạt bằng mã</b></li>
+<li>Điền hai mã ở trên, rồi tự đặt mật khẩu từ 8 ký tự</li>
+</ol>
+<p style="color:#5a6b61;font-size:14px">Mã kích hoạt dùng một lần và hết hạn sau 90 ngày. Mật khẩu do bạn tự đặt, không ai tra lại được; quên thì xin Ban tổ chức cấp mã mới.</p>
+<p style="color:#5a6b61;font-size:14px">Thư này gửi tự động, bạn không cần trả lời.<br>CLB Ngoại Khoa Trưng Vương</p>
+</div>`;
+  return { tieuDe, chu, html };
+}
+
+function thuThu(appUrl: string) {
+  const tieuDe = "Thư thử · app CLB Ngoại Khoa Trưng Vương";
+  const chu = [
+    "Đây là thư thử của app CLB Ngoại Khoa Trưng Vương.",
+    "",
+    "Nhận được thư này nghĩa là đã nối xong dịch vụ gửi thư: địa chỉ người gửi hợp lệ và khóa API chạy được.",
+    "",
+    `App: ${appUrl}`,
+  ].join("\n");
+  const html = `<div style="font:16px/1.6 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1b2a22;max-width:520px">
+<p>Đây là <b>thư thử</b> của app CLB Ngoại Khoa Trưng Vương.</p>
+<p>Nhận được thư này nghĩa là đã nối xong dịch vụ gửi thư: địa chỉ người gửi hợp lệ và khóa API chạy được.</p>
+<p style="color:#5a6b61;font-size:14px">App: <a href="${thoat(appUrl)}" style="color:#1f6b45">${thoat(appUrl)}</a></p>
+</div>`;
+  return { tieuDe, chu, html };
+}
+
+/* ---------- Gửi một thư qua Brevo ---------- */
+
+async function guiMot(
+  khoa: string,
+  nguoiGui: { name: string; email: string },
+  traLoi: string,
+  den: { email: string; name?: string },
+  thu: { tieuDe: string; chu: string; html: string },
+): Promise<{ ok: boolean; loi?: string }> {
+  const than: Record<string, unknown> = {
+    sender: nguoiGui,
+    to: [den],
+    subject: thu.tieuDe,
+    textContent: thu.chu,
+    htmlContent: thu.html,
+  };
+  if (traLoi) than.replyTo = { email: traLoi };
+  try {
+    const r = await fetch(BREVO, {
+      method: "POST",
+      headers: { "api-key": khoa, "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify(than),
+    });
+    if (r.ok) return { ok: true };
+    const t = (await r.text()).slice(0, 300);
+    let loi = t;
+    try { const j = JSON.parse(t); loi = j.message || j.code || t; } catch (_) { /* giữ nguyên */ }
+    return { ok: false, loi: `${r.status} · ${loi}` };
+  } catch (e) {
+    return { ok: false, loi: String((e as Error)?.message ?? e).slice(0, 200) };
+  }
+}
+
+// Gửi cả danh sách, mỗi lúc vài thư một, giữ nguyên thứ tự kết quả.
+async function guiNhieu<T>(ds: T[], lam: (x: T) => Promise<KetQua>): Promise<KetQua[]> {
+  const ra: KetQua[] = new Array(ds.length);
+  let i = 0;
+  const chay = async () => {
+    while (true) {
+      const k = i++;
+      if (k >= ds.length) return;
+      ra[k] = await lam(ds[k]);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(CUNG_LUC, ds.length) }, chay));
+  return ra;
+}
+
+/* ---------- Thân hàm ---------- */
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method !== "POST") return tra({ ok: false, loi: "Sai phương thức" }, 405);
+
+  const auth = req.headers.get("Authorization") ?? "";
+  if (!auth.toLowerCase().startsWith("bearer ")) return tra({ ok: false, loi: "Chưa đăng nhập." }, 401);
+
+  let body: { viec?: string; dot_id?: string; email?: string; ds?: { id: string; ma_kich_hoat: string }[] };
+  try { body = await req.json(); } catch { return tra({ ok: false, loi: "Dữ liệu không hợp lệ" }, 400); }
+  const viec = String(body.viec ?? "");
+  if (!["kiem", "thu", "ma_kich_hoat"].includes(viec)) return tra({ ok: false, loi: "Không rõ việc cần làm" }, 400);
+
+  const url = Deno.env.get("SUPABASE_URL")!;
+  // Khóa công khai: lấy từ biến môi trường, không có thì dùng chính khóa trình duyệt đã gửi lên.
+  const khoaCongKhai = Deno.env.get("SUPABASE_ANON_KEY") ?? req.headers.get("apikey") ?? "";
+  const nguoiDung = createClient(url, khoaCongKhai, {
+    global: { headers: { Authorization: auth } },
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const quanTri = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  // Ai đang bấm, và có được gửi thư của đợt này không.
+  const dotId = viec === "ma_kich_hoat" ? String(body.dot_id ?? "") : null;
+  if (viec === "ma_kich_hoat" && !dotId) return tra({ ok: false, loi: "Thiếu đợt" }, 400);
+  const { data: quyen, error: eQ } = await nguoiDung.rpc("kiem_quyen_gui_thu", { p_dot: dotId });
+  if (eQ) { console.error(eQ); return tra({ ok: false, loi: "Máy chủ đang lỗi. Thử lại sau." }, 500); }
+  if (!quyen || !quyen.toi) return tra({ ok: false, loi: "Chưa đăng nhập." }, 401);
+  if (!quyen.duoc_gui) {
+    return tra({ ok: false, loi: dotId ? "Chỉ trưởng ban, thư ký của đợt và quản trị được gửi thư." : "Chỉ quản trị làm được việc này." }, 403);
+  }
+
+  // Khóa API và cài đặt người gửi.
+  const khoa = Deno.env.get("BREVO_API_KEY") ?? "";
+  const { data: cd } = await quanTri.from("cai_dat").select("gia_tri").eq("khoa", "thu").maybeSingle();
+  const c = (cd?.gia_tri ?? {}) as Record<string, unknown>;
+  const nguoiGui = {
+    name: String(c.ten_nguoi_gui ?? "CLB Ngoại Khoa Trưng Vương"),
+    email: String(c.dia_chi_gui ?? "").trim(),
+  };
+  const traLoi = String(c.tra_loi_toi ?? "").trim();
+  const appUrl = String(c.app_url ?? "https://drlekimlong-svg.github.io/thanh-vien-nktv/");
+
+  if (viec === "kiem") {
+    return tra({
+      ok: true,
+      co_khoa: !!khoa,
+      co_dia_chi: !!nguoiGui.email,
+      bat: c.bat === true,
+      ten_nguoi_gui: nguoiGui.name,
+      dia_chi_gui: nguoiGui.email,
+      tra_loi_toi: traLoi,
+      app_url: appUrl,
+    });
+  }
+
+  if (!khoa) return tra({ ok: false, loi: "Chưa nối dịch vụ gửi thư. Quản trị cần đặt khóa BREVO_API_KEY cho dự án." }, 503);
+  if (!nguoiGui.email) return tra({ ok: false, loi: "Chưa có địa chỉ người gửi. Vào Quản lý › Gửi thư để điền." }, 400);
+
+  /* ----- Thư thử ----- */
+  if (viec === "thu") {
+    const den = String(body.email ?? "").trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(den)) return tra({ ok: false, loi: "Địa chỉ nhận không hợp lệ." }, 400);
+    const r = await guiMot(khoa, nguoiGui, traLoi, { email: den }, thuThu(appUrl));
+    await quanTri.rpc("ghi_thu_da_gui", {
+      p_dot: null, p_nguoi: quyen.toi,
+      p: [{ id: null, email: den, ok: r.ok, loi: r.loi ?? "", loai: "thu_thu" }],
+    });
+    return tra(r.ok ? { ok: true } : { ok: false, loi: r.loi }, r.ok ? 200 : 502);
+  }
+
+  /* ----- Gửi mã kích hoạt ----- */
+  if (c.bat !== true) return tra({ ok: false, loi: "Gửi thư đang tắt. Quản trị bật ở Quản lý › Gửi thư." }, 400);
+
+  const xin = (body.ds ?? []).filter((x) => x && x.id && x.ma_kich_hoat);
+  if (!xin.length) return tra({ ok: false, loi: "Không có ai để gửi." }, 400);
+  if (xin.length > MOI_LAN) return tra({ ok: false, loi: `Mỗi lượt gửi tối đa ${MOI_LAN} người.` }, 400);
+
+  // Địa chỉ nhận lấy từ cơ sở dữ liệu, không lấy từ trình duyệt.
+  const { data: ds, error: eN } = await quanTri.rpc("nguoi_nhan_thu", { p_dot: dotId, p_ids: xin.map((x) => x.id) });
+  if (eN) { console.error(eN); return tra({ ok: false, loi: "Máy chủ đang lỗi. Thử lại sau." }, 500); }
+  const theoId = new Map<string, Nguoi>(((ds ?? []) as Nguoi[]).map((n) => [n.id, n]));
+  const tenDot = String(quyen.ten_dot ?? "Lớp tập huấn");
+
+  const ketQua = await guiNhieu(xin, async (x): Promise<KetQua> => {
+    const n = theoId.get(x.id);
+    if (!n) return { id: x.id, email: "", ok: false, loi: "Không có tên trong đợt này" };
+    if (!n.email) return { id: n.id, email: "", ok: false, loi: "Chưa có email" };
+    // Tài khoản diễn tập: không gửi thật, để khỏi tốn hạn mức và khỏi bị trả thư.
+    if (/@dientap\.test$/i.test(n.email)) return { id: n.id, email: n.email, ok: false, loi: "Địa chỉ diễn tập, không gửi thật" };
+    const r = await guiMot(khoa, nguoiGui, traLoi, { email: n.email, name: n.ho_ten },
+      thuMaKichHoat(n, x.ma_kich_hoat, tenDot, appUrl));
+    return { id: n.id, email: n.email, ok: r.ok, loi: r.loi };
+  });
+
+  const { error: eG } = await quanTri.rpc("ghi_thu_da_gui", {
+    p_dot: dotId, p_nguoi: quyen.toi,
+    p: ketQua.map((r) => ({ id: r.id, email: r.email, ok: r.ok, loi: r.loi ?? "", loai: "ma_kich_hoat" })),
+  });
+  if (eG) console.error(eG);   // gửi rồi thì vẫn báo cho người dùng, chỉ nhật ký là thiếu
+
+  return tra({
+    ok: true,
+    da_gui: ketQua.filter((r) => r.ok).length,
+    loi: ketQua.filter((r) => !r.ok).length,
+    ds: ketQua,
+  });
+});
