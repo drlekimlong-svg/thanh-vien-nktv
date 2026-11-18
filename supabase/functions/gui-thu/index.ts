@@ -144,6 +144,12 @@ async function guiMot(
       Subject: thu.tieuDe,
       TextPart: thu.chu,
       HTMLPart: thu.html,
+      // Đây là thư giao dịch nên tắt cả hai kiểu theo dõi. Để bật thì Mailjet nhét ảnh 1x1
+      // vào thân thư và viết lại mọi đường dẫn sang tên miền chuyển hướng của nó: Gmail
+      // thấy đúng dấu vân tay thư quảng cáo nên xếp vào tab Quảng cáo, mà địa chỉ app in
+      // trong thư cũng không còn là địa chỉ thật để học viên gõ lại được.
+      TrackOpens: "disabled",
+      TrackClicks: "disabled",
     };
     if (traLoi) m.ReplyTo = { Email: traLoi };
     if (dinhKem) m.Attachments = [{ ContentType: dinhKem.loai, Filename: dinhKem.ten, Base64Content: dinhKem.noiDung }];
