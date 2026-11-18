@@ -8,7 +8,9 @@
 //     hàm này tra địa chỉ trong cơ sở dữ liệu. Thư vì vậy chỉ đi tới đúng địa chỉ đã lưu.
 //   * Mã kích hoạt bản rõ không lưu ở đâu cả — gửi xong là quên. Nhật ký chỉ ghi được hay lỗi.
 //
-// Khóa API nằm ở secret BREVO_API_KEY của dự án Supabase, không nằm trong kho mã nguồn.
+// Khóa API nằm ở secret của dự án Supabase, không nằm trong kho mã nguồn:
+//   Mailjet: MAILJET_API_KEY + MAILJET_SECRET_KEY  (đủ cả hai thì dùng Mailjet)
+//   Brevo:   BREVO_API_KEY                         (dự phòng)
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const CORS = {
@@ -21,20 +23,33 @@ const tra = (o: unknown, status = 200) =>
 
 const MOI_LAN = 60;        // mỗi lượt gọi nhận tối đa chừng này người
 const CUNG_LUC = 4;        // số thư gửi song song
+const MAILJET = "https://api.mailjet.com/v3.1/send";
 const BREVO = "https://api.brevo.com/v3/smtp/email";
 
 type Nguoi = { id: string; ma: string; ho_ten: string; email: string };
 type KetQua = { id: string | null; email: string; ok: boolean; loi?: string; loai?: string };
 type Zalo = { link: string | null; qr: string | null };
-type DinhKem = { name: string; content: string };
+type DinhKem = { ten: string; loai: string; noiDung: string };
+type DichVu = { ten: "mailjet" | "brevo"; dau: string };
 
-/** Tách data URL "data:image/png;base64,AAA" thành tệp đính kèm Brevo. Không phải data URL thì bỏ. */
+/** Dịch vụ nào đang nối: đủ cặp khóa Mailjet thì dùng Mailjet, không thì Brevo, không nữa là chưa nối. */
+function chonDichVu(): DichVu | null {
+  const k = (Deno.env.get("MAILJET_API_KEY") ?? "").trim();
+  const s = (Deno.env.get("MAILJET_SECRET_KEY") ?? "").trim();
+  if (k && s) return { ten: "mailjet", dau: "Basic " + btoa(`${k}:${s}`) };
+  const b = (Deno.env.get("BREVO_API_KEY") ?? "").trim();
+  if (b) return { ten: "brevo", dau: b };
+  return null;
+}
+
+/** Tách data URL "data:image/png;base64,AAA" thành tệp đính kèm. Không phải data URL thì bỏ. */
 function dinhKemTuAnh(ten: string, data: string | null): DinhKem | null {
   if (!data) return null;
   const m = /^data:image\/([a-z0-9.+-]+);base64,(.+)$/i.exec(data.trim());
   if (!m) return null;
-  const duoi = m[1].toLowerCase() === "jpeg" ? "jpg" : m[1].toLowerCase();
-  return { name: `${ten}.${duoi}`, content: m[2] };
+  const loai = m[1].toLowerCase();
+  const duoi = loai === "jpeg" ? "jpg" : loai;
+  return { ten: `${ten}.${duoi}`, loai: `image/${loai}`, noiDung: m[2] };
 }
 
 const thoat = (s: string) =>
@@ -104,37 +119,62 @@ function thuThu(appUrl: string) {
   return { tieuDe, chu, html };
 }
 
-/* ---------- Gửi một thư qua Brevo ---------- */
+/* ---------- Gửi một thư ---------- */
 
 async function guiMot(
-  khoa: string,
+  dv: DichVu,
   nguoiGui: { name: string; email: string },
   traLoi: string,
   den: { email: string; name?: string },
   thu: { tieuDe: string; chu: string; html: string },
   dinhKem?: DinhKem | null,
 ): Promise<{ ok: boolean; loi?: string }> {
-  const than: Record<string, unknown> = {
-    sender: nguoiGui,
-    to: [den],
-    subject: thu.tieuDe,
-    textContent: thu.chu,
-    htmlContent: thu.html,
-  };
-  if (traLoi) than.replyTo = { email: traLoi };
   // Ảnh gửi kèm chứ không nhúng thẳng vào thân thư: phần lớn hộp thư chặn ảnh data: URL.
-  if (dinhKem) than.attachment = [dinhKem];
+  const mailjet = dv.ten === "mailjet";
+  const dia = mailjet ? MAILJET : BREVO;
+  const dau: Record<string, string> = mailjet
+    ? { authorization: dv.dau, "content-type": "application/json" }
+    : { "api-key": dv.dau, "content-type": "application/json", accept: "application/json" };
+
+  let than: Record<string, unknown>;
+  if (mailjet) {
+    const m: Record<string, unknown> = {
+      From: { Email: nguoiGui.email, Name: nguoiGui.name },
+      To: [den.name ? { Email: den.email, Name: den.name } : { Email: den.email }],
+      Subject: thu.tieuDe,
+      TextPart: thu.chu,
+      HTMLPart: thu.html,
+    };
+    if (traLoi) m.ReplyTo = { Email: traLoi };
+    if (dinhKem) m.Attachments = [{ ContentType: dinhKem.loai, Filename: dinhKem.ten, Base64Content: dinhKem.noiDung }];
+    than = { Messages: [m] };
+  } else {
+    than = { sender: nguoiGui, to: [den], subject: thu.tieuDe, textContent: thu.chu, htmlContent: thu.html };
+    if (traLoi) than.replyTo = { email: traLoi };
+    if (dinhKem) than.attachment = [{ name: dinhKem.ten, content: dinhKem.noiDung }];
+  }
+
   try {
-    const r = await fetch(BREVO, {
-      method: "POST",
-      headers: { "api-key": khoa, "content-type": "application/json", accept: "application/json" },
-      body: JSON.stringify(than),
-    });
+    const r = await fetch(dia, { method: "POST", headers: dau, body: JSON.stringify(than) });
+    const t = (await r.text()).slice(0, 2000);
+    // deno-lint-ignore no-explicit-any
+    let j: any = null;
+    try { j = JSON.parse(t); } catch (_) { /* không phải JSON thì đọc thẳng chữ */ }
+
+    if (mailjet) {
+      // Mailjet trả 200 cả khi một thư trong lô hỏng, nên phải đọc Status của từng thư.
+      const m0 = j?.Messages?.[0];
+      if (r.ok && m0?.Status === "success") return { ok: true };
+      const tu = (m0?.Errors ?? [])
+        // deno-lint-ignore no-explicit-any
+        .map((e: any) => String(e?.ErrorMessage ?? e?.ErrorCode ?? "")).filter(Boolean).join("; ");
+      const loi = tu || String(j?.ErrorMessage ?? "") || t.slice(0, 300);
+      return { ok: false, loi: `${r.status} · ${loi}`.slice(0, 300) };
+    }
+
     if (r.ok) return { ok: true };
-    const t = (await r.text()).slice(0, 300);
-    let loi = t;
-    try { const j = JSON.parse(t); loi = j.message || j.code || t; } catch (_) { /* giữ nguyên */ }
-    return { ok: false, loi: `${r.status} · ${loi}` };
+    const loi = String(j?.message ?? j?.code ?? "") || t.slice(0, 300);
+    return { ok: false, loi: `${r.status} · ${loi}`.slice(0, 300) };
   } catch (e) {
     return { ok: false, loi: String((e as Error)?.message ?? e).slice(0, 200) };
   }
@@ -190,8 +230,8 @@ Deno.serve(async (req) => {
     return tra({ ok: false, loi: dotId ? "Chỉ trưởng ban, thư ký của đợt và quản trị được gửi thư." : "Chỉ quản trị làm được việc này." }, 403);
   }
 
-  // Khóa API và cài đặt người gửi.
-  const khoa = Deno.env.get("BREVO_API_KEY") ?? "";
+  // Dịch vụ gửi thư và cài đặt người gửi.
+  const dv = chonDichVu();
   const { data: cd } = await quanTri.from("cai_dat").select("gia_tri").eq("khoa", "thu").maybeSingle();
   const c = (cd?.gia_tri ?? {}) as Record<string, unknown>;
   const nguoiGui = {
@@ -204,7 +244,8 @@ Deno.serve(async (req) => {
   if (viec === "kiem") {
     return tra({
       ok: true,
-      co_khoa: !!khoa,
+      co_khoa: !!dv,
+      dich_vu: dv?.ten ?? "",
       co_dia_chi: !!nguoiGui.email,
       bat: c.bat === true,
       ten_nguoi_gui: nguoiGui.name,
@@ -214,14 +255,14 @@ Deno.serve(async (req) => {
     });
   }
 
-  if (!khoa) return tra({ ok: false, loi: "Chưa nối dịch vụ gửi thư. Quản trị cần đặt khóa BREVO_API_KEY cho dự án." }, 503);
+  if (!dv) return tra({ ok: false, loi: "Chưa nối dịch vụ gửi thư. Quản trị cần đặt MAILJET_API_KEY và MAILJET_SECRET_KEY cho dự án." }, 503);
   if (!nguoiGui.email) return tra({ ok: false, loi: "Chưa có địa chỉ người gửi. Vào Quản lý › Gửi thư để điền." }, 400);
 
   /* ----- Thư thử ----- */
   if (viec === "thu") {
     const den = String(body.email ?? "").trim();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(den)) return tra({ ok: false, loi: "Địa chỉ nhận không hợp lệ." }, 400);
-    const r = await guiMot(khoa, nguoiGui, traLoi, { email: den }, thuThu(appUrl));
+    const r = await guiMot(dv, nguoiGui, traLoi, { email: den }, thuThu(appUrl));
     await quanTri.rpc("ghi_thu_da_gui", {
       p_dot: null, p_nguoi: quyen.toi,
       p: [{ id: null, email: den, ok: r.ok, loi: r.loi ?? "", loai: "thu_thu" }],
@@ -253,7 +294,7 @@ Deno.serve(async (req) => {
     if (!n.email) return { id: n.id, email: "", ok: false, loi: "Chưa có email" };
     // Tài khoản diễn tập: không gửi thật, để khỏi tốn hạn mức và khỏi bị trả thư.
     if (/@dientap\.test$/i.test(n.email)) return { id: n.id, email: n.email, ok: false, loi: "Địa chỉ diễn tập, không gửi thật" };
-    const r = await guiMot(khoa, nguoiGui, traLoi, { email: n.email, name: n.ho_ten },
+    const r = await guiMot(dv, nguoiGui, traLoi, { email: n.email, name: n.ho_ten },
       thuMaKichHoat(n, x.ma_kich_hoat, tenDot, appUrl, zalo), qrDinhKem);
     return { id: n.id, email: n.email, ok: r.ok, loi: r.loi };
   });

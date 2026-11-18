@@ -103,11 +103,15 @@ async function manGuiThu(vung) {
     h('div', { class: 'bang-tin ' + (sanSang ? 'xanh' : 'vang') },
       !tt || tt.loi ? 'Không hỏi được máy chủ: ' + ((tt && tt.loi) || 'lỗi lạ')
         : sanSang ? 'Đã nối dịch vụ gửi thư. Gửi một thư thử trước khi bật.'
-          : !tt.co_khoa ? 'Chưa có khóa API. Đặt secret BREVO_API_KEY cho dự án Supabase rồi mở lại màn này.'
-            : 'Đã có khóa API nhưng chưa có địa chỉ người gửi. Điền bên dưới, dùng đúng địa chỉ đã xác minh ở Brevo.'),
+          : !tt.co_khoa ? 'Chưa có khóa API. Đặt hai secret MAILJET_API_KEY và MAILJET_SECRET_KEY cho dự án Supabase rồi mở lại màn này.'
+            : 'Đã có khóa API nhưng chưa có địa chỉ người gửi. Điền bên dưới, dùng đúng địa chỉ đã xác minh ở Mailjet.'),
 
     nhom('Trạng thái',
-      dong({ tieu: 'Khóa API', sau: h('span', { class: 'the-nhan ' + (tt && tt.co_khoa ? 'dung' : 'vang') }, tt && tt.co_khoa ? 'Đã có' : 'Chưa có'), muiTen: false }),
+      dong({
+        tieu: 'Khóa API', muiTen: false,
+        sau: h('span', { class: 'the-nhan ' + (tt && tt.co_khoa ? 'dung' : 'vang') },
+          !tt || !tt.co_khoa ? 'Chưa có' : tt.dich_vu === 'mailjet' ? 'Mailjet' : tt.dich_vu === 'brevo' ? 'Brevo' : 'Đã có')
+      }),
       dong({ tieu: 'Địa chỉ người gửi', sau: h('span', { class: 'the-nhan ' + (tt && tt.co_dia_chi ? 'dung' : 'vang') }, tt && tt.co_dia_chi ? 'Đã có' : 'Chưa có'), muiTen: false }),
       dong({ tieu: 'Gửi thư tự động', sau: h('span', { class: 'the-nhan ' + (cd.bat ? 'dung' : '') }, cd.bat ? 'Đang bật' : 'Đang tắt'), muiTen: false })),
 
@@ -125,7 +129,7 @@ async function manGuiThu(vung) {
     },
       nhom('Người gửi',
         oNhap('Tên hiện trong hộp thư người nhận', { name: 'ten', value: cd.ten_nguoi_gui, maxlength: 80 }),
-        oNhap('Địa chỉ gửi (phải là địa chỉ đã xác minh ở Brevo)', { name: 'dc', type: 'email', value: cd.dia_chi_gui, placeholder: 'clb@vi-du.com' }),
+        oNhap('Địa chỉ gửi (phải là địa chỉ đã xác minh ở Mailjet)', { name: 'dc', type: 'email', value: cd.dia_chi_gui, placeholder: 'clb@vi-du.com' }),
         oNhap('Địa chỉ nhận thư trả lời (để trống thì không nhận)', { name: 'tl', type: 'email', value: cd.tra_loi_toi }),
         oNhap('Địa chỉ app in trong thư', { name: 'url', value: cd.app_url, placeholder: 'https://…' })),
       h('button', { class: 'nut day', type: 'submit', style: 'margin-bottom:22px' }, 'Lưu người gửi')),
@@ -159,10 +163,10 @@ async function manGuiThu(vung) {
       'Tắt thì mọi thứ chạy như cũ: Ban tổ chức cấp mã rồi tự gửi bằng bảng app xuất ra. Bật hay tắt đều không ảnh hưởng tài khoản đã kích hoạt.'),
 
     nhom('Cách nối dịch vụ gửi thư',
-      dong({ tieu: '1. Tạo tài khoản Brevo', phu: 'brevo.com, gói miễn phí 300 thư mỗi ngày', muiTen: false }),
-      dong({ tieu: '2. Xác minh địa chỉ gửi', phu: 'Senders & IP › Senders. Dùng Gmail được, nhưng thư dễ vào Spam hơn tên miền riêng', muiTen: false }),
-      dong({ tieu: '3. Tạo khóa API', phu: 'SMTP & API › API keys, chép khóa v3', muiTen: false }),
-      dong({ tieu: '4. Đặt secret', phu: 'Supabase › Edge Functions › Secrets, tên BREVO_API_KEY', muiTen: false }),
+      dong({ tieu: '1. Tạo tài khoản Mailjet', phu: 'mailjet.com, gói miễn phí 200 thư mỗi ngày', muiTen: false }),
+      dong({ tieu: '2. Xác minh địa chỉ gửi', phu: 'Account › Sender domains & addresses. Dùng Gmail được, nhưng thư dễ vào Spam hơn tên miền riêng', muiTen: false }),
+      dong({ tieu: '3. Tạo khóa API', phu: 'Account › API Key Management, bấm Generate Secret Key, chép cả API Key lẫn Secret Key', muiTen: false }),
+      dong({ tieu: '4. Đặt hai secret', phu: 'Supabase › Edge Functions › Secrets, tên MAILJET_API_KEY và MAILJET_SECRET_KEY', muiTen: false }),
       dong({ tieu: '5. Quay lại màn này', phu: 'Điền địa chỉ gửi, gửi thư thử, rồi bật công tắc', muiTen: false })),
 
     nhatKy.length ? nhom('200 thư gần nhất', nhatKy.slice(0, 50).map(x => dong({

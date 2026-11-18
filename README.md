@@ -70,7 +70,9 @@ Thư ký hoặc điều hành tạo nhóm Zalo **trước khi nạp danh sách**
 
 App gửi được mã kích hoạt cho học viên qua email, thay cho việc thư ký chép bảng gửi tay. Thành viên CLB không có email trong danh sách nên không gửi thư cho thành viên.
 
-**Nối dịch vụ gửi thư** (làm một lần, quản trị): tạo tài khoản Brevo (gói miễn phí 300 thư mỗi ngày) → xác minh một địa chỉ gửi ở *Senders & IP* → tạo khóa API v3 ở *SMTP & API* → đặt secret `BREVO_API_KEY` cho dự án Supabase → vào **Quản lý › Gửi thư**, điền tên và địa chỉ người gửi, gửi một thư thử, rồi bật công tắc. Khóa API không nằm trong kho mã nguồn và không nằm trong cơ sở dữ liệu.
+**Nối dịch vụ gửi thư** (làm một lần, quản trị): tạo tài khoản Mailjet (gói miễn phí 200 thư mỗi ngày) → xác minh một địa chỉ gửi ở *Account › Sender domains & addresses* → vào *Account › API Key Management*, bấm **Generate Secret Key** và chép cả API Key lẫn Secret Key → đặt hai secret `MAILJET_API_KEY` và `MAILJET_SECRET_KEY` cho dự án Supabase → vào **Quản lý › Gửi thư**, điền tên và địa chỉ người gửi, gửi một thư thử, rồi bật công tắc. Khóa API không nằm trong kho mã nguồn và không nằm trong cơ sở dữ liệu.
+
+Edge Function `gui-thu` chạy được với Brevo (`BREVO_API_KEY`) lẫn Mailjet (`MAILJET_API_KEY` + `MAILJET_SECRET_KEY`); đủ cặp khóa Mailjet thì nó dùng Mailjet, không thì quay về Brevo. Màn *Quản lý › Gửi thư* hiện tên dịch vụ đang nối.
 
 **Cách dùng:** Ban tổ chức cấp mã ở *Danh sách học viên* → bảng mã hiện ra kèm nút **Gửi email**. App gửi theo từng lượt 40 người, xong thì báo ai nhận được, ai không. Người không nhận được vẫn gửi tay bằng bảng CSV, mã vẫn dùng được.
 
