@@ -173,6 +173,81 @@ export function demo(vai) {
     .map(x => dot.find(d => d.id === x.dot_id)).filter(Boolean)
     .map(d => ({ id: d.id, ma: d.ma, ten: d.ten, bat_dau: d.bat_dau, ket_thuc: d.ket_thuc, trang_thai: d.trang_thai }));
 
+
+  /* ---------- Sau buổi (migration 0015): yêu cầu, bài thi, phiếu, tiêu chí, chứng nhận ---------- */
+  const yeuCau = [
+    { id: 'y1', dot_id: 'o1', nguoi: 'h3', loai: 'thac_mac', noi_dung: 'Em bận ca trực đúng giờ thực hành, đổi ca được không ạ?', luc: new Date(nay - 4 * 3600e3).toISOString(), trang_thai: 'moi', tra_loi: null, tra_loi_luc: null },
+    { id: 'y2', dot_id: 'o1', nguoi: 'h1', loai: 'phan_hoi', noi_dung: 'Buổi lý thuyết hơi nhanh ở phần quai ruột ạ.', luc: new Date(nay - 26 * 3600e3).toISOString(), trang_thai: 'xong', tra_loi: 'Cảm ơn bạn, buổi sau tập huấn viên sẽ đi chậm phần đó.', tra_loi_luc: new Date(nay - 20 * 3600e3).toISOString() }
+  ];
+  const baiThi = [
+    { id: 'bt1', dot_id: 'o1', ma: 'VIET', ten: 'Bài viết', thang: 10, trong_so: 70, thu_tu: 1 },
+    { id: 'bt2', dot_id: 'o1', ma: 'TRAM', ten: 'Chạy trạm', thang: 10, trong_so: 30, thu_tu: 2 }
+  ];
+  const diemBai = [
+    { bai_id: 'bt1', thanh_vien_id: 'h0', diem: 8 }, { bai_id: 'bt2', thanh_vien_id: 'h0', diem: 9 },
+    { bai_id: 'bt1', thanh_vien_id: 'h1', diem: 7 }, { bai_id: 'bt2', thanh_vien_id: 'h1', diem: 6 },
+    { bai_id: 'bt1', thanh_vien_id: 'h2', diem: 4 }, { bai_id: 'bt2', thanh_vien_id: 'h2', diem: 5 }
+  ];
+  const phieu = [{ id: 'f1', dot_id: 'o1', ten: 'Phiếu đánh giá cuối đợt', mo_ta: 'Gửi trước khi nhận giấy chứng nhận.', an_danh: true, mo: true, han: new Date(nay + 15 * ngay).toISOString(), tao_luc: new Date(nay - 2 * ngay).toISOString() }];
+  const phieuCau = [
+    { id: 'fc1', phieu_id: 'f1', thu_tu: 1, noi_dung: 'Buổi học có ích với bạn không?', loai: 'thang5', lua_chon: null, bat_buoc: true },
+    { id: 'fc2', phieu_id: 'f1', thu_tu: 2, noi_dung: 'Tập huấn viên giảng dễ hiểu không?', loai: 'thang5', lua_chon: null, bat_buoc: true },
+    { id: 'fc3', phieu_id: 'f1', thu_tu: 3, noi_dung: 'Điều bạn muốn Ban tổ chức làm khác đi (không bắt buộc)', loai: 'chu', lua_chon: null, bat_buoc: false }
+  ];
+  // Hai người đã gửi: dòng trả lời không gắn tên vì phiếu ẩn danh, giờ làm tròn theo ngày.
+  const phieuDaGui = [
+    { phieu_id: 'f1', thanh_vien_id: 'h1', luc: new Date(nay - ngay).toISOString() },
+    { phieu_id: 'f1', thanh_vien_id: 'h3', luc: new Date(nay - ngay).toISOString() }
+  ];
+  const phieuTraLoi = [
+    { id: 'ft1', phieu_id: 'f1', nguoi: null, tra_loi: { fc1: '5', fc2: '4', fc3: 'Thêm thời gian hỏi đáp.' }, luc: ngayVN(nay - ngay) + 'T00:00:00+07:00' },
+    { id: 'ft2', phieu_id: 'f1', nguoi: null, tra_loi: { fc1: '4', fc2: '5', fc3: '' }, luc: ngayVN(nay - ngay) + 'T00:00:00+07:00' }
+  ];
+  const tieuChi = [
+    { id: 'tc1', dot_id: 'o1', ten: 'Dự buổi lý thuyết', loai: 'co_mat_buoi', buoi_id: 'bd1', phan: null, so_buoi: null, nguong: null, phieu_id: null, cot_loi: true, thu_tu: 1 },
+    { id: 'tc2', dot_id: 'o1', ten: 'Điểm tổng từ 6,0', loai: 'diem_tong', buoi_id: null, phan: null, so_buoi: null, nguong: 6, phieu_id: null, cot_loi: true, thu_tu: 2 },
+    { id: 'tc3', dot_id: 'o1', ten: 'Gửi phiếu đánh giá', loai: 'gui_phieu', buoi_id: null, phan: null, so_buoi: null, nguong: null, phieu_id: 'f1', cot_loi: true, thu_tu: 3 },
+    { id: 'tc4', dot_id: 'o1', ten: 'Dự ít nhất 1 ca thực hành', loai: 'co_mat_phan', buoi_id: null, phan: 'thuc_hanh', so_buoi: 1, nguong: null, phieu_id: null, cot_loi: false, thu_tu: 4 }
+  ];
+  dot[0].cai_dat = { nguong_xuat_sac: 8.5 };
+  // Đợt KHAU2526 đã xong: h7 có sẵn giấy để thử màn Kết quả và trang tra cứu công khai.
+  const chungNhan = [{ dot_id: 'o2', thanh_vien_id: 'h7', ma: 'KHAU2526-0001-K3PW', muc: 'hoan_thanh', ghi_chu: null, diem_tong: 7.5, cap_luc: new Date(nay - 260 * ngay).toISOString(), thu_hoi_luc: null }];
+
+  const diemTongDemo = (dotId, tvId) => {
+    const bs = baiThi.filter(b => b.dot_id === dotId);
+    const tong = bs.reduce((s, b) => s + Number(b.trong_so), 0);
+    if (!tong) return null;
+    const s = bs.reduce((acc, b) => {
+      const d = diemBai.find(x => x.bai_id === b.id && x.thanh_vien_id === tvId);
+      return acc + ((d ? Number(d.diem) : 0) / Number(b.thang) * 10 * Number(b.trong_so));
+    }, 0);
+    return Math.round(s / tong * 100) / 100;
+  };
+  const datTieuChiDemo = (tc, tvId, diem) => {
+    if (tc.loai === 'co_mat_buoi') return dd.some(d => d.buoi_id === tc.buoi_id && d.thanh_vien_id === tvId);
+    if (tc.loai === 'co_mat_phan') return new Set(dd.filter(d => d.thanh_vien_id === tvId
+      && (buoi.find(b => b.id === d.buoi_id) || {}).dot_id === tc.dot_id
+      && (buoi.find(b => b.id === d.buoi_id) || {}).phan === tc.phan).map(d => d.buoi_id)).size >= (tc.so_buoi || 1);
+    if (tc.loai === 'diem_tong') return diem !== null && diem !== undefined && diem >= (tc.nguong || 0);
+    if (tc.loai === 'gui_phieu') return phieuDaGui.some(g => g.phieu_id === tc.phieu_id && g.thanh_vien_id === tvId);
+    return false;
+  };
+  const xetMotDemo = (dotId, tvId) => {
+    const diem = diemTongDemo(dotId, tvId);
+    const tcs = tieuChi.filter(x => x.dot_id === dotId).sort((a, b) => a.thu_tu - b.thu_tu);
+    const thieuCot = tcs.filter(x => x.cot_loi && !datTieuChiDemo(x, tvId, diem)).map(x => x.ten);
+    const thieuBo = tcs.filter(x => !x.cot_loi && !datTieuChiDemo(x, tvId, diem)).map(x => x.ten);
+    const soBuoi = new Set(dd.filter(d => d.thanh_vien_id === tvId && (buoi.find(b => b.id === d.buoi_id) || {}).dot_id === dotId).map(d => d.buoi_id)).size;
+    const nguong = ((dot.find(x => x.id === dotId) || {}).cai_dat || {}).nguong_xuat_sac;
+    let muc;
+    if (thieuCot.length) muc = soBuoi > 0 ? 'tham_du' : 'chua_hoan_thanh';
+    else if (thieuBo.length) muc = 'hoan_thanh_ghi_chu';
+    else if (nguong !== null && nguong !== undefined && diem !== null && diem >= Number(nguong)) muc = 'xuat_sac';
+    else muc = 'hoan_thanh';
+    return { muc, diem_tong: diem, so_buoi_co_mat: soBuoi, thieu_cot_loi: thieuCot, thieu_bo_sung: thieuBo,
+      ghi_chu: thieuBo.length && !thieuCot.length ? 'Chưa có: ' + thieuBo.join(', ') : null };
+  };
+
   const gioi =(ms = 60) => new Promise(r => setTimeout(r, ms));
   const tt = (b, t) => {
     const d = dd.find(x => x.buoi_id === b.id && x.thanh_vien_id === t.id);
@@ -430,6 +505,7 @@ export function demo(vai) {
       return dot.map(d => Object.assign({}, d, {
         so_hoc_vien: dotHv.filter(x => x.dot_id === d.id && x.trang_thai === 'ghi_danh').length,
         so_kich_hoat: dotHv.filter(x => x.dot_id === d.id && x.trang_thai === 'ghi_danh' && (hv.find(h => h.id === x.thanh_vien_id) || {}).user_id).length,
+        cai_dat: d.cai_dat || {},
         la_btc: laBtcDot(d.id)
       }));
     },
@@ -765,6 +841,253 @@ export function demo(vai) {
       const cuaToi = dotHv.filter(x => x.thanh_vien_id === toiId() && x.trang_thai === 'ghi_danh').map(x => x.dot_id);
       return { bay_gio: new Date().toISOString(), buoi_gan: buoiGan, can_chon: canChon,
         thong_bao_moi: tbDot.filter(x => cuaToi.includes(x.dot_id) && !doc.includes(x.id)).length };
+    },
+
+    /* ---------- Sau buổi (migration 0015) ---------- */
+    async dsYeuCauDot(id) {
+      await gioi();
+      if (!thayDuocDot(id)) return [];
+      const ql = laBtcDot(id);
+      return yeuCau.filter(y => y.dot_id === id && (ql || y.nguoi === toiId()))
+        .slice().sort((a, b) => new Date(b.luc) - new Date(a.luc))
+        .map(y => {
+          const t = [...tv, ...hv].find(x => x.id === y.nguoi) || {};
+          return Object.assign({}, y, { la_cua_toi: y.nguoi === toiId(), ho_ten: ql ? t.ho_ten : null, ma: ql ? t.ma : null });
+        });
+    },
+    async guiYeuCauDot(id, loai, nd) {
+      await gioi(120);
+      if (!thayDuocDot(id)) throw new Error('Bạn không thuộc đợt này');
+      if (!String(nd || '').trim()) throw new Error('Nội dung còn trống');
+      const x = { id: uid(), dot_id: id, nguoi: toiId(), loai, noi_dung: String(nd).trim(), luc: new Date().toISOString(), trang_thai: 'moi', tra_loi: null, tra_loi_luc: null };
+      yeuCau.push(x);
+      return x.id;
+    },
+    async xuLyYeuCauDot(id, tt, tl) {
+      const y = yeuCau.find(x => x.id === id);
+      if (!y) throw new Error('Không tìm thấy yêu cầu');
+      if (!laBtcDot(y.dot_id)) throw new Error('Chỉ trưởng ban, thư ký của đợt và quản trị được xử lý');
+      const t = String(tl || '').trim() || null;
+      Object.assign(y, { trang_thai: tt, tra_loi: t, tra_loi_luc: t ? new Date().toISOString() : null });
+    },
+
+    async dsBaiThiDot(id) {
+      await gioi();
+      if (!thayDuocDot(id)) return [];
+      return baiThi.filter(b => b.dot_id === id).slice().sort((a, c) => a.thu_tu - c.thu_tu || a.ma.localeCompare(c.ma))
+        .map(b => Object.assign({}, b, { so_diem: diemBai.filter(d => d.bai_id === b.id).length }));
+    },
+    async luuBaiThiDot(id, p) {
+      const dotId = id ? (baiThi.find(b => b.id === id) || {}).dot_id : p.dot_id;
+      if (!laBtcDot(dotId)) throw new Error('Chỉ trưởng ban, thư ký của đợt và quản trị được sửa bài thi');
+      const o = { dot_id: dotId, ma: String(p.ma).trim().toUpperCase(), ten: String(p.ten).trim(),
+        thang: Number(p.thang) || 10, trong_so: Number(p.trong_so) || 1, thu_tu: Number(p.thu_tu) || 0 };
+      if (id) { Object.assign(baiThi.find(b => b.id === id), o); return id; }
+      const moi = Object.assign({ id: uid() }, o);
+      baiThi.push(moi);
+      return moi.id;
+    },
+    async xoaBaiThiDot(id) {
+      const b = baiThi.find(x => x.id === id);
+      if (!b) throw new Error('Không tìm thấy bài thi');
+      if (!laBtcDot(b.dot_id)) throw new Error('Chỉ trưởng ban, thư ký của đợt và quản trị được xóa bài thi');
+      baiThi.splice(baiThi.indexOf(b), 1);
+      for (let i = diemBai.length - 1; i >= 0; i--) if (diemBai[i].bai_id === id) diemBai.splice(i, 1);
+    },
+    async nhapDiemDot(baiId, ds, ghi) {
+      await gioi(200);
+      const b = baiThi.find(x => x.id === baiId);
+      if (!b) throw new Error('Không tìm thấy bài thi');
+      if (!laBtcDot(b.dot_id)) throw new Error('Chỉ trưởng ban, thư ký của đợt và quản trị được nhập điểm');
+      const daGap = new Map(), ket = [], dem = { ok: 0, sua: 0, loi: 0 };
+      ds.forEach((r, i) => {
+        const ma = String(r.ma || '').trim().toUpperCase();
+        const diem = String(r.diem || '').trim().replace(',', '.');
+        const so = diem === '' || Number.isNaN(Number(diem)) ? null : Number(diem);
+        let tt = null, ly_do = null, t = null;
+        if (!ma) { tt = 'loi'; ly_do = 'Thiếu mã học viên'; }
+        else if (so === null) { tt = 'loi'; ly_do = 'Điểm không đọc được'; }
+        else if (so < 0 || so > b.thang) { tt = 'loi'; ly_do = 'Điểm ngoài thang 0 đến ' + b.thang; }
+        else if (daGap.has(ma)) { tt = 'loi'; ly_do = 'Trùng mã với dòng ' + daGap.get(ma) + ' trong chính bảng này'; }
+        else {
+          daGap.set(ma, r.dong || String(i + 1));
+          t = [...tv, ...hv].find(x => x.ma === ma) || hv.find(x => x.email === String(r.ma || '').trim().toLowerCase());
+          if (!t) { tt = 'khong_thay'; ly_do = 'Không có ai mang mã này'; }
+          else if (!dotHv.some(g => g.dot_id === b.dot_id && g.thanh_vien_id === t.id && g.trang_thai === 'ghi_danh')) { tt = 'ngoai_dot'; ly_do = 'Không có tên trong đợt này'; }
+          else if (diemBai.some(d => d.bai_id === baiId && d.thanh_vien_id === t.id)) tt = 'sua';
+          else tt = 'ok';
+        }
+        if (ghi && (tt === 'ok' || tt === 'sua')) {
+          const cu = diemBai.find(d => d.bai_id === baiId && d.thanh_vien_id === t.id);
+          if (cu) cu.diem = so; else diemBai.push({ bai_id: baiId, thanh_vien_id: t.id, diem: so });
+        }
+        dem[tt === 'ok' || tt === 'sua' ? tt : 'loi']++;
+        ket.push({ dong: r.dong || String(i + 1), ma, ho_ten: t ? t.ho_ten : null, diem: so, tinh_trang: tt, ly_do });
+      });
+      return { da_ghi: !!ghi, dem, ds: ket };
+    },
+    async xoaDiemDot(baiId, tvId) {
+      const i = diemBai.findIndex(d => d.bai_id === baiId && d.thanh_vien_id === tvId);
+      if (i >= 0) diemBai.splice(i, 1);
+    },
+
+    async dsPhieuDot(id) {
+      await gioi();
+      if (!thayDuocDot(id)) return [];
+      return phieu.filter(f => f.dot_id === id).map(f => Object.assign({}, f, {
+        so_cau: phieuCau.filter(c => c.phieu_id === f.id).length,
+        so_gui: phieuDaGui.filter(g => g.phieu_id === f.id).length,
+        toi_da_gui: phieuDaGui.some(g => g.phieu_id === f.id && g.thanh_vien_id === toiId()),
+        cau: phieuCau.filter(c => c.phieu_id === f.id).slice().sort((a, b) => a.thu_tu - b.thu_tu)
+      }));
+    },
+    async luuPhieuDot(id, p) {
+      const dotId = id ? (phieu.find(f => f.id === id) || {}).dot_id : p.dot_id;
+      if (!laBtcDot(dotId)) throw new Error('Chỉ trưởng ban, thư ký của đợt và quản trị được soạn phiếu');
+      const daGui = id && phieuTraLoi.some(x => x.phieu_id === id);
+      if (daGui && p.cau) throw new Error('Phiếu đã có người gửi nên không sửa được câu hỏi');
+      const o = { dot_id: dotId, ten: String(p.ten).trim(), mo_ta: p.mo_ta || null,
+        an_danh: p.an_danh !== false, mo: !!p.mo, han: p.han || null };
+      let fid = id;
+      if (id) Object.assign(phieu.find(f => f.id === id), o);
+      else { fid = uid(); phieu.push(Object.assign({ id: fid, tao_luc: new Date().toISOString() }, o)); }
+      if (p.cau) {
+        for (let i = phieuCau.length - 1; i >= 0; i--) if (phieuCau[i].phieu_id === fid) phieuCau.splice(i, 1);
+        p.cau.forEach((c, i) => phieuCau.push({ id: uid(), phieu_id: fid, thu_tu: i + 1, noi_dung: c.noi_dung,
+          loai: c.loai || 'thang5', lua_chon: c.lua_chon || null, bat_buoc: c.bat_buoc !== false }));
+      }
+      return fid;
+    },
+    async xoaPhieuDot(id) {
+      const f = phieu.find(x => x.id === id);
+      if (!f) throw new Error('Không tìm thấy phiếu');
+      if (!laBtcDot(f.dot_id)) throw new Error('Chỉ trưởng ban, thư ký của đợt và quản trị được xóa phiếu');
+      phieu.splice(phieu.indexOf(f), 1);
+      for (let i = phieuCau.length - 1; i >= 0; i--) if (phieuCau[i].phieu_id === id) phieuCau.splice(i, 1);
+      for (let i = phieuTraLoi.length - 1; i >= 0; i--) if (phieuTraLoi[i].phieu_id === id) phieuTraLoi.splice(i, 1);
+      for (let i = phieuDaGui.length - 1; i >= 0; i--) if (phieuDaGui[i].phieu_id === id) phieuDaGui.splice(i, 1);
+    },
+    async guiPhieuDot(id, tl) {
+      await gioi(150);
+      const f = phieu.find(x => x.id === id);
+      if (!f) throw new Error('Không tìm thấy phiếu');
+      if (!oTrongDot(f.dot_id)) throw new Error('Bạn không có tên trong đợt này');
+      if (!f.mo) throw new Error('Phiếu chưa mở');
+      if (f.han && Date.now() > new Date(f.han).getTime()) throw new Error('Phiếu đã hết hạn');
+      if (phieuDaGui.some(g => g.phieu_id === id && g.thanh_vien_id === toiId())) throw new Error('Bạn đã gửi phiếu này rồi');
+      const thieu = phieuCau.filter(c => c.phieu_id === id && c.bat_buoc && !String((tl || {})[c.id] || '').trim());
+      if (thieu.length) throw new Error('Còn câu bắt buộc chưa trả lời');
+      phieuDaGui.push({ phieu_id: id, thanh_vien_id: toiId(), luc: new Date().toISOString() });
+      phieuTraLoi.push({ id: uid(), phieu_id: id, nguoi: f.an_danh ? null : toiId(), tra_loi: tl,
+        luc: f.an_danh ? ngayVN(Date.now()) + 'T00:00:00+07:00' : new Date().toISOString() });
+    },
+    async tongHopPhieuDot(id) {
+      await gioi();
+      const f = phieu.find(x => x.id === id);
+      if (!f || !laBtcDot(f.dot_id)) return null;
+      const tls = phieuTraLoi.filter(x => x.phieu_id === id);
+      return {
+        so_gui: phieuDaGui.filter(g => g.phieu_id === id).length,
+        an_danh: f.an_danh,
+        cau: phieuCau.filter(c => c.phieu_id === id).slice().sort((a, b) => a.thu_tu - b.thu_tu).map(c => ({
+          id: c.id, noi_dung: c.noi_dung, loai: c.loai, lua_chon: c.lua_chon,
+          tra_loi: tls.map(x => (x.tra_loi || {})[c.id]).filter(v => String(v || '').trim() !== '')
+        })),
+        ds: f.an_danh ? null : tls.map(x => {
+          const t = [...tv, ...hv].find(y => y.id === x.nguoi) || {};
+          return { ho_ten: t.ho_ten || null, ma: t.ma || null, luc: x.luc, tra_loi: x.tra_loi };
+        })
+      };
+    },
+
+    async datCaiDatDot(id, p) {
+      if (!laBtcDot(id)) throw new Error('Chỉ trưởng ban, thư ký của đợt và quản trị được đổi cài đặt');
+      const d = dot.find(x => x.id === id);
+      d.cai_dat = Object.assign({}, d.cai_dat || {}, p);
+    },
+    async dsTieuChiDot(id) {
+      await gioi();
+      if (!thayDuocDot(id)) return [];
+      return tieuChi.filter(x => x.dot_id === id).slice().sort((a, b) => a.thu_tu - b.thu_tu).map(x => Object.assign({}, x, {
+        buoi_ten: (buoi.find(b => b.id === x.buoi_id) || {}).ten || null,
+        phieu_ten: (phieu.find(f => f.id === x.phieu_id) || {}).ten || null
+      }));
+    },
+    async luuTieuChiDot(id, p) {
+      if (!laBtcDot(id)) throw new Error('Chỉ trưởng ban, thư ký của đợt và quản trị được đặt tiêu chí');
+      for (let i = tieuChi.length - 1; i >= 0; i--) if (tieuChi[i].dot_id === id) tieuChi.splice(i, 1);
+      (p || []).forEach((x, i) => tieuChi.push({
+        id: uid(), dot_id: id, ten: x.ten, loai: x.loai, buoi_id: x.buoi_id || null, phan: x.phan || null,
+        so_buoi: x.so_buoi ? Number(x.so_buoi) : null, nguong: x.nguong === '' || x.nguong === null || x.nguong === undefined ? null : Number(x.nguong),
+        phieu_id: x.phieu_id || null, cot_loi: x.cot_loi !== false, thu_tu: i + 1
+      }));
+    },
+    async xetKetQuaDot(id) {
+      await gioi();
+      if (!laBtcDot(id)) return [];
+      return dotHv.filter(g => g.dot_id === id && g.trang_thai === 'ghi_danh')
+        .map(g => hv.find(h2 => h2.id === g.thanh_vien_id)).filter(Boolean)
+        .sort((a, b) => a.ho_ten.localeCompare(b.ho_ten, 'vi'))
+        .map(t => ({
+          thanh_vien_id: t.id, ma: t.ma, ho_ten: t.ho_ten,
+          xet: xetMotDemo(id, t.id),
+          diem: baiThi.filter(b => b.dot_id === id).sort((a, c) => a.thu_tu - c.thu_tu).map(b => {
+            const d = diemBai.find(x => x.bai_id === b.id && x.thanh_vien_id === t.id);
+            return { bai_id: b.id, ma: b.ma, ten: b.ten, diem: d ? d.diem : null };
+          }),
+          chung_nhan: chungNhan.find(c => c.dot_id === id && c.thanh_vien_id === t.id) || null
+        }));
+    },
+    async capChungNhanDot(id, ids) {
+      await gioi(150);
+      if (!laBtcDot(id)) throw new Error('Chỉ trưởng ban, thư ký của đợt và quản trị được cấp chứng nhận');
+      const d = dot.find(x => x.id === id), ra = [];
+      (ids || []).forEach(x => {
+        if (!dotHv.some(g => g.dot_id === id && g.thanh_vien_id === x && g.trang_thai === 'ghi_danh')) return;
+        const xet = xetMotDemo(id, x);
+        let c = chungNhan.find(y => y.dot_id === id && y.thanh_vien_id === x);
+        if (!c) {
+          const n = chungNhan.filter(y => y.dot_id === id).length + 1;
+          c = { dot_id: id, thanh_vien_id: x, ma: `${d.ma}-${String(n).padStart(4, '0')}-${maKichHoat().slice(0, 4)}` };
+          chungNhan.push(c);
+        }
+        Object.assign(c, { muc: xet.muc, ghi_chu: xet.ghi_chu, diem_tong: xet.diem_tong, cap_luc: new Date().toISOString(), thu_hoi_luc: null });
+        ra.push({ thanh_vien_id: x, ma: c.ma, muc: c.muc });
+      });
+      return { ds: ra };
+    },
+    async thuHoiChungNhan(id, tvId, th) {
+      if (!laBtcDot(id)) throw new Error('Chỉ trưởng ban, thư ký của đợt và quản trị được thu hồi chứng nhận');
+      const c = chungNhan.find(y => y.dot_id === id && y.thanh_vien_id === tvId);
+      if (c) c.thu_hoi_luc = th ? new Date().toISOString() : null;
+    },
+    async traChungNhan(ma) {
+      await gioi();
+      const c = chungNhan.find(x => x.ma === String(ma || '').trim().toUpperCase());
+      if (!c) return null;
+      const t = hv.find(x => x.id === c.thanh_vien_id) || {}, d = dot.find(x => x.id === c.dot_id) || {};
+      return { ma: c.ma, ho_ten: t.ho_ten, dot_ma: d.ma, dot_ten: d.ten, bat_dau: d.bat_dau, ket_thuc: d.ket_thuc,
+        muc: c.muc, ghi_chu: c.ghi_chu, cap_luc: c.cap_luc, con_hieu_luc: !c.thu_hoi_luc };
+    },
+    async ketQuaCuaToi() {
+      await gioi();
+      return dotHv.filter(g => g.thanh_vien_id === toiId() && g.trang_thai === 'ghi_danh')
+        .map(g => dot.find(d => d.id === g.dot_id)).filter(Boolean)
+        .map(d => ({
+          dot_id: d.id, dot_ma: d.ma, dot_ten: d.ten, trang_thai: d.trang_thai,
+          diem: baiThi.filter(b => b.dot_id === d.id).sort((a, c) => a.thu_tu - c.thu_tu).map(b => {
+            const x = diemBai.find(y => y.bai_id === b.id && y.thanh_vien_id === toiId());
+            return { ten: b.ten, diem: x ? x.diem : null, thang: b.thang };
+          }),
+          diem_tong: diemTongDemo(d.id, toiId()),
+          tieu_chi: tieuChi.filter(x => x.dot_id === d.id).sort((a, b) => a.thu_tu - b.thu_tu).map(x => ({
+            ten: x.ten, cot_loi: x.cot_loi, dat: datTieuChiDemo(x, toiId(), diemTongDemo(d.id, toiId()))
+          })),
+          chung_nhan: (() => {
+            const c = chungNhan.find(y => y.dot_id === d.id && y.thanh_vien_id === toiId());
+            return c ? { ma: c.ma, muc: c.muc, ghi_chu: c.ghi_chu, cap_luc: c.cap_luc, con_hieu_luc: !c.thu_hoi_luc } : null;
+          })()
+        }));
     },
 
     async thongKeBai(id) {

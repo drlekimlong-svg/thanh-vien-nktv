@@ -379,6 +379,17 @@ button.dong:active, a.dong:active { background: var(--ke); transition: none; }
   .in-ck ul { margin: 0; padding: 0; }
   .in-ck li { list-style: none; position: relative; padding-left: 7mm; margin-bottom: 2mm; break-inside: avoid; }
   .in-ck li::before { content: ''; position: absolute; left: 0; top: 0.8mm; width: 4mm; height: 4mm; border: 0.3mm solid #333; border-radius: 0.8mm; }
+  /* Giấy chứng nhận: mỗi người một trang. */
+  .in-giay { break-after: page; text-align: center; padding: 12mm 10mm; border: 0.6mm double #333; margin-bottom: 6mm; }
+  .in-giay:last-child { break-after: auto; }
+  .in-giay .ten-clb { font-size: 12pt; font-weight: 700; letter-spacing: 0.06em; }
+  .in-giay .phu { font-size: 10pt; margin-bottom: 10mm; }
+  .in-giay h2 { font-size: 20pt; letter-spacing: 0.12em; margin: 0 0 7mm; }
+  .in-giay p { margin: 0 0 3mm; font-size: 11pt; line-height: 1.5; }
+  .in-giay .ten { font-size: 18pt; font-weight: 700; margin: 3mm 0 4mm; }
+  .in-giay .muc { font-size: 13pt; font-weight: 700; margin: 5mm 0; }
+  .in-giay .ghi-chu { font-size: 10pt; font-style: italic; }
+  .in-giay .ma { font-size: 9pt; color: #333; margin-top: 6mm; word-break: break-all; }
   @page { margin: 12mm; }
 }
 

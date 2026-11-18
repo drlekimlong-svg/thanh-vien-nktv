@@ -3,11 +3,11 @@
 // Phần B: việc cần làm bây giờ, mã điểm danh, lịch học, chọn ca, tài liệu, checklist, câu hỏi, thông báo.
 import { S } from './state.js';
 import {
-  h, dat, dong, nhom, moSheet, thu, toast, bieuTuong, gio, ngay, ngayGio, rong, oNhap, xacNhan, soLieu, dauNgay
+  h, dat, dong, nhom, moSheet, thu, toast, bieuTuong, gio, ngay, ngayGio, rong, oNhap, oChon, xacNhan, soLieu, soVN, dauNgay
 } from './ui.js';
 import { moMaCuaToi, moThongBao } from './v-homnay.js';
 import { manCauHoi, moChecklist, soMucChecklist, hangTaiLieu } from './v-tronggio.js';
-import { PHAN } from './v-dot.js';
+import { PHAN, MUC, LOAI_YC } from './dot-chung.js';
 
 const TRANG_THAI = { soan: 'Chưa mở', mo: 'Đang mở', ket_thuc: 'Đã kết thúc' };
 const LOP_TT = { soan: 'cho', mo: 'dung', ket_thuc: '' };
@@ -23,8 +23,107 @@ export async function tuyenHocVien(vung, tab, con = []) {
   if (tab === 'hom-nay' && con[0] === 'cau-hoi') return manHVCauHoi(vung, con[1], con[2]);
   if (tab === 'lich') return manHVLich(vung);
   if (tab === 'tai-lieu') return manHVTaiLieu(vung);
+  if (tab === 'ket-qua') return manHVKetQua(vung);
   if (tab === 'ho-so') return manHVHoSo(vung);
   return manHVHomNay(vung);
+}
+
+/* ---------- Gửi thắc mắc, phản hồi cho Ban tổ chức ---------- */
+function guiYeuCau(dotId, sauKhi) {
+  const f = h('form', {
+    onsubmit: async (e) => {
+      e.preventDefault();
+      const v = f.elements;
+      if (!v.nd.value.trim()) return toast('Nội dung còn trống.', true);
+      if (await thu(() => S.db.guiYeuCauDot(dotId, v.loai.value, v.nd.value.trim()), 'Đã gửi cho Ban tổ chức')) { s.dong(); if (sauKhi) sauKhi(); }
+    }
+  },
+    h('div', { class: 'nhom' },
+      oChon('Loại', Object.keys(LOAI_YC).map(k => [k, LOAI_YC[k]]), 'thac_mac', { name: 'loai' }),
+      oNhap('Nội dung', { the: 'textarea', name: 'nd', rows: 6, maxlength: 4000, required: true })),
+    h('p', { class: 'chu-nho', style: 'margin-bottom:14px' }, 'Ô này chỉ nhận chữ, không gửi được tệp hay ảnh. Đừng ghi thông tin sức khỏe hay giấy tờ cá nhân vào đây; nếu cần nộp giấy, nhắn Ban tổ chức để đưa trực tiếp.'),
+    h('button', { class: 'nut day', type: 'submit' }, 'Gửi'));
+  const s = moSheet({ tieuDe: 'Gửi cho Ban tổ chức', noiDung: f });
+}
+
+/* ---------- Làm phiếu đánh giá ---------- */
+function moPhieu(f, sauKhi) {
+  const tl = {};
+  const than = h('div', null,
+    f.mo_ta ? h('p', { class: 'chu-nho', style: 'margin-bottom:12px' }, f.mo_ta) : null,
+    h('div', { class: 'bang-tin' + (f.an_danh ? ' xanh' : '') }, f.an_danh
+      ? 'Phiếu ẩn danh: câu trả lời của bạn không gắn với tên bạn, giờ gửi chỉ ghi theo ngày. App vẫn ghi là bạn đã gửi, để tính tiêu chí hoàn thành.'
+      : 'Phiếu này có tên: Ban tổ chức thấy bạn trả lời gì.'),
+    (f.cau || []).map(c => {
+      const nhan = c.noi_dung + (c.bat_buoc ? '' : ' (không bắt buộc)');
+      if (c.loai === 'thang5') {
+        const o = h('div', { class: 'o' }, h('span', null, nhan),
+          h('div', { class: 'chon-ngang', style: 'padding:6px 0 0' }, [1, 2, 3, 4, 5].map(n =>
+            h('button', { class: 'vien', type: 'button', 'aria-pressed': 'false', onclick: (e) => {
+              tl[c.id] = String(n);
+              e.currentTarget.parentElement.querySelectorAll('.vien').forEach((v, i) => v.setAttribute('aria-pressed', i === n - 1 ? 'true' : 'false'));
+            } }, String(n)))));
+        return o;
+      }
+      if (c.loai === 'chon') {
+        return oChon(nhan, [['', 'Chưa chọn'], ...(c.lua_chon || []).map(x => [x, x])], '', { onchange: (e) => { tl[c.id] = e.target.value; } });
+      }
+      return oNhap(nhan, { the: 'textarea', rows: 4, oninput: (e) => { tl[c.id] = e.target.value; } });
+    }),
+    h('button', { class: 'nut day', type: 'button', style: 'margin-top:4px', onclick: async () => {
+      const thieu = (f.cau || []).filter(c => c.bat_buoc && !String(tl[c.id] || '').trim());
+      if (thieu.length) return toast('Còn ' + thieu.length + ' câu bắt buộc chưa trả lời.', true);
+      if (await thu(() => S.db.guiPhieuDot(f.id, tl), 'Đã gửi phiếu')) { s.dong(); if (sauKhi) sauKhi(); }
+    } }, 'Gửi phiếu'),
+    h('p', { class: 'chu-nho', style: 'margin-top:10px' }, 'Gửi rồi thì không sửa lại được.'));
+  const s = moSheet({ tieuDe: f.ten, noiDung: h('div', { class: 'nhom', style: 'background:none;box-shadow:none;margin:0' }, than) });
+}
+
+/* ---------- Kết quả và giấy chứng nhận ---------- */
+async function manHVKetQua(vung) {
+  const ds = await S.db.ketQuaCuaToi();
+  const inGiay = (k, d) => {
+    const the = h('div', { class: 'trang-in' }, h('div', { class: 'in-giay' },
+      h('div', { class: 'ten-clb' }, 'CLB NGOẠI KHOA TRƯNG VƯƠNG'),
+      h('div', { class: 'phu' }, 'Trường Đại học Y khoa Phạm Ngọc Thạch'),
+      h('h2', null, 'GIẤY CHỨNG NHẬN'),
+      h('p', null, 'Chứng nhận'),
+      h('div', { class: 'ten' }, S.toi.ho_ten),
+      h('p', null, 'đã tham gia ', h('b', null, d.dot_ten),
+        d.diem_tong === null || d.diem_tong === undefined ? null : [' với điểm tổng ', h('b', null, soVN(d.diem_tong, 2)), '/10']),
+      h('div', { class: 'muc' }, 'Kết quả: ' + MUC[k.muc][0]),
+      k.ghi_chu ? h('p', { class: 'ghi-chu' }, k.ghi_chu) : null,
+      h('p', { class: 'ma' }, 'Mã tra cứu: ', k.ma),
+      h('p', { class: 'ma' }, 'Tra tại: ', (window.NKTV_CONFIG && window.NKTV_CONFIG.appUrl) || location.origin + location.pathname, '?cn=', k.ma)));
+    document.body.append(the);
+    window.print();
+    setTimeout(() => the.remove(), 500);
+  };
+
+  dat(vung,
+    h('h1', { class: 'tieu-de-lon' }, 'Kết quả'),
+    !ds.length ? rong('Bạn chưa có đợt tập huấn nào.') : null,
+    ds.map(d => [
+      h('div', { class: 'nhan-nhom' }, `${d.dot_ma} · ${TRANG_THAI[d.trang_thai]}`),
+      (d.diem || []).length ? nhom('Điểm', [
+        ...d.diem.map(b => dong({ tieu: b.ten, sau: b.diem === null ? 'chưa có' : soVN(b.diem) + '/' + soVN(b.thang), muiTen: false })),
+        dong({ tieu: 'Điểm tổng', sau: d.diem_tong === null || d.diem_tong === undefined ? '–' : soVN(d.diem_tong, 2) + '/10', muiTen: false })
+      ]) : null,
+      (d.tieu_chi || []).length ? nhom('Tiêu chí hoàn thành', d.tieu_chi.map(tc => dong({
+        tieu: tc.ten, phu: tc.cot_loi ? 'Cốt lõi' : 'Bổ sung',
+        sau: h('span', { class: 'the-nhan ' + (tc.dat ? 'dung' : 'vang') }, tc.dat ? 'Đạt' : 'Chưa đạt'), muiTen: false
+      }))) : null,
+      d.chung_nhan ? nhom('Giấy chứng nhận',
+        dong({ tieu: 'Kết quả', sau: h('span', { class: 'the-nhan ' + MUC[d.chung_nhan.muc][1] }, MUC[d.chung_nhan.muc][0]), muiTen: false }),
+        d.chung_nhan.ghi_chu ? dong({ tieu: 'Ghi chú trên giấy', phu: d.chung_nhan.ghi_chu, muiTen: false }) : null,
+        dong({ tieu: 'Mã tra cứu', sau: d.chung_nhan.ma, muiTen: false }),
+        dong({ tieu: 'Ngày cấp', sau: ngay(d.chung_nhan.cap_luc), muiTen: false }),
+        d.chung_nhan.con_hieu_luc
+          ? dong({ tieu: 'In hoặc lưu PDF', truoc: icon('phieu'), onclick: () => inGiay(d.chung_nhan, d) })
+          : dong({ tieu: 'Giấy đã thu hồi', phu: 'Hỏi Ban tổ chức đợt nếu bạn cần biết vì sao', muiTen: false })) : null,
+      !d.chung_nhan ? h('p', { class: 'chu-nho', style: 'margin-bottom:18px' }, 'Ban tổ chức chưa cấp giấy cho đợt này.') : null
+    ]),
+    ds.length ? h('p', { class: 'chu-nho', style: 'margin-bottom:22px' }, 'Điểm và tiêu chí ở đây là bản app tính theo dữ liệu hiện có. Thấy sai thì gửi thắc mắc cho Ban tổ chức ở tab Hôm nay.') : null);
 }
 
 /* ---------- Việc cần làm bây giờ ---------- */
@@ -33,6 +132,13 @@ export async function manHVHomNay(vung) {
   const mo = dotMo();
   const xong = ds.filter(d => d.trang_thai === 'ket_thuc');
   const tc = mo.length ? await S.db.hvTrangChu().catch(() => null) : null;
+  // Phiếu đang mở của các đợt đang học, chưa gửi thì hiện lên như một việc cần làm.
+  const phieu = [];
+  for (const d of mo) {
+    const ps = await S.db.dsPhieuDot(d.id).catch(() => []);
+    ps.filter(p => p.mo && !p.toi_da_gui && (!p.han || new Date(p.han) > new Date()))
+      .forEach(p => phieu.push(Object.assign({ dot_ma: d.ma }, p)));
+  }
   const nay = tc && tc.bay_gio ? new Date(tc.bay_gio).getTime() : Date.now() + (S.lech || 0);
   const buoiGan = (tc && tc.buoi_gan) || [];
   const canChon = (tc && tc.can_chon) || [];
@@ -83,7 +189,13 @@ export async function manHVHomNay(vung) {
 
     canChon.length ? nhom('Cần chọn ca', canChon.map(hangChon)) : null,
 
-    mo.length && !buoiGan.length && !canChon.length
+    phieu.length ? nhom('Phiếu đánh giá đang mở', phieu.map(p => dong({
+      tieu: p.ten,
+      phu: [p.dot_ma, p.an_danh ? 'ẩn danh' : 'có tên', `${p.so_cau} câu`, p.han ? 'hạn ' + ngay(p.han) : null].filter(Boolean).join(' · '),
+      truoc: icon('phieu'), onclick: () => moPhieu(p, lai)
+    }))) : null,
+
+    mo.length && !buoiGan.length && !canChon.length && !phieu.length
       ? h('div', { class: 'bang-tin xanh' }, 'Bây giờ không có việc gì cần làm. Tới giờ buổi học, nút điểm danh sẽ hiện ngay ở đây. Lịch cả đợt nằm ở tab Lịch.')
       : null,
 
@@ -112,7 +224,10 @@ export async function manHVHomNay(vung) {
 
     xong.length ? h('p', { class: 'chu-nho', style: 'margin-bottom:22px' }, 'Kết quả và giấy chứng nhận của các đợt đã xong sẽ hiện ở mục này khi Ban tổ chức nhập điểm và duyệt.') : null,
 
-    nhom(null, dong({ tieu: 'Mã điểm danh của tôi', truoc: icon('qr'), onclick: moMaCuaToi })),
+    nhom(null,
+      dong({ tieu: 'Mã điểm danh của tôi', truoc: icon('qr'), onclick: moMaCuaToi }),
+      ds.length ? dong({ tieu: 'Gửi thắc mắc, phản hồi', phu: 'Ban tổ chức đợt đọc và trả lời ngay trong app',
+        truoc: icon('don'), onclick: () => guiYeuCau((mo[0] || ds[0]).id, lai) }) : null),
 
     h('p', { class: 'chu-nho giua-chu' }, 'CLB Ngoại Khoa Trưng Vương · Đón Nhận – Trưởng thành – Trao lại'));
 }

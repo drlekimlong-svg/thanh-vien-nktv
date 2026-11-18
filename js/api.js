@@ -61,17 +61,23 @@ const sua = (bang, id, o) => rest(`${bang}?id=eq.${id}`, { method: 'PATCH', body
 const xoa = (bang, id) => rest(`${bang}?id=eq.${id}`, { method: 'DELETE' });
 
 export const emailTu = (ma) => `${ma.toLowerCase()}@${C.mienTaiKhoan}`;
-/** Nhận "NKTV-001", "nktv001", "1" đều ra NKTV-001. */
-export const chuanMa = (s) => {
-  const so = String(s || '').replace(/\D/g, '');
-  return so ? 'NKTV-' + so.padStart(3, '0') : '';
+/** Chuẩn hóa mã đăng nhập. Gõ sẵn tiền tố thì theo tiền tố; không thì theo cửa đã chọn.
+    Thành viên CLB: "NKTV-001", "nktv001", "1" đều ra NKTV-001.
+    Học viên: "HV00001", "hv1", "1" đều ra HV00001. */
+export const chuanMa = (s, loai) => {
+  const chu = String(s || '').trim().toUpperCase();
+  const so = chu.replace(/\D/g, '');
+  if (!so) return '';
+  if (chu.startsWith('HV')) return 'HV' + so.padStart(5, '0');
+  if (chu.startsWith('NKTV')) return 'NKTV-' + so.padStart(3, '0');
+  return loai === 'hoc_vien' ? 'HV' + so.padStart(5, '0') : 'NKTV-' + so.padStart(3, '0');
 };
 
 export const api = {
   coPhien: () => !!phien,
-  async dangNhap(ma, matKhau) {
+  async dangNhap(ma, matKhau, loai) {
     const d = await goiFetch(`${C.supabaseUrl}/auth/v1/token?grant_type=password`, {
-      method: 'POST', headers: { apikey: C.supabaseKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: emailTu(chuanMa(ma)), password: matKhau })
+      method: 'POST', headers: { apikey: C.supabaseKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ email: emailTu(chuanMa(ma, loai)), password: matKhau })
     });
     luuPhien({ access_token: d.access_token, refresh_token: d.refresh_token, expires_at: d.expires_at });
   },
@@ -83,8 +89,8 @@ export const api = {
   async doiMatKhau(moi) {
     await goiFetch(`${C.supabaseUrl}/auth/v1/user`, { method: 'PUT', headers: await dauDe(), body: JSON.stringify({ password: moi }) });
   },
-  kichHoat: (ma, code, matKhau) => goiFetch(`${C.supabaseUrl}/functions/v1/kich-hoat`, {
-    method: 'POST', headers: { apikey: C.supabaseKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ ma: chuanMa(ma), ma_kich_hoat: code, mat_khau: matKhau })
+  kichHoat: (ma, code, matKhau, loai) => goiFetch(`${C.supabaseUrl}/functions/v1/kich-hoat`, {
+    method: 'POST', headers: { apikey: C.supabaseKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ ma: chuanMa(ma, loai), ma_kich_hoat: code, mat_khau: matKhau })
   }),
   theCongKhai: (khoa) => goiFetch(`${C.supabaseUrl}/rest/v1/rpc/the_thanh_vien`, {
     method: 'POST', headers: { apikey: C.supabaseKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_khoa: khoa })
@@ -204,6 +210,33 @@ export const api = {
   luuThongBaoDot: (id, p) => rpc('luu_thong_bao_dot', { p_id: id, p }),
   xoaThongBaoDot: (id) => rpc('xoa_thong_bao_dot', { p_id: id }),
   hvTrangChu: () => rpc('hv_trang_chu'),
+
+  /* Sau buổi (migration 0015): phản hồi và thắc mắc, bài thi và điểm, phiếu đánh giá,
+     tiêu chí hoàn thành, xét kết quả và giấy chứng nhận. */
+  guiYeuCauDot: (dot, loai, nd) => rpc('gui_yeu_cau_dot', { p_dot: dot, p_loai: loai, p_noi_dung: nd }),
+  dsYeuCauDot: (dot) => rpc('ds_yeu_cau_dot', { p_dot: dot }),
+  xuLyYeuCauDot: (id, tt, tl) => rpc('xu_ly_yeu_cau_dot', { p_id: id, p_trang_thai: tt, p_tra_loi: tl ?? null }),
+  luuBaiThiDot: (id, p) => rpc('luu_bai_thi_dot', { p_id: id, p }),
+  xoaBaiThiDot: (id) => rpc('xoa_bai_thi_dot', { p_id: id }),
+  dsBaiThiDot: (dot) => rpc('ds_bai_thi_dot', { p_dot: dot }),
+  nhapDiemDot: (bai, ds, ghi) => rpc('nhap_diem_dot', { p_bai: bai, p_ds: ds, p_ghi: !!ghi }),
+  xoaDiemDot: (bai, tv) => rpc('xoa_diem_dot', { p_bai: bai, p_tv: tv }),
+  luuPhieuDot: (id, p) => rpc('luu_phieu_dot', { p_id: id, p }),
+  xoaPhieuDot: (id) => rpc('xoa_phieu_dot', { p_id: id }),
+  dsPhieuDot: (dot) => rpc('ds_phieu_dot', { p_dot: dot }),
+  guiPhieuDot: (phieu, tl) => rpc('gui_phieu_dot', { p_phieu: phieu, p_tra_loi: tl }),
+  tongHopPhieuDot: (phieu) => rpc('tong_hop_phieu_dot', { p_phieu: phieu }),
+  datCaiDatDot: (dot, p) => rpc('dat_cai_dat_dot', { p_dot: dot, p }),
+  luuTieuChiDot: (dot, p) => rpc('luu_tieu_chi_dot', { p_dot: dot, p }),
+  dsTieuChiDot: (dot) => rpc('ds_tieu_chi_dot', { p_dot: dot }),
+  xetKetQuaDot: (dot) => rpc('xet_ket_qua_dot', { p_dot: dot }),
+  capChungNhanDot: (dot, ids) => rpc('cap_chung_nhan_dot', { p_dot: dot, p_ids: ids }),
+  thuHoiChungNhan: (dot, tv, th) => rpc('thu_hoi_chung_nhan', { p_dot: dot, p_tv: tv, p_thu_hoi: !!th }),
+  ketQuaCuaToi: () => rpc('ket_qua_cua_toi'),
+  // Tra cứu chứng nhận chạy được khi chưa đăng nhập, y như thẻ thành viên.
+  traChungNhan: (ma) => goiFetch(`${C.supabaseUrl}/rest/v1/rpc/tra_chung_nhan`, {
+    method: 'POST', headers: { apikey: C.supabaseKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_ma: ma })
+  }),
 
   // Tuyển quân: phiếu của người khác chỉ trả về khi tài khoản được xem kết quả (quy tắc ở bảng tq_danh_gia).
   dsThiSinh: () => rest('tq_thi_sinh?select=id,ma_ts,stt,ho_ten,lop,nam&dot=eq.TQ2026&order=stt'),

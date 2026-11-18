@@ -1,6 +1,6 @@
 // Khởi động, đăng nhập, khung điều hướng.
 import { S, donDep } from './state.js';
-import { $, h, dat, bieuTuong, oNhap, NHA, moTaTV, dangTai, dongHetSheet } from './ui.js';
+import { $, h, dat, dong, bieuTuong, oNhap, ngay, NHA, moTaTV, dangTai, dongHetSheet } from './ui.js';
 import { api, chuanMa } from './api.js';
 import { manHomNay } from './v-homnay.js';
 import { manLich } from './v-lich.js';
@@ -33,6 +33,7 @@ const TAB_HV = [
   { id: 'hom-nay', ten: 'Hôm nay', icon: 'hom_nay' },
   { id: 'lich', ten: 'Lịch học', icon: 'lich' },
   { id: 'tai-lieu', ten: 'Tài liệu', icon: 'test' },
+  { id: 'ket-qua', ten: 'Kết quả', icon: 'sao' },
   { id: 'ho-so', ten: 'Hồ sơ', icon: 'ho_so' }
 ];
 const laHocVien = () => S.toi && S.toi.loai === 'hoc_vien';
@@ -113,46 +114,122 @@ async function manThe(khoa) {
     h('a', { class: 'nut phu', href: location.pathname + (S.demo ? location.search.replace(/[?&]the=[^&]*/, '') : '') }, 'Mở app thành viên')));
 }
 
-/* ---------- Đăng nhập và kích hoạt ---------- */
-function manDangNhap(cheDo = 'dang-nhap', baoLoi = '') {
+/* ---------- Tra cứu giấy chứng nhận, không cần đăng nhập ----------
+   Mã in trên giấy. Ai có mã thì xem được họ tên, đợt và mức của đúng giấy đó;
+   hàm tra_chung_nhan không trả về email, số điện thoại hay điểm từng bài. */
+const MUC_CN = {
+  xuat_sac: ['Xuất sắc', 'dung'], hoan_thanh: ['Hoàn thành', 'dung'],
+  hoan_thanh_ghi_chu: ['Hoàn thành có ghi chú', 'phep'], tham_du: ['Tham dự', 'tre'],
+  chua_hoan_thanh: ['Chưa hoàn thành', 'vang']
+};
+async function manChungNhan(ma) {
   nenSang(true);
-  const ma = oNhap('Mã thành viên', { name: 'ma', autocomplete: 'username', placeholder: 'NKTV-001', autocapitalize: 'characters', required: true });
-  const mk = oNhap(cheDo === 'kich-hoat' ? 'Mật khẩu tự đặt (ít nhất 8 ký tự)' : 'Mật khẩu', { name: 'mk', type: 'password', autocomplete: cheDo === 'kich-hoat' ? 'new-password' : 'current-password', required: true });
-  const code = cheDo === 'kich-hoat' ? oNhap('Mã kích hoạt', { name: 'code', autocomplete: 'one-time-code', autocapitalize: 'characters', required: true }) : null;
-  const loi = h('div', { class: 'loi-o', style: 'padding:0 16px 14px' }, baoLoi);
-  loi.hidden = !baoLoi;
-  const nut = h('button', { class: 'nut day', type: 'submit' }, cheDo === 'kich-hoat' ? 'Kích hoạt và đăng nhập' : 'Đăng nhập');
+  dat(goc, h('div', { class: 'man-ngoai' }, dangTai()));
+  let c = null, loi = '';
+  if (ma) { try { c = await S.db.traChungNhan(ma); } catch (e) { loi = e.message; } }
+  const oMa = oNhap('Mã trên giấy', { name: 'ma', value: ma || '', placeholder: 'XQ2627-0001-K3PW', autocapitalize: 'characters', required: true });
+  const form = h('form', { onsubmit: (e) => { e.preventDefault(); const v = form.elements.ma.value.trim(); if (v) manChungNhan(v); } },
+    h('div', { class: 'nhom' }, oMa), h('button', { class: 'nut day', type: 'submit' }, 'Tra cứu'));
+  dat(goc, h('div', { class: 'man-ngoai' },
+    h('img', { class: 'logo-lon', src: 'img/logo.webp', alt: 'Logo CLB Ngoại Khoa Trưng Vương' }),
+    h('h1', { class: 'ten-clb' }, 'CLB Ngoại Khoa Trưng Vương'),
+    h('p', { class: 'khau-hieu' }, 'Tra cứu giấy chứng nhận'),
+    c ? h('div', { class: 'the-cong-khai' }, h('div', { class: 'than' },
+      h('div', { class: 'ten' }, c.ho_ten),
+      h('div', { style: 'color:var(--chu-2);margin:6px 0 4px' }, c.dot_ten),
+      h('div', { class: 'chu-nho', style: 'margin-bottom:12px' }, 'Mã ', c.ma),
+      h('span', { class: 'the-nhan ' + (c.con_hieu_luc ? MUC_CN[c.muc][1] : 'vang') },
+        c.con_hieu_luc ? MUC_CN[c.muc][0] : 'Giấy đã thu hồi'),
+      c.ghi_chu ? h('p', { class: 'chu-nho', style: 'margin-top:10px' }, c.ghi_chu) : null,
+      h('p', { class: 'chu-nho', style: 'margin-top:10px' }, 'Cấp ngày ', ngay(c.cap_luc))))
+      : ma ? h('div', { class: 'rong-chu' }, loi || 'Không có giấy chứng nhận nào mang mã này.') : null,
+    form,
+    h('p', { class: 'chu-nho giua-chu', style: 'margin:16px 0 14px' }, 'Trang này chỉ cho biết giấy có thật và còn hiệu lực hay không.'),
+    h('a', { class: 'nut phu', href: location.pathname }, 'Mở app thành viên')));
+  if (!ma) (oMa.querySelector('input')).focus({ preventScroll: true });
+}
+
+/* ---------- Đăng nhập và kích hoạt ----------
+   Trước 18/11/2026 chỉ có một màn, "Kích hoạt bằng mã" là dòng chữ nhỏ dưới cùng, nên nhiều
+   người lần đầu dùng app điền mã kích hoạt vào ô mật khẩu. Nay chia ba màn, mỗi màn hỏi đúng
+   một câu, và hai lựa chọn "Đăng nhập" với "Kích hoạt bằng mã" hiện ngang nhau. */
+
+const CUA = {
+  thanh_vien: { ten: 'Thành viên CLB', phu: 'Mã NKTV-… do Ban nhân sự cấp', icon: 'nguoi', mau: 'NKTV-001', ai: 'Ban nhân sự' },
+  hoc_vien: { ten: 'Học viên tập huấn', phu: 'Mã HV… do Ban tổ chức đợt cấp', icon: 'ho_so', mau: 'HV00001', ai: 'Ban tổ chức đợt' }
+};
+
+const khungNgoai = (...con) => {
+  nenSang(true);
+  dat(goc, h('div', { class: 'man-ngoai' },
+    h('img', { class: 'logo-lon', src: 'img/logo.webp', alt: 'Logo CLB Ngoại Khoa Trưng Vương' }),
+    h('h1', { class: 'ten-clb' }, 'CLB Ngoại Khoa Trưng Vương'),
+    h('p', { class: 'khau-hieu' }, 'Đón Nhận – Trưởng thành – Trao lại'),
+    ...con));
+};
+const oLoi = (chu) => { const d = h('div', { class: 'loi-o', style: 'padding:0 16px 14px' }, chu || ''); d.hidden = !chu; return d; };
+const hoi = (chu) => h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:10px' }, chu);
+const nutLui = (viec) => h('div', { class: 'giua-chu', style: 'margin-top:16px' },
+  h('button', { class: 'nut-chu', type: 'button', onclick: viec }, '‹ Quay lại'));
+
+function manDangNhap(baoLoi = '') {
+  khungNgoai(
+    oLoi(baoLoi),
+    hoi('Bạn đăng nhập với tư cách nào?'),
+    h('div', { class: 'nhom' }, Object.keys(CUA).map(k => dong({
+      tieu: CUA[k].ten, phu: CUA[k].phu,
+      truoc: h('div', { class: 'bieu-tuong' }, bieuTuong(CUA[k].icon)),
+      onclick: () => manChonViec(k)
+    }))));
+}
+
+function manChonViec(loai) {
+  const v = CUA[loai];
+  khungNgoai(
+    hoi(v.ten + ' · bạn muốn làm gì?'),
+    h('div', { class: 'nhom' },
+      dong({ tieu: 'Đăng nhập', phu: 'Đã có mật khẩu', truoc: h('div', { class: 'bieu-tuong' }, bieuTuong('khoa')), onclick: () => manNhap(loai, 'dang-nhap') }),
+      dong({ tieu: 'Kích hoạt bằng mã', phu: 'Lần đầu dùng app, hoặc quên mật khẩu', truoc: h('div', { class: 'bieu-tuong' }, bieuTuong('phieu')), onclick: () => manNhap(loai, 'kich-hoat') })),
+    h('p', { class: 'chu-nho giua-chu' }, 'Mã kích hoạt do ', v.ai, ' cấp, dùng một lần. Đừng điền mã kích hoạt vào ô mật khẩu: chọn "Kích hoạt bằng mã" thì app hỏi riêng ô cho nó.'),
+    nutLui(() => manDangNhap()));
+}
+
+function manNhap(loai, cheDo, baoLoi = '') {
+  const v = CUA[loai], kh = cheDo === 'kich-hoat';
+  const ma = oNhap(loai === 'hoc_vien' ? 'Mã học viên' : 'Mã thành viên',
+    { name: 'ma', autocomplete: 'username', placeholder: v.mau, autocapitalize: 'characters', required: true });
+  const code = kh ? oNhap('Mã kích hoạt', { name: 'code', autocomplete: 'one-time-code', autocapitalize: 'characters', required: true }) : null;
+  const mk = oNhap(kh ? 'Mật khẩu tự đặt (ít nhất 8 ký tự)' : 'Mật khẩu',
+    { name: 'mk', type: 'password', autocomplete: kh ? 'new-password' : 'current-password', required: true });
+  const loi = oLoi(baoLoi);
+  const nut = h('button', { class: 'nut day', type: 'submit' }, kh ? 'Kích hoạt và đăng nhập' : 'Đăng nhập');
   const form = h('form', {
     novalidate: true,
     onsubmit: async (e) => {
       e.preventDefault();
-      const f = form.elements, m = chuanMa(f.ma.value);
+      const f = form.elements, m = chuanMa(f.ma.value, loai);
       loi.hidden = true;
       const baoSai = (c) => { loi.textContent = c; loi.hidden = false; };
-      if (!m) return baoSai('Cần nhập mã thành viên, ví dụ NKTV-001.');
+      if (!m) return baoSai('Cần nhập mã, ví dụ ' + v.mau + '.');
       if (!f.mk.value) return baoSai('Cần nhập mật khẩu.');
       nut.disabled = true;
       try {
-        if (cheDo === 'kich-hoat') {
+        if (kh) {
           if (!f.code.value.trim()) throw new Error('Cần nhập mã kích hoạt.');
           if (f.mk.value.length < 8) throw new Error('Mật khẩu cần ít nhất 8 ký tự.');
-          await S.db.kichHoat(m, f.code.value, f.mk.value);
+          await S.db.kichHoat(m, f.code.value, f.mk.value, loai);
         }
-        await S.db.dangNhap(m, f.mk.value);
+        await S.db.dangNhap(m, f.mk.value, loai);
         await vaoApp();
       } catch (er) { baoSai(er.message); nut.disabled = false; }
     }
   },
     h('div', { class: 'nhom' }, ma, code, mk), loi, nut);
-  dat(goc, h('div', { class: 'man-ngoai' },
-    h('img', { class: 'logo-lon', src: 'img/logo.webp', alt: 'Logo CLB Ngoại Khoa Trưng Vương' }),
-    h('h1', { class: 'ten-clb' }, 'CLB Ngoại Khoa Trưng Vương'),
-    h('p', { class: 'khau-hieu' }, 'Đón Nhận – Trưởng thành – Trao lại'),
+  khungNgoai(
+    hoi(v.ten + ' · ' + (kh ? 'kích hoạt bằng mã' : 'đăng nhập')),
     form,
-    h('div', { class: 'giua-chu', style: 'margin-top:14px' },
-      h('button', { class: 'nut-chu', type: 'button', onclick: () => manDangNhap(cheDo === 'kich-hoat' ? 'dang-nhap' : 'kich-hoat') },
-        cheDo === 'kich-hoat' ? 'Đã có tài khoản? Đăng nhập' : 'Lần đầu dùng hoặc quên mật khẩu? Kích hoạt bằng mã')),
-    cheDo === 'kich-hoat' ? h('p', { class: 'chu-nho giua-chu', style: 'margin-top:12px' }, 'Mã kích hoạt do Ban nhân sự cấp, dùng một lần. Quên mật khẩu thì xin mã mới và làm lại bước này.') : null));
+    kh ? h('p', { class: 'chu-nho giua-chu', style: 'margin-top:12px' }, 'Mã kích hoạt dùng một lần và hết hạn sau 90 ngày. Ô mật khẩu là mật khẩu bạn tự đặt từ bây giờ, không phải mã kích hoạt.') : null,
+    nutLui(() => manChonViec(loai)));
   (ma.querySelector('input')).focus({ preventScroll: true });
 }
 
@@ -160,7 +237,7 @@ async function vaoApp() {
   S.toi = await S.db.toi();
   if (!S.toi) {
     await S.db.dangXuat();
-    return manDangNhap('dang-nhap', 'Tài khoản này chưa gắn với thành viên nào. Báo lại cho Ban nhân sự.');
+    return manDangNhap('Tài khoản này chưa gắn với ai. Báo lại cho Ban nhân sự hoặc Ban tổ chức đợt của bạn.');
   }
   // Lệch giờ giữa máy này và máy chủ, để mã động và giờ quét không sai khi đồng hồ điện thoại chạy lệch.
   if (S.toi.bay_gio) S.lech = new Date(S.toi.bay_gio).getTime() - Date.now();
@@ -180,6 +257,7 @@ async function vaoApp() {
   } else S.db = api;
   try {
     if (q.get('the')) return await manThe(q.get('the'));
+    if (q.has('cn')) return await manChungNhan(q.get('cn'));
     if (S.db.coPhien()) await vaoApp(); else manDangNhap();
   } catch (e) {
     console.error(e);

@@ -8,32 +8,17 @@ import {
 } from './ui.js';
 import { manMotBuoi } from './v-quanly.js';
 import { manCauHoi, docMucChecklist, vietMucChecklist, soMucChecklist, moChecklist, hangTaiLieu } from './v-tronggio.js';
+import { TRANG_THAI, LOP_TT, VAI, PHAN, icon, thanh, laBtcQuanLy, laGiangVien, laDiemDanh, thayDuocDot } from './dot-chung.js';
+import { manYeuCauDot, manBaiThiDot, manPhieuDot, manTieuChiDot, manKetQuaDot } from './v-ketqua.js';
 
-const icon = (t) => h('div', { class: 'bieu-tuong' }, bieuTuong(t));
-const thanh = (tieu, href = '#tap-huan', nhan = 'Tập huấn', phai = null) =>
-  h('div', { class: 'thanh-nho' }, h('div', { class: 'khoang' }, h('a', { class: 'nut-lui', href, style: 'text-decoration:none' }, '‹ ' + nhan)), h('h1', null, tieu), h('div', { class: 'khoang phai' }, phai));
-
-const TRANG_THAI = { soan: 'Đang soạn', mo: 'Đang mở', ket_thuc: 'Đã kết thúc' };
-const LOP_TT = { soan: 'cho', mo: 'dung', ket_thuc: '' };
-const VAI = { truong_ban: 'Trưởng ban', thu_ky: 'Thư ký', giang_vien: 'Tập huấn viên', diem_danh: 'Phụ trách điểm danh' };
+// Nhãn, vai trò và thanh tiêu đề nằm ở dot-chung.js vì v-ketqua.js cũng dùng.
 // Chỉ trưởng ban và thư ký nạp được danh sách và cấp được mã (hàm la_btc_dot trong Postgres).
-const VAI_QUAN_LY = ['truong_ban', 'thu_ky'];
 
 const khoang = (d) => {
   if (!d.bat_dau && !d.ket_thuc) return 'Chưa ghi ngày';
   if (d.bat_dau && d.ket_thuc) return ngay(d.bat_dau + 'T12:00:00+07:00') + ' – ' + ngay(d.ket_thuc + 'T12:00:00+07:00');
   return ngay((d.bat_dau || d.ket_thuc) + 'T12:00:00+07:00');
 };
-const laBtcQuanLy = (dot) => S.toi.la_quan_tri ||
-  (S.toi.btc_dot || []).some(b => b.dot_id === dot && VAI_QUAN_LY.includes(b.vai));
-const coVai = (dot, vai) => S.toi.la_quan_tri || (S.toi.btc_dot || []).some(b => b.dot_id === dot && vai.includes(b.vai));
-// Tài liệu, checklist, câu hỏi: trưởng ban, thư ký và tập huấn viên. Điểm danh: thêm phụ trách điểm danh.
-const laGiangVien = (dot) => coVai(dot, ['truong_ban', 'thu_ky', 'giang_vien']);
-const laDiemDanh = (dot) => coVai(dot, ['truong_ban', 'thu_ky', 'diem_danh']);
-const thayDuocDot = (dot) => coVai(dot, Object.keys(VAI));
-
-export const PHAN = { ly_thuyet: 'Lý thuyết', thuc_hanh: 'Thực hành', luong_gia: 'Lượng giá', khac: 'Khác' };
-
 export async function tuyenTapHuan(vung, con) {
   const [a, b, c] = con;
   if (a && b === 'nap') return manNapDS(vung, a);
@@ -44,6 +29,11 @@ export async function tuyenTapHuan(vung, con) {
   if (a && b === 'checklist') return manChecklistDot(vung, a);
   if (a && b === 'thong-bao') return manThongBaoDot(vung, a);
   if (a && b === 'cau-hoi') return manCauHoiDot(vung, a, c);
+  if (a && b === 'yeu-cau') return manYeuCauDot(vung, a);
+  if (a && b === 'bai-thi') return manBaiThiDot(vung, a, c);
+  if (a && b === 'phieu') return manPhieuDot(vung, a, c);
+  if (a && b === 'tieu-chi') return manTieuChiDot(vung, a);
+  if (a && b === 'ket-qua') return manKetQuaDot(vung, a);
   if (a) return manMotDot(vung, a);
   return manTapHuan(vung);
 }
@@ -162,6 +152,12 @@ async function manMotDot(vung, id) {
       laGiangVien(id) ? dong({ tieu: 'Tài liệu', phu: 'Đường dẫn Drive, mở theo giờ hoặc sau khi điểm danh', truoc: icon('test'), href: `#tap-huan/${id}/tai-lieu` }) : null,
       laGiangVien(id) ? dong({ tieu: 'Checklist', phu: 'Học viên tick trong giờ, in ra PDF được', truoc: icon('phieu'), href: `#tap-huan/${id}/checklist` }) : null,
       ql ? dong({ tieu: 'Thông báo của đợt', phu: 'Chỉ học viên trong đợt và Ban tổ chức thấy', truoc: icon('chuong'), href: `#tap-huan/${id}/thong-bao` }) : null),
+    nhom('Sau buổi',
+      dong({ tieu: 'Phản hồi và thắc mắc', phu: 'Học viên gửi chữ, không đính tệp', truoc: icon('don'), href: `#tap-huan/${id}/yeu-cau` }),
+      ql ? dong({ tieu: 'Bài thi và điểm', phu: 'Thi trên máy CLB, ở đây chỉ nhập điểm', truoc: icon('bieu_do'), href: `#tap-huan/${id}/bai-thi` }) : null,
+      ql ? dong({ tieu: 'Phiếu đánh giá', phu: 'Soạn phiếu, mở cho học viên, xem tổng hợp', truoc: icon('phieu'), href: `#tap-huan/${id}/phieu` }) : null,
+      ql ? dong({ tieu: 'Tiêu chí hoàn thành', phu: 'Cốt lõi, bổ sung và ngưỡng xuất sắc', truoc: icon('sao'), href: `#tap-huan/${id}/tieu-chi` }) : null,
+      ql ? dong({ tieu: 'Kết quả và chứng nhận', phu: 'Xét từng người rồi cấp giấy', truoc: icon('khoa'), href: `#tap-huan/${id}/ket-qua` }) : null),
     nhom('Ban tổ chức',
       dong({ tieu: 'Phân vai', phu: theoVai.length ? theoVai.join(' · ') : 'Chưa phân vai ai', truoc: icon('khoa'),
         onclick: S.toi.la_quan_tri || (S.toi.btc_dot || []).some(b => b.dot_id === id && b.vai === 'truong_ban') ? () => phanVai(id, btc, tv, lai) : undefined,
