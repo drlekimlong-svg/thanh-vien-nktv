@@ -12,6 +12,7 @@ import { manQuanLy, tuyenQuanLy } from './v-quanly.js';
 import { manTuyenQuan } from './v-tuyenquan.js';
 import { tuyenTapHuan } from './v-dot.js';
 import { tuyenHocVien } from './v-hocvien.js';
+import { manGuiBai } from './v-guibai.js';
 
 const goc = $('#app');
 const q = new URLSearchParams(location.search);
@@ -20,6 +21,8 @@ const TAB = [
   { id: 'hom-nay', ten: 'Hôm nay', icon: 'hom_nay' },
   { id: 'lich', ten: 'Lịch', icon: 'lich' },
   { id: 'post-test', ten: 'Post-test', icon: 'test' },
+  // Lối vào webapp Gửi bài NKTV (Apps Script, đăng nhập bằng mã nhà). Học viên không có tab này.
+  { id: 'gui-bai', ten: 'Gửi bài', icon: 'gui' },
   // Chỉ hiện khi quản trị bật trong cài đặt tuyen_quan. Khóa rồi vẫn mở lại được
   // bằng dòng Tuyển quân trong tab Quản lý, nên không chiếm chỗ trên thanh tab cả năm.
   { id: 'tuyen-quan', ten: 'Tuyển quân', icon: 'phieu', dk: () => !!(S.caiDat.tuyen_quan && S.caiDat.tuyen_quan.mo === true) },
@@ -63,7 +66,8 @@ async function tuyen() {
       if (con[0] === 'lam') await manLamBai(vung, con[1]);
       else if (con[0] === 'ket-qua') await manKetQua(vung, con[1]);
       else await manPostTest(vung);
-    } else if (tab === 'tuyen-quan') await manTuyenQuan(vung, con);
+    } else if (tab === 'gui-bai') manGuiBai(vung);
+    else if (tab === 'tuyen-quan') await manTuyenQuan(vung, con);
     else if (tab === 'tap-huan') await tuyenTapHuan(vung, con);
     else if (tab === 'ho-so') await manHoSo(vung, con[0]);
     else if (tab === 'quan-ly') { if (con.length) await tuyenQuanLy(vung, con); else await manQuanLy(vung); }

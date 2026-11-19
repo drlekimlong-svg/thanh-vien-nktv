@@ -41,6 +41,8 @@ const SVG = {
   khoa: '<path d="M7 10V7.500a5 5 0 0 1 10 0V10" stroke="currentColor" stroke-width="2" fill="none"/><rect x="4.500" y="10" width="15" height="11" rx="2.400" fill="currentColor"/>',
   bieu_do: '<path d="M5 20V12M12 20V5M19 20v-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" fill="none"/>',
   phieu: '<path d="M9 2.8h6a1 1 0 0 1 1 1v1.6a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3.8a1 1 0 0 1 1-1Z" fill="currentColor"/><path d="M6.4 4.4h.6v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h.6A2.4 2.4 0 0 1 20 6.8v11.8a2.4 2.4 0 0 1-2.4 2.4H6.4A2.4 2.4 0 0 1 4 18.6V6.8a2.4 2.4 0 0 1 2.4-2.4Z" fill="currentColor"/><path d="m8 13.6 2 2 4.6-4.6" stroke="var(--tab-nen, #fff)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
+  gui: '<path d="M3.5 10.3 19.9 3.7c.7-.3 1.4.4 1.1 1.1l-6.6 16.4c-.3.8-1.4.7-1.6-.1l-1.7-6.4-6.4-1.7c-.8-.2-.9-1.300-.1-1.600Z" fill="currentColor"/><path d="m11.1 12.9 4.6-4.6" stroke="var(--tab-nen, #fff)" stroke-width="1.8" stroke-linecap="round"/>',
+  mo_ngoai: '<path d="M13.5 4H20v6.5M20 4l-8.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M17.5 14v3.6a2.4 2.4 0 0 1-2.4 2.4H6.4A2.4 2.4 0 0 1 4 17.6V8.9a2.4 2.4 0 0 1 2.4-2.4H10" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>',
   mui: '<path d="m1.500 1.500 5.500 5.500-5.500 5.500" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'
 };
 export function bieuTuong(ten) {

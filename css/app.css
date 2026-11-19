@@ -155,6 +155,7 @@ button.dong:active, a.dong:active { background: var(--ke); transition: none; }
 .nut.nguy { background: color-mix(in srgb, var(--vang) 13%, transparent); color: var(--vang); }
 .nut.nho { min-height: 36px; padding: 7px 13px; font-size: 0.875rem; border-radius: 10px; }
 .nut.day { width: 100%; }
+.nut.lon { min-height: 56px; font-size: 1.0625rem; border-radius: 15px; }
 .nut svg { width: 20px; height: 20px; }
 .hang-nut { display: flex; gap: 10px; flex-wrap: wrap; }
 .hang-nut > .nut { flex: 1; min-width: 130px; }
