@@ -1,6 +1,6 @@
 // Khởi động, đăng nhập, khung điều hướng.
 import { S, donDep } from './state.js';
-import { $, h, dat, dong, bieuTuong, oNhap, ngay, NHA, moTaTV, dangTai, dongHetSheet } from './ui.js';
+import { $, h, dat, dong, bieuTuong, oNhap, ngay, NHA, moTaTV, dangTai, dongHetSheet, anhDaiDien, bannerCLB } from './ui.js';
 import { api, chuanMa } from './api.js';
 import { manHomNay } from './v-homnay.js';
 import { manLich } from './v-lich.js';
@@ -8,29 +8,28 @@ import { manSoanLich, manKhoLich } from './v-soanlich.js';
 import { manDiemNhom } from './v-diemnhom.js';
 import { manPostTest, manLamBai, manKetQua } from './v-test.js';
 import { manHoSo } from './v-hoso.js';
-import { manQuanLy, tuyenQuanLy } from './v-quanly.js';
+import { manQuanLy, tuyenQuanLy, thanhNho } from './v-quanly.js';
 import { manTuyenQuan } from './v-tuyenquan.js';
 import { tuyenTapHuan } from './v-dot.js';
 import { tuyenHocVien } from './v-hocvien.js';
 import { manGuiBai } from './v-guibai.js';
 import { manBaiGiay, manQlBaiGiay } from './v-baigiay.js';
+import { canHoi, noiDungHoiLai, noiDungTuChoi, noiDungThongBao, oDongY, manQlDuLieu, PHIEN_BAN } from './v-dulieu.js';
 
 const goc = $('#app');
 const q = new URLSearchParams(location.search);
 
+/* Thanh tab tối đa 5 mục (anh Long chốt 21/11/2026). `cung`: các trang con vẫn tô sáng tab này.
+   - Post-test và Gửi bài chung tab "Bài làm", chuyển qua lại bằng nút hai nửa ở đầu màn.
+   - Tập huấn vào trong Quản lý; ai thuộc Ban tổ chức đợt mà không có tab Quản lý thì Tập huấn là tab thứ năm.
+   - Tuyển quân không còn là tab: khi mở, lối vào là thẻ đầu màn Hôm nay và dòng trong Quản lý. */
 const TAB = [
   { id: 'hom-nay', ten: 'Hôm nay', icon: 'hom_nay' },
   { id: 'lich', ten: 'Lịch', icon: 'lich' },
-  { id: 'post-test', ten: 'Post-test', icon: 'test' },
-  // Lối vào webapp Gửi bài NKTV (Apps Script, đăng nhập bằng mã nhà). Học viên không có tab này.
-  { id: 'gui-bai', ten: 'Gửi bài', icon: 'gui' },
-  // Chỉ hiện khi quản trị bật trong cài đặt tuyen_quan. Khóa rồi vẫn mở lại được
-  // bằng dòng Tuyển quân trong tab Quản lý, nên không chiếm chỗ trên thanh tab cả năm.
-  { id: 'tuyen-quan', ten: 'Tuyển quân', icon: 'phieu', dk: () => !!(S.caiDat.tuyen_quan && S.caiDat.tuyen_quan.mo === true) },
-  // Ban tổ chức một đợt tập huấn, và quản trị.
-  { id: 'tap-huan', ten: 'Tập huấn', icon: 'nguoi', dk: () => S.toi.la_quan_tri || !!(S.toi.btc_dot && S.toi.btc_dot.length) },
+  { id: 'post-test', ten: 'Bài làm', icon: 'test', cung: ['gui-bai'] },
   { id: 'ho-so', ten: 'Hồ sơ', icon: 'ho_so' },
-  { id: 'quan-ly', ten: 'Quản lý', icon: 'quan_ly', dk: () => S.toi.xem_duoc_ten }
+  { id: 'quan-ly', ten: 'Quản lý', icon: 'quan_ly', dk: () => S.toi.xem_duoc_ten, cung: ['tap-huan', 'tuyen-quan'] },
+  { id: 'tap-huan', ten: 'Tập huấn', icon: 'nguoi', dk: () => !S.toi.xem_duoc_ten && !!(S.toi.btc_dot && S.toi.btc_dot.length) }
 ];
 // Học viên các đợt tập huấn dùng bộ tab riêng: không có lịch CLB, post-test, quản lý.
 const TAB_HV = [
@@ -49,8 +48,11 @@ async function tuyen() {
   const [dau, ...con] = location.hash.replace(/^#\/?/, '').split('/');
   const tab = dau || 'hom-nay';
   dat($('#khung-tab'), (laHocVien() ? TAB_HV : TAB.filter(t => !t.dk || t.dk())).map(t =>
-    h('button', { class: 'tab', type: 'button', 'aria-current': t.id === tab ? 'page' : null, onclick: () => denTrang(t.id) }, bieuTuong(t.icon), h('span', null, t.ten),
+    h('button', { class: 'tab', type: 'button', 'aria-current': t.id === tab || (t.cung || []).includes(tab) ? 'page' : null, onclick: () => denTrang(t.id) },
+      h('span', { class: 'vien-tab' }, bieuTuong(t.icon)), h('span', { class: 'ten-tab' }, t.ten),
       t.id === 'quan-ly' && S.soCho ? h('span', { class: 'cham' }, S.soCho) : null)));
+  // Thanh logo chỉ ở trang gốc của mỗi tab; Hôm nay đã có dải xanh riêng, trang con có thanh quay lại.
+  goc.dataset.dauApp = !con.length && !(tab === 'hom-nay' && !laHocVien()) ? 'co' : '';
   const vung = $('#vung');
   vung.className = 'noi-dung';
   dat(vung, dangTai());
@@ -73,7 +75,10 @@ async function tuyen() {
     else if (tab === 'tuyen-quan') await manTuyenQuan(vung, con);
     else if (tab === 'tap-huan') await tuyenTapHuan(vung, con);
     else if (tab === 'ho-so') await manHoSo(vung, con[0]);
-    else if (tab === 'quan-ly') { if (con.length) await tuyenQuanLy(vung, con); else await manQuanLy(vung); }
+    else if (tab === 'quan-ly') {
+      if (con[0] === 'du-lieu') await manQlDuLieu(vung, thanhNho);
+      else if (con.length) await tuyenQuanLy(vung, con); else await manQuanLy(vung);
+    }
     else await manHomNay(vung);
   } catch (e) {
     console.error(e);
@@ -85,7 +90,7 @@ async function tuyen() {
 function nenSang(bat) {
   const r = document.documentElement;
   if (bat) r.dataset.theme = 'light'; else delete r.dataset.theme;
-  document.querySelectorAll('meta[name="theme-color"]').forEach(m => { m.content = bat || !m.media.includes('dark') ? '#f2f4f1' : '#0f1411'; });
+  document.querySelectorAll('meta[name="theme-color"]').forEach(m => { m.content = bat || !m.media.includes('dark') ? '#F5F6F4' : '#0E1822'; });
 }
 
 function dungKhung() {
@@ -96,11 +101,50 @@ function dungKhung() {
     h('nav', { class: 'thanh-tab', 'aria-label': 'Điều hướng chính', id: 'thanh-tab' },
       h('div', { class: 'logo-ben' }, h('img', { src: 'img/logo.webp', alt: '' }), h('span', null, 'CLB Ngoại khoa', h('br'), 'Trưng Vương')),
       h('div', { id: 'khung-tab', style: 'display:contents' })),
+    // Logo CLB ở đầu mỗi màn trên điện thoại (máy tính đã có ở thanh bên).
+    h('header', { class: 'dau-app' },
+      h('img', { class: 'logo-dau', src: 'img/logo.webp', alt: 'Logo CLB Ngoại khoa Trưng Vương' }),
+      h('span', { class: 'ten-dau' }, 'CLB Ngoại khoa', h('br'), 'Trưng Vương'),
+      h('a', { href: '#ho-so', 'aria-label': 'Hồ sơ của tôi' }, anhDaiDien(S.toi))),
     h('main', { id: 'vung', class: 'noi-dung' })));
   if (nha) { goc.classList.add('co-nha'); goc.style.setProperty('--nha-goc', nha.mau); }
   window.addEventListener('hashchange', tuyen);
   tuyen();
 }
+
+/* ---------- Dữ liệu cá nhân: trang công khai, hỏi lại, sau khi từ chối ---------- */
+function manDuLieu() {
+  nenSang(true);
+  dat(goc, h('div', { class: 'man-ngoai man-du-lieu' },
+    h('a', { class: 'nut-chu', href: location.pathname + (S.demo ? location.search.replace(/[?&]du-lieu[^&]*/, '').replace(/^&/, '?') : ''), style: 'align-self:flex-start;margin-left:-6px;text-decoration:none' }, '‹ Mở app thành viên'),
+    h('img', { class: 'logo-nho-ngoai', src: 'img/logo.webp', alt: 'Logo CLB Ngoại khoa Trưng Vương' }),
+    h('h1', { class: 'tieu-de-serif' }, 'Dữ liệu cá nhân của bạn'),
+    h('div', { class: 'gach-ngan' }),
+    noiDungThongBao('thu')));
+}
+
+function manHoiLai(dy) {
+  nenSang(true);
+  dat(goc, h('div', { class: 'man-ngoai' },
+    h('img', { class: 'logo-nho-ngoai', src: 'img/logo.webp', alt: 'Logo CLB Ngoại khoa Trưng Vương' }),
+    noiDungHoiLai(dy, {
+      tiepTuc: () => dungKhung(),
+      tuChoi: async () => { await S.db.dangXuat(); manTuChoi(); }
+    })));
+}
+
+function manTuChoi() {
+  nenSang(true);
+  window.removeEventListener('hashchange', tuyen);
+  history.replaceState(null, '', location.pathname + location.search);
+  goc.classList.remove('co-nha');
+  dat(goc, h('div', { class: 'man-ngoai' },
+    h('img', { class: 'logo-nho-ngoai', src: 'img/logo.webp', alt: 'Logo CLB Ngoại khoa Trưng Vương' }),
+    noiDungTuChoi(),
+    h('button', { class: 'nut phu day', type: 'button', onclick: () => manDangNhap() }, 'Về màn đăng nhập')));
+}
+// Rút lại đồng ý từ Hồ sơ › Dữ liệu của tôi.
+window.addEventListener('nktv-tu-choi', async () => { await S.db.dangXuat(); manTuChoi(); });
 
 /* ---------- Thẻ công khai khi quét bằng camera thường ---------- */
 async function manThe(khoa) {
@@ -161,18 +205,26 @@ async function manChungNhan(ma) {
    người lần đầu dùng app điền mã kích hoạt vào ô mật khẩu. Nay chia ba màn, mỗi màn hỏi đúng
    một câu, và hai lựa chọn "Đăng nhập" với "Kích hoạt bằng mã" hiện ngang nhau. */
 
+// han: số ngày mã kích hoạt còn dùng được (0002/0009: thành viên 30 ngày; 0013/0017: học viên 90 ngày).
 const CUA = {
-  thanh_vien: { ten: 'Thành viên CLB', phu: 'Mã NKTV-… do Ban nhân sự cấp', icon: 'nguoi', mau: 'NKTV-001', ai: 'Ban nhân sự' },
-  hoc_vien: { ten: 'Học viên tập huấn', phu: 'Mã HV… do Ban tổ chức đợt cấp', icon: 'ho_so', mau: 'HV00001', ai: 'Ban tổ chức đợt' }
+  thanh_vien: { ten: 'Thành viên CLB', phu: 'Mã NKTV-… do Ban nhân sự cấp', icon: 'nguoi', mau: 'NKTV-001', ai: 'Ban nhân sự', han: 30 },
+  hoc_vien: { ten: 'Học viên tập huấn', phu: 'Mã HV… do Ban tổ chức đợt cấp', icon: 'ho_so', mau: 'HV00001', ai: 'Ban tổ chức đợt', han: 90 }
 };
 
+const lienKetDuLieu = () => location.pathname + '?du-lieu' + (S.demo ? '&demo=' + (q.get('demo') || '') : '');
 const khungNgoai = (...con) => {
   nenSang(true);
-  dat(goc, h('div', { class: 'man-ngoai' },
-    h('img', { class: 'logo-lon', src: 'img/logo.webp', alt: 'Logo CLB Ngoại Khoa Trưng Vương' }),
-    h('h1', { class: 'ten-clb' }, 'CLB Ngoại Khoa Trưng Vương'),
-    h('p', { class: 'khau-hieu' }, 'Đón Nhận – Trưởng thành – Trao lại'),
-    ...con));
+  dat(goc, h('div', { class: 'man-ngoai man-dang-nhap' },
+    // Banner tập thể (anh Long gửi 21/11/2026): trong tranh đã có logo, tên CLB và câu chuyện trung tâm.
+    bannerCLB('banner-ngoai'),
+    h('h1', { class: 'an-sr' }, 'CLB Ngoại khoa Trưng Vương'),
+    h('div', { class: 'kicker giua-chu' }, 'App thành viên'),
+    h('div', { class: 'gach-ngan giua' }),
+    ...con,
+    // Lối vào thông báo xử lý dữ liệu cá nhân, mở được khi chưa đăng nhập (migration 0020).
+    h('a', { class: 'chan-du-lieu', href: lienKetDuLieu() },
+      h('span', { class: 'hang' }, 'Dữ liệu cá nhân của bạn ›'),
+      h('small', null, 'CLB thu gì, lưu ở đâu, bạn có quyền gì · phiên bản ' + PHIEN_BAN))));
 };
 const oLoi = (chu) => { const d = h('div', { class: 'loi-o', style: 'padding:0 16px 14px' }, chu || ''); d.hidden = !chu; return d; };
 const hoi = (chu) => h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:10px' }, chu);
@@ -209,7 +261,9 @@ function manNhap(loai, cheDo, baoLoi = '') {
   const mk = oNhap(kh ? 'Mật khẩu tự đặt (ít nhất 8 ký tự)' : 'Mật khẩu',
     { name: 'mk', type: 'password', autocomplete: kh ? 'new-password' : 'current-password', required: true });
   const loi = oLoi(baoLoi);
-  const nut = h('button', { class: 'nut day', type: 'submit' }, kh ? 'Kích hoạt và đăng nhập' : 'Đăng nhập');
+  const nut = h('button', { class: 'nut day', type: 'submit', disabled: kh }, kh ? 'Kích hoạt và đăng nhập' : 'Đăng nhập');
+  // Kích hoạt lần đầu: hai ô đồng ý, không đánh dấu sẵn; nút chỉ bấm được khi đã chọn ô bắt buộc.
+  const dongY = kh ? oDongY((ok) => { nut.disabled = !ok; }) : null;
   const form = h('form', {
     novalidate: true,
     onsubmit: async (e) => {
@@ -224,18 +278,21 @@ function manNhap(loai, cheDo, baoLoi = '') {
         if (kh) {
           if (!f.code.value.trim()) throw new Error('Cần nhập mã kích hoạt.');
           if (f.mk.value.length < 8) throw new Error('Mật khẩu cần ít nhất 8 ký tự.');
+          if (!dongY.giaTri().dong_y) throw new Error('Cần đọc và chọn ô đồng ý bắt buộc.');
           await S.db.kichHoat(m, f.code.value, f.mk.value, loai);
         }
         await S.db.dangNhap(m, f.mk.value, loai);
+        // Ghi lời đồng ý ngay sau khi có phiên. Ghi hỏng thì màn hỏi lại sẽ hiện, nên không chặn đăng nhập.
+        if (kh) { const d = dongY.giaTri(); await S.db.ghiDongY(PHIEN_BAN, true, d.dang_anh, 'kich_hoat').catch(e => console.warn(e)); }
         await vaoApp();
-      } catch (er) { baoSai(er.message); nut.disabled = false; }
+      } catch (er) { baoSai(er.message); nut.disabled = kh && !dongY.giaTri().dong_y; }
     }
   },
-    h('div', { class: 'nhom' }, ma, code, mk), loi, nut);
+    h('div', { class: 'nhom' }, ma, code, mk), dongY ? dongY.el : null, loi, nut);
   khungNgoai(
     hoi(v.ten + ' · ' + (kh ? 'kích hoạt bằng mã' : 'đăng nhập')),
     form,
-    kh ? h('p', { class: 'chu-nho giua-chu', style: 'margin-top:12px' }, 'Mã kích hoạt dùng một lần và hết hạn sau 90 ngày. Ô mật khẩu là mật khẩu bạn tự đặt từ bây giờ, không phải mã kích hoạt.') : null,
+    kh ? h('p', { class: 'chu-nho giua-chu', style: 'margin-top:12px' }, `Mã kích hoạt dùng một lần và hết hạn sau ${v.han} ngày. Ô mật khẩu là mật khẩu bạn tự đặt từ bây giờ, không phải mã kích hoạt.`) : null,
     nutLui(() => manChonViec(loai)));
   (ma.querySelector('input')).focus({ preventScroll: true });
 }
@@ -250,6 +307,9 @@ async function vaoApp() {
   if (S.toi.bay_gio) S.lech = new Date(S.toi.bay_gio).getTime() - Date.now();
   S.caiDat = await S.db.caiDat().catch(() => ({}));
   if (S.toi.la_phu_trach) S.soCho = (await S.db.dsDon('cho').catch(() => [])).length;
+  // Chưa đồng ý phiên bản thông báo hiện hành (kể cả người kích hoạt trước khi có thông báo): hỏi trước khi vào app.
+  const { can, dy } = await canHoi();
+  if (can) return manHoiLai(dy);
   dungKhung();
 }
 
@@ -265,6 +325,7 @@ async function vaoApp() {
   try {
     if (q.get('the')) return await manThe(q.get('the'));
     if (q.has('cn')) return await manChungNhan(q.get('cn'));
+    if (q.has('du-lieu')) return manDuLieu();
     if (S.db.coPhien()) await vaoApp(); else manDangNhap();
   } catch (e) {
     console.error(e);

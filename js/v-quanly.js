@@ -56,7 +56,9 @@ export async function manQuanLy(vung) {
     nhom('Thành viên',
       dong({ tieu: 'Danh sách thành viên', truoc: icon('nguoi'), href: '#quan-ly/thanh-vien' }),
       ad ? dong({ tieu: 'Phân quyền', phu: 'Ban cố vấn, Senior, Junior, nhóm trưởng, nhóm phó', truoc: icon('khoa'), href: '#quan-ly/phan-quyen' }) : null,
-      ad ? dong({ tieu: 'Kích hoạt tài khoản', phu: 'Cấp mã lần đầu, cấp lại khi quên mật khẩu', truoc: icon('khoa'), href: '#quan-ly/kich-hoat' }) : null),
+      ad ? dong({ tieu: 'Kích hoạt tài khoản', phu: 'Cấp mã lần đầu, cấp lại khi quên mật khẩu', truoc: icon('khoa'), href: '#quan-ly/kich-hoat' }) : null,
+      // Migration 0020: ai đã đồng ý, ai chưa, yêu cầu xem, sửa, xóa dữ liệu.
+      ad ? dong({ tieu: 'Dữ liệu cá nhân', phu: 'Lời đồng ý và yêu cầu về dữ liệu', truoc: icon('ho_so'), href: '#quan-ly/du-lieu' }) : null),
     qt ? nhom('Học tập',
       dong({ tieu: 'Post-test và test đầu giờ', phu: 'Tải đề lên, xem điểm', truoc: icon('test'), href: '#quan-ly/post-test' }),
       dong({ tieu: 'Xác nhận năng lực và hoạt động', truoc: icon('sao'), sau: so(choXn), href: '#quan-ly/xac-nhan' }),
@@ -65,13 +67,16 @@ export async function manQuanLy(vung) {
     qt ? nhom('Chương trình',
       dong({
         tieu: 'Tuyển quân', truoc: icon('phieu'), href: '#tuyen-quan',
-        phu: S.caiDat.tuyen_quan && S.caiDat.tuyen_quan.mo === true ? 'Đang mở · thành viên thấy tab Tuyển quân' : 'Đã khóa · xem lại kết quả, bật lại khi cần'
+        phu: S.caiDat.tuyen_quan && S.caiDat.tuyen_quan.mo === true ? 'Đang mở · thành viên thấy thẻ Tuyển quân ở màn Hôm nay' : 'Đã khóa · xem lại kết quả, bật lại khi cần'
       }),
       dong({ tieu: 'Tập huấn học viên', phu: 'Đợt, danh sách học viên, mã kích hoạt', truoc: icon('nguoi'), href: '#tap-huan' }),
       dong({
         tieu: 'Gửi thư', truoc: icon('chuong'), href: '#quan-ly/gui-thu',
         phu: S.caiDat.thu && S.caiDat.thu.bat === true ? 'Đang bật · app gửi mã kích hoạt cho học viên qua email' : 'Đang tắt · mã kích hoạt do thư ký gửi tay'
-      })) : null);
+      })) : null,
+    // Tập huấn không còn là tab riêng khi đã có tab Quản lý (21/11/2026): người điểm danh thuộc Ban tổ chức đợt vào từ đây.
+    !qt && S.toi.btc_dot && S.toi.btc_dot.length ? nhom('Chương trình',
+      dong({ tieu: 'Tập huấn học viên', phu: 'Đợt bạn thuộc Ban tổ chức', truoc: icon('nguoi'), href: '#tap-huan' })) : null);
 }
 
 /* ---------- Gửi thư (migration 0016) ----------

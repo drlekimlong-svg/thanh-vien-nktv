@@ -196,7 +196,18 @@ export const oNhap = (nhan, tt) => h('label', { class: 'o' }, h('span', null, nh
 export const oChon = (nhan, ds, gt, tt) => h('label', { class: 'o' }, h('span', null, nhan),
   h('select', tt, ds.map(d => { const [v, c] = Array.isArray(d) ? d : [d, d]; return h('option', { value: v, selected: String(gt ?? '') === String(v) }, c); })));
 export const oBat = (nhan, tt) => h('label', { class: 'o o-ngang' }, h('span', null, nhan), h('input', Object.assign({ type: 'checkbox' }, tt)));
+/** Họ tên trong danh sách nhân sự thường viết hoa toàn bộ: hiện thành hoa đầu mỗi chữ cho dễ đọc. Tên đã viết thường giữ nguyên. */
+export const tenDep = (s) => { const t = String(s || '').trim(); return t && t === t.toUpperCase() ? t.toLowerCase().replace(/(^|\s)(\S)/g, (m, a, b) => a + b.toUpperCase()) : t; };
 export const dangTai = () => h('div', { class: 'dang-tai' }, 'Đang tải…');
+/** Banner tập thể CLB (tranh vẽ, 1903×826 gốc): bản 900 px cho điện thoại, 1600 px cho màn lớn. */
+export const bannerCLB = (lop) => h('img', {
+  class: 'banner-clb ' + (lop || ''), src: 'img/banner-nktv-900.webp', srcset: 'img/banner-nktv-900.webp 900w, img/banner-nktv.webp 1600w',
+  sizes: '(min-width: 760px) 720px, 100vw', width: 1600, height: 694, alt: 'Tranh tập thể CLB Ngoại khoa Trưng Vương: thành viên đọc phim X-quang, CT, thực hành khâu và học thống kê. Đón Nhận – Trưởng thành – Trao lại.'
+});
+/** Nút hai nửa (hoặc hơn) chuyển giữa các trang cùng một tab, ví dụ Post-test và Gửi bài trong tab Bài làm. */
+export const phanDoan = (ds, dang) => h('nav', { class: 'phan-doan', 'aria-label': 'Chuyển mục' },
+  ds.map(([href, ten]) => h('a', { href, class: href === dang ? 'dang' : null, 'aria-current': href === dang ? 'page' : null }, ten)));
+export const BAI_LAM = [['#post-test', 'Post-test'], ['#gui-bai', 'Gửi bài nhóm']];
 export const rong = (chu) => h('div', { class: 'rong-chu' }, chu);
 export const soLieu = (ds) => h('div', { class: 'so-lieu' }, ds.map(d => h('div', { class: 'o-so ' + (d.lop || '') }, h('div', { class: 'so' }, d.so), h('div', { class: 'ten' }, d.ten))));
 
@@ -239,6 +250,14 @@ export const NHA = {
   'Yin-Yang Kois': { anh: 'koi', mau: '#252B3B', nhat: '#F2EEE3', ten: 'Cá Chép' }
 };
 export const DS_NHA = Object.keys(NHA);
+/** Ô ảnh đại diện: mascot của nhà, hoặc chữ cái đầu tên khi chưa có nhà (Junior chưa xếp nhà, học viên). */
+export function anhDaiDien(t, them = '') {
+  const nha = t && t.nha && NHA[t.nha];
+  const ten = String((t && t.ho_ten) || '').trim().split(/\s+/).pop() || '?';
+  return nha
+    ? h('span', { class: 'anh-dai-dien ' + them, style: `--nha-goc:${nha.mau};--nha-nen:${nha.nhat}` }, h('img', { src: `img/${nha.anh}.webp`, alt: '' }))
+    : h('span', { class: 'anh-dai-dien chu-cai ' + them }, ten[0].toUpperCase());
+}
 export const TT_DIEM_DANH = { dung: 'Đúng giờ', tre: 'Trễ', phep: 'Vắng có phép', vang: 'Vắng', chua: 'Chưa điểm danh' };
 export const moTaTV = (t) => [t.gen !== null && t.gen !== undefined ? 'Gen ' + t.gen : null, t.nha, t.cap].filter(Boolean).join(' · ');
 export const taiCSV = (ten, hang) => {

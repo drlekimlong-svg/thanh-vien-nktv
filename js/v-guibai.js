@@ -2,7 +2,7 @@
 // Webapp có đăng nhập riêng bằng mã nhà và mã Ban cố vấn; app này không giữ, không hiện mã nào,
 // và không nhúng iframe vì Apps Script không cho nhúng từ tên miền khác.
 import { S } from './state.js';
-import { h, dat, nhom, dong, bieuTuong, NHA } from './ui.js';
+import { h, dat, nhom, dong, bieuTuong, NHA, phanDoan, BAI_LAM } from './ui.js';
 
 // Bản /exec của lần triển khai lâu dài: đường dẫn giữ nguyên khi webapp ra phiên bản mới.
 export const GUI_BAI_URL = 'https://script.google.com/macros/s/AKfycbzAAu3JBu68OqdcUcbRCrzfYN426-T1eV_0ZNJSalDaSlhUMh_72Q81MWUmILaPTlOA/exec';
@@ -12,7 +12,8 @@ const icon = (ten) => h('div', { class: 'bieu-tuong' }, bieuTuong(ten));
 export function manGuiBai(vung) {
   const nha = S.toi.nha && NHA[S.toi.nha];
   dat(vung,
-    h('h1', { class: 'tieu-de-lon' }, 'Gửi bài'),
+    h('h1', { class: 'tieu-de-lon' }, 'Bài làm'),
+    phanDoan(BAI_LAM, '#gui-bai'),
     h('div', { class: 'dau-ho-so' + (nha ? ' co-nha' : ''), style: nha ? `--nha-goc:${nha.mau}` : null },
       nha ? h('img', { class: 'mascot', src: `img/${nha.anh}.webp`, alt: '' }) : null,
       h('div', { class: 'nhan' }, 'Theo từng combo sinh hoạt'),

@@ -1,7 +1,8 @@
 // Hồ sơ năng lực: bản đồ ba bậc Đón Nhận – Trưởng thành – Trao lại, hoạt động, chuyên cần, điểm post-test.
 import { S } from './state.js';
-import { h, dat, dong, nhom, moSheet, thu, toast, NHA, moTaTV, namHoc, soLieu, soVN, ngay, oNhap, oChon, giaTriNgay, xacNhan } from './ui.js';
+import { h, dat, dong, nhom, moSheet, thu, toast, tenDep, NHA, moTaTV, namHoc, soLieu, soVN, ngay, oNhap, oChon, giaTriNgay, xacNhan } from './ui.js';
 import { moMaCuaToi } from './v-homnay.js';
+import { moDuLieuCuaToi } from './v-dulieu.js';
 
 export const BAC = ['Đón Nhận', 'Trưởng thành', 'Trao lại'];
 const TT_NL = { dat: 'Đã đạt', dang_ren: 'Đang rèn luyện', cho: 'Chờ xác nhận', tu_choi: 'Chưa được xác nhận' };
@@ -112,7 +113,7 @@ export async function manHoSo(vung, idKhac) {
     h('div', { class: 'dau-ho-so' + (nha ? ' co-nha' : ''), style: nha ? `--nha-goc:${nha.mau}` : null },
       nha ? h('img', { class: 'mascot', src: `img/${nha.anh}.webp`, alt: '' }) : null,
       h('div', { class: 'nhan' }, nha ? `Nhà ${tv.nha} · ${nha.ten}` : 'Chưa có nhà'),
-      h('div', { class: 'ten' }, tv.ho_ten),
+      h('div', { class: 'ten' }, tenDep(tv.ho_ten)),
       h('div', { class: 'phu' }, tv.ma, moTaTV(tv) ? ' · ' + moTaTV(tv) : '')),
     soLieu([
       { so: cc && cc.tong ? Math.round((cc.dung + cc.tre) / cc.tong * 100) + '%' : '–', ten: cc && cc.tong ? `Chuyên cần ${nam.nhan}: ${cc.dung + cc.tre}/${cc.tong} buổi` : `Chuyên cần ${nam.nhan}` },
@@ -134,6 +135,7 @@ export async function manHoSo(vung, idKhac) {
     laToi ? nhom('Tài khoản',
       dong({ tieu: 'Mã điểm danh của tôi', onclick: moMaCuaToi }),
       dong({ tieu: 'Đổi mật khẩu', onclick: doiMatKhau }),
+      dong({ tieu: 'Dữ liệu của tôi', phu: 'Thông báo, lời đồng ý, gửi yêu cầu xem, sửa, xóa', onclick: moDuLieuCuaToi }),
       h('button', {
         class: 'dong', type: 'button', style: 'color:var(--vang);font-weight:500',
         onclick: async () => { if (await xacNhan({ tieuDe: 'Đăng xuất?', nut: 'Đăng xuất', nguy: true })) { await S.db.dangXuat(); location.hash = ''; location.reload(); } }

@@ -6,6 +6,7 @@ import {
   h, dat, dong, nhom, moSheet, thu, toast, bieuTuong, gio, ngay, ngayGio, rong, oNhap, oChon, xacNhan, soLieu, soVN, dauNgay
 } from './ui.js';
 import { moMaCuaToi, moThongBao } from './v-homnay.js';
+import { moDuLieuCuaToi } from './v-dulieu.js';
 import { manCauHoi, moChecklist, soMucChecklist, hangTaiLieu } from './v-tronggio.js';
 import { PHAN, MUC, LOAI_YC } from './dot-chung.js';
 
@@ -432,6 +433,7 @@ export async function manHVHoSo(vung) {
     h('p', { class: 'chu-nho', style: 'margin-bottom:22px' }, 'Sai thông tin thì nhắn Ban tổ chức đợt sửa, vì danh sách do Ban tổ chức nạp. Chuyên cần chỉ tính các buổi Ban tổ chức đã đóng.'),
     nhom('Tài khoản',
       dong({ tieu: 'Đổi mật khẩu', onclick: doiMatKhau }),
+      dong({ tieu: 'Dữ liệu của tôi', phu: 'Thông báo, lời đồng ý, gửi yêu cầu xem, sửa, xóa', onclick: moDuLieuCuaToi }),
       h('button', {
         class: 'dong', type: 'button', style: 'color:var(--vang);font-weight:500',
         onclick: async () => { if (await xacNhan({ tieuDe: 'Đăng xuất?', nut: 'Đăng xuất', nguy: true })) { await S.db.dangXuat(); location.hash = ''; location.reload(); } }

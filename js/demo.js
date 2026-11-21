@@ -4,6 +4,7 @@
 // hv là học viên đang trong đợt mở, hvxong là học viên chỉ còn đợt đã kết thúc (tài khoản chỉ xem).
 // Cùng tên hàm với api.js để thử giao diện mà không chạm vào dữ liệu thật.
 import { baiGiayGia } from './demo-baigiay.js';
+import { duLieuGia } from './demo-dulieu.js';
 const uid = () => 'x' + Math.random().toString(36).slice(2, 12);
 const NHA = ['Seiryu', 'Suzaku', 'Byakko', 'Genbu', 'Kirin', 'Yin-Yang Kois'];
 
@@ -1158,6 +1159,8 @@ export function demo(vai) {
     },
 
     // Phiếu trả lời bài giấy (migration 0019).
-    ...baiGiayGia({ tv, buoi, dd, me })
+    ...baiGiayGia({ tv, buoi, dd, me }),
+    // Dữ liệu cá nhân (migration 0020).
+    ...duLieuGia({ tv, hv, me, toiId })
   };
 }

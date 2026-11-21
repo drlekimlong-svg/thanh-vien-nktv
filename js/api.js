@@ -268,5 +268,14 @@ export const api = {
   dsDanhGiaTQ: () => rest('tq_danh_gia?select=*&order=gui_luc'),
   luuDanhGiaTQ: (ts, p) => rpc('luu_danh_gia_tq', { p_ts: ts, p }),
   ghiChuTQ: (tv) => rest(`tq_ghi_chu?select=thi_sinh_id,noi_dung,sua_luc&thanh_vien_id=eq.${tv}`),
-  luuGhiChuTQ: (ts, tv, noiDung) => rest('tq_ghi_chu', { method: 'POST', body: JSON.stringify({ thi_sinh_id: ts, thanh_vien_id: tv, noi_dung: noiDung, sua_luc: new Date().toISOString() }), headers: { Prefer: 'resolution=merge-duplicates' } })
+  luuGhiChuTQ: (ts, tv, noiDung) => rest('tq_ghi_chu', { method: 'POST', body: JSON.stringify({ thi_sinh_id: ts, thanh_vien_id: tv, noi_dung: noiDung, sua_luc: new Date().toISOString() }), headers: { Prefer: 'resolution=merge-duplicates' } }),
+
+  // Dữ liệu cá nhân (migration 0020): lời đồng ý theo phiên bản thông báo, yêu cầu về dữ liệu.
+  dongYCuaToi: () => rpc('dong_y_cua_toi'),
+  ghiDongY: (phien, dongY, dangAnh, nguon) => rpc('ghi_dong_y', { p_phien_ban: phien, p_dong_y: !!dongY, p_dang_anh: !!dangAnh, p_nguon: nguon }),
+  guiYeuCauDuLieu: (loai, noiDung) => rpc('gui_yeu_cau_du_lieu', { p_loai: loai, p_noi_dung: noiDung || null }),
+  yeuCauCuaToi: () => rpc('yeu_cau_cua_toi'),
+  dsDongYDuLieu: () => rpc('ds_dong_y_du_lieu'),
+  dsYeuCauDuLieu: () => rpc('ds_yeu_cau_du_lieu'),
+  xuLyYeuCauDuLieu: (id, tt, phanHoi) => rpc('xu_ly_yeu_cau_du_lieu', { p_id: id, p_trang_thai: tt, p_phan_hoi: phanHoi || null })
 };
