@@ -163,7 +163,7 @@ function manDaGui(vung, b, dau) {
 
 /* ---------- Quản trị và Ban cố vấn ---------- */
 export async function manQlBaiGiay(vung, id, viec) {
-  if (!S.toi.la_quan_tri) throw new Error('Màn này dành cho quản trị và Ban cố vấn.');
+  if (!S.toi.la_quan_tri) throw new Error('Màn hình này dành cho quản trị và Ban cố vấn.');
   if (id === 'moi') return manThongTin(vung, null);
   const admin = !!S.toi.la_admin;
   const [td, kq] = await Promise.all([S.db.tienDoBaiGiay(id), admin ? S.db.ketQuaBaiGiay(id) : null]);

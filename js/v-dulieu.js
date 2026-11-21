@@ -290,7 +290,7 @@ export async function manQlDuLieu(vung, thanhNho) {
         tuChoi.length ? tuChoi.map(x => dong({ tieu: x.ho_ten, phu: `${x.ma} · chọn chưa đồng ý ${ngayGio(x.luc)}`, muiTen: false }))
           : dong({ tieu: 'Không có ai.', muiTen: false })),
       chua.length ? nhom(`Đã kích hoạt, chưa trả lời · ${chua.length}`, chua.slice(0, 80).map(x => dong({ tieu: x.ho_ten, phu: x.ma + (x.phien_ban ? ' · đồng ý phiên bản cũ ' + x.phien_ban : ''), muiTen: false }))) : null,
-      h('p', { class: 'chu-nhom' }, 'Người đã kích hoạt mà chưa trả lời sẽ gặp màn hỏi ở lần mở app tiếp theo. Người chưa kích hoạt được hỏi lúc kích hoạt.'));
+      h('p', { class: 'chu-nhom' }, 'Người đã kích hoạt mà chưa trả lời sẽ gặp màn hình hỏi đồng ý ở lần mở app tiếp theo. Người chưa kích hoạt được hỏi lúc kích hoạt.'));
   };
   const xuLy = (y) => {
     const f = h('form', {

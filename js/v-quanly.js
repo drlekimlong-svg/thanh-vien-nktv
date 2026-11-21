@@ -67,7 +67,7 @@ export async function manQuanLy(vung) {
     qt ? nhom('Chương trình',
       dong({
         tieu: 'Tuyển quân', truoc: icon('phieu'), href: '#tuyen-quan',
-        phu: S.caiDat.tuyen_quan && S.caiDat.tuyen_quan.mo === true ? 'Đang mở · thành viên thấy thẻ Tuyển quân ở màn Hôm nay' : 'Đã khóa · xem lại kết quả, bật lại khi cần'
+        phu: S.caiDat.tuyen_quan && S.caiDat.tuyen_quan.mo === true ? 'Đang mở · thành viên thấy thẻ Tuyển quân ở màn hình Hôm nay' : 'Đã khóa · xem lại kết quả, bật lại khi cần'
       }),
       dong({ tieu: 'Tập huấn học viên', phu: 'Đợt, danh sách học viên, mã kích hoạt', truoc: icon('nguoi'), href: '#tap-huan' }),
       dong({
@@ -86,7 +86,7 @@ export async function manQuanLy(vung) {
    mọi thành viên đăng nhập đều đọc được vì bảng cai_dat mở cho cả nhà. */
 
 async function manGuiThu(vung) {
-  if (!S.toi.la_quan_tri) return dat(vung, thanhNho('Gửi thư'), rong('Chỉ quản trị và Ban cố vấn vào được màn này.'));
+  if (!S.toi.la_quan_tri) return dat(vung, thanhNho('Gửi thư'), rong('Chỉ quản trị và Ban cố vấn vào được màn hình này.'));
   const lai = () => manGuiThu(vung);
   const cd = Object.assign({ bat: false, ten_nguoi_gui: 'CLB Ngoại Khoa Trưng Vương', dia_chi_gui: '', tra_loi_toi: '', app_url: '' }, S.caiDat.thu || {});
   const [tt, nhatKy] = await Promise.all([
@@ -108,7 +108,7 @@ async function manGuiThu(vung) {
     h('div', { class: 'bang-tin ' + (sanSang ? 'xanh' : 'vang') },
       !tt || tt.loi ? 'Không hỏi được máy chủ: ' + ((tt && tt.loi) || 'lỗi lạ')
         : sanSang ? 'Đã nối dịch vụ gửi thư. Gửi một thư thử trước khi bật.'
-          : !tt.co_khoa ? 'Chưa có khóa API. Đặt hai secret MAILJET_API_KEY và MAILJET_SECRET_KEY cho dự án Supabase rồi mở lại màn này.'
+          : !tt.co_khoa ? 'Chưa có khóa API. Đặt hai secret MAILJET_API_KEY và MAILJET_SECRET_KEY cho dự án Supabase rồi mở lại màn hình này.'
             : 'Đã có khóa API nhưng chưa có địa chỉ người gửi. Điền bên dưới, dùng đúng địa chỉ đã xác minh ở Mailjet.'),
 
     nhom('Trạng thái',
@@ -172,7 +172,7 @@ async function manGuiThu(vung) {
       dong({ tieu: '2. Xác minh địa chỉ gửi', phu: 'Account › Sender domains & addresses. Dùng Gmail được, nhưng thư dễ vào Spam hơn tên miền riêng', muiTen: false }),
       dong({ tieu: '3. Tạo khóa API', phu: 'Account › API Key Management, bấm Generate Secret Key, chép cả API Key lẫn Secret Key', muiTen: false }),
       dong({ tieu: '4. Đặt hai secret', phu: 'Supabase › Edge Functions › Secrets, tên MAILJET_API_KEY và MAILJET_SECRET_KEY', muiTen: false }),
-      dong({ tieu: '5. Quay lại màn này', phu: 'Điền địa chỉ gửi, gửi thư thử, rồi bật công tắc', muiTen: false })),
+      dong({ tieu: '5. Quay lại màn hình này', phu: 'Điền địa chỉ gửi, gửi thư thử, rồi bật công tắc', muiTen: false })),
 
     nhatKy.length ? nhom('200 thư gần nhất', nhatKy.slice(0, 50).map(x => dong({
       tieu: x.loai === 'thu_thu' ? 'Thư thử' : (x.ho_ten || x.email),

@@ -603,7 +603,7 @@ async function manThuDot(vung, id) {
 /* ---------- Nhóm Zalo của đợt (migration 0017) ----------
 
    Thư ký hoặc điều hành tạo nhóm Zalo trước khi nạp danh sách, rồi dán link và ảnh QR vào đây.
-   Link và QR đi kèm thư báo mã kích hoạt, hiện trên màn Hôm nay của học viên và in lên phiếu. */
+   Link và QR đi kèm thư báo mã kích hoạt, hiện trên màn hình Hôm nay của học viên và in lên phiếu. */
 
 /** Thu nhỏ ảnh QR về PNG rộng tối đa 600 px, nền trắng để quét được. */
 async function nenQR(tep) {
@@ -660,7 +660,7 @@ async function manZaloDot(vung, id) {
   dat(vung,
     thanh('Nhóm Zalo', '#tap-huan/' + id, d.ma),
     h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:16px' }, d.ten),
-    h('div', { class: 'bang-tin xanh' }, 'Tạo nhóm Zalo trước khi nạp danh sách. Link và mã QR ở đây sẽ đi kèm thư báo mã kích hoạt, hiện trên màn Hôm nay của học viên và in lên phiếu.'),
+    h('div', { class: 'bang-tin xanh' }, 'Tạo nhóm Zalo trước khi nạp danh sách. Link và mã QR ở đây sẽ đi kèm thư báo mã kích hoạt, hiện trên màn hình Hôm nay của học viên và in lên phiếu.'),
     f,
     h('p', { class: 'chu-nho', style: 'margin-top:14px' }, 'Trong Zalo: mở nhóm → Tùy chọn → Link tham gia nhóm. Chép link và lưu ảnh QR về máy, rồi dán vào đây. Đổi link thì các thư đã gửi vẫn mang link cũ.'));
 }

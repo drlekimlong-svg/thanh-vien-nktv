@@ -20,9 +20,9 @@ const goc = $('#app');
 const q = new URLSearchParams(location.search);
 
 /* Thanh tab tối đa 5 mục (anh Long chốt 21/11/2026). `cung`: các trang con vẫn tô sáng tab này.
-   - Post-test và Gửi bài chung tab "Bài làm", chuyển qua lại bằng nút hai nửa ở đầu màn.
+   - Post-test và Gửi bài chung tab "Bài làm", chuyển qua lại bằng nút hai nửa ở đầu màn hình.
    - Tập huấn vào trong Quản lý; ai thuộc Ban tổ chức đợt mà không có tab Quản lý thì Tập huấn là tab thứ năm.
-   - Tuyển quân không còn là tab: khi mở, lối vào là thẻ đầu màn Hôm nay và dòng trong Quản lý. */
+   - Tuyển quân không còn là tab: khi mở, lối vào là thẻ đầu màn hình Hôm nay và dòng trong Quản lý. */
 const TAB = [
   { id: 'hom-nay', ten: 'Hôm nay', icon: 'hom_nay' },
   { id: 'lich', ten: 'Lịch', icon: 'lich' },
@@ -141,7 +141,7 @@ function manTuChoi() {
   dat(goc, h('div', { class: 'man-ngoai' },
     h('img', { class: 'logo-nho-ngoai', src: 'img/logo.webp', alt: 'Logo CLB Ngoại khoa Trưng Vương' }),
     noiDungTuChoi(),
-    h('button', { class: 'nut phu day', type: 'button', onclick: () => manDangNhap() }, 'Về màn đăng nhập')));
+    h('button', { class: 'nut phu day', type: 'button', onclick: () => manDangNhap() }, 'Về giao diện đăng nhập')));
 }
 // Rút lại đồng ý từ Hồ sơ › Dữ liệu của tôi.
 window.addEventListener('nktv-tu-choi', async () => { await S.db.dangXuat(); manTuChoi(); });
