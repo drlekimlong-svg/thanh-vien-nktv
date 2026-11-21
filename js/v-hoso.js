@@ -116,11 +116,11 @@ export async function manHoSo(vung, idKhac) {
       h('div', { class: 'ten' }, tenDep(tv.ho_ten)),
       h('div', { class: 'phu' }, tv.ma, moTaTV(tv) ? ' · ' + moTaTV(tv) : '')),
     soLieu([
-      { so: cc && cc.tong ? Math.round((cc.dung + cc.tre) / cc.tong * 100) + '%' : '–', ten: cc && cc.tong ? `Chuyên cần ${nam.nhan}: ${cc.dung + cc.tre}/${cc.tong} buổi` : `Chuyên cần ${nam.nhan}` },
+      { so: cc && cc.tong ? Math.round((cc.dung + cc.tre) / cc.tong * 100) + '%' : '–', ten: 'Chuyên cần', phu: cc && cc.tong ? `${cc.dung + cc.tre}/${cc.tong} buổi · ${nam.nhan}` : nam.nhan },
       { so: tinh('chuyen_de').length, ten: 'Chuyên đề đã trình bày' },
       { so: tinh('chuong_trinh').length, ten: 'Chương trình đã tổ chức' },
       { so: soVN(gioTraoLai, 1), ten: 'Giờ dạy và mentor' },
-      { so: diemTB === null ? '–' : soVN(diemTB), ten: `Điểm post-test trung bình (${diem.length} bài)` }
+      { so: diemTB === null ? '–' : soVN(diemTB), ten: 'Post-test', phu: `Điểm trung bình, ${diem.length} bài` }
     ]),
     BANG_MINH_HOA(),
     h('div', { class: 'nhan-nhom', style: 'font-size:1.25rem;color:var(--chu);font-weight:700;letter-spacing:-0.015em;padding-bottom:12px' }, `Bản đồ năng lực`, h('span', { style: 'font-size:0.875rem;font-weight:500;color:var(--chu-2);letter-spacing:0' }, `${soDat}/${dang.length * 3} bậc đã đạt`)),

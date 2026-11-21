@@ -1,6 +1,6 @@
 // Màn hình "Hôm nay": buổi sắp tới, thông báo, việc đang chờ.
 import { S } from './state.js';
-import { h, dat, dong, nhom, bieuTuong, moSheet, thu, gio, ngayGio, ngay, namHoc, oNhap, oBat, qrSvg, moTaTV, NHA, DS_NHA, anhDaiDien, bannerCLB } from './ui.js';
+import { h, dat, dong, nhom, bieuTuong, moSheet, thu, gio, ngayGio, ngay, namHoc, oNhap, oBat, qrSvg, moTaTV, NHA, DS_NHA, anhDaiDien, tenDep, thuDai, ngayNgan, giaTriNgay } from './ui.js';
 import { suKienBuoi } from './v-lich.js';
 import { taoMa, BUOC } from './ma-dong.js';
 
@@ -58,6 +58,51 @@ export async function moThongBao(tb, sauKhi) {
   S.db.danhDauDoc(tb.id, S.toi.id).then(sauKhi).catch(() => {});
 }
 
+/* ---------- Lời khích lệ ở dải đầu màn hình Hôm nay ----------
+   Anh Long 22/11/2026: lời chào đổi ngẫu nhiên mỗi chủ nhật, để khích lệ thành viên đi sinh hoạt.
+   Mỗi người một câu, giữ nguyên cả tuần, sang chủ nhật kế tiếp mới đổi (hạt giống: mã người + ngày chủ nhật).
+   Ngày có buổi sinh hoạt dùng nhóm câu "hôm nay"; ngày khác dùng nhóm câu nhắc buổi tới.
+   Câu có {nha} chỉ dùng khi người đó đã có nhà; {con} chỉ khi còn từ 2 ngày trở lên. Không dùng dấu chấm than. */
+const LOI_HOM_NAY = [
+  '{ten} ơi, {gio} hôm nay nhà {nha} chờ bạn ở {noi}',
+  'Hôm nay cả CLB có mặt thì ca bệnh mới đủ người biện luận',
+  'Chiều nay mang theo một câu hỏi bạn còn băn khoăn nhất',
+  'Đến sớm 5 phút, điểm danh xong là vào ca',
+  'Đón Nhận hôm nay, để mai kia Trao lại cho khóa sau',
+  'Mỗi người một mũi khâu, thiếu bạn là hở một mũi',
+  'Nhà {nha} cần đủ người hôm nay, hẹn bạn lúc {gio}',
+  'Ba tiếng hôm nay, thêm một ca bệnh bạn hiểu đến nơi',
+  '{ten}, hẹn bạn {gio} ở {noi}',
+  'Tay vững nhờ những buổi đi đều, gặp bạn lúc {gio}',
+  'Có mặt hôm nay là thêm điểm chuyên cần cho nhà {nha}',
+  'Học cùng nhau hôm nay, vào trực sẽ đỡ bỡ ngỡ hơn'
+];
+const LOI_NGAY_THUONG = [
+  'Buổi tới: {buoi}, nhớ giữ lịch',
+  'Còn {con} ngày nữa là gặp lại cả CLB',
+  'Đọc trước một chút trong tuần, buổi tới sẽ dễ theo hơn',
+  'Xem bài cần làm sớm, đỡ dồn vào phút cuối',
+  'Trưởng thành là đi đều từng buổi, không cần đi nhanh',
+  'Bận thì xin nghỉ sớm trong app, để nhà biết mà sắp xếp',
+  'Mỗi buổi bạn có mặt là thêm điểm cho nhà {nha}',
+  'Buổi tới mang theo một câu hỏi lâm sàng của riêng bạn',
+  'Đón Nhận – Trưởng thành – Trao lại: mỗi tuần một bước',
+  'Ôn lại một kỹ năng của buổi trước, mười phút là đủ'
+];
+const bam = (s) => { let x = 5381; for (const c of s) x = ((x * 33) ^ c.charCodeAt(0)) >>> 0; return x; };
+function loiChao(toi) {
+  const homNay = new Date(giaTriNgay(Date.now()) + 'T12:00:00+07:00');
+  const cn = new Date(homNay); cn.setUTCDate(cn.getUTCDate() - homNay.getUTCDay());
+  const coBuoi = toi && giaTriNgay(toi.bat_dau) === giaTriNgay(Date.now());
+  const con = toi ? Math.round((new Date(giaTriNgay(toi.bat_dau) + 'T12:00:00+07:00') - homNay) / 864e5) : 0;
+  const tenGoi = tenDep(S.toi.ho_ten).split(/\s+/).pop();
+  const gt = { ten: tenGoi, nha: S.toi.nha || '', gio: toi ? gio(toi.bat_dau) : '', noi: toi && toi.dia_diem ? toi.dia_diem : '', buoi: toi ? ngayGio(toi.bat_dau) : '', con: con >= 2 ? String(con) : '' };
+  const ds = (coBuoi ? LOI_HOM_NAY : LOI_NGAY_THUONG).filter(c => (c.match(/\{(\w+)\}/g) || []).every(k => gt[k.slice(1, -1)]));
+  const c = ds[bam((S.toi.id || '') + '|' + giaTriNgay(cn)) % ds.length];
+  return c.replace(/\{(\w+)\}/g, (_, k) => gt[k]);
+}
+
+
 export async function manHomNay(vung) {
   const nam = namHoc();
   const [buoi, tb, doc, bai] = await Promise.all([
@@ -65,8 +110,6 @@ export async function manHomNay(vung) {
     S.db.dsThongBao(), S.db.daDoc(S.toi.id), S.db.baiCuaToi().catch(() => [])
   ]);
   const toi = buoi[0];
-  const tenGoi = S.toi.ho_ten.trim().split(/\s+/).pop();
-  const canh = tenGoi[0] + tenGoi.slice(1).toLowerCase();
   const daDoc = new Set(doc);
   // Test đầu giờ hiện từ 12 giờ trước buổi, kể cả khi chưa điểm danh, để thành viên biết có bài.
   const ganBuoi = (b) => b.buoi_bat_dau && Math.abs(new Date(b.buoi_bat_dau) - Date.now()) < 12 * 3600e3;
@@ -85,47 +128,47 @@ export async function manHomNay(vung) {
   const vungTB = h('div', null);
   dat(vungTB, veTB());
 
-  // Dải xanh đầu màn theo bộ nhận diện: logo bản trắng, đường chỉ khâu, lời chào, ảnh đại diện (mascot nhà hoặc chữ cái đầu).
+  // Dải xanh đầu màn hình: tiêu đề là ngày (rà soát 22/11/2026), lời khích lệ đổi mỗi chủ nhật, dòng phụ là họ tên và nhà.
   const nha = S.toi.nha && NHA[S.toi.nha];
   const chuaNha = !nha && S.toi.cap === 'Junior';
-  const moTa = [nha ? 'Nhà ' + S.toi.nha : null, S.toi.gen !== null && S.toi.gen !== undefined ? 'Gen ' + S.toi.gen : null, S.toi.cap, chuaNha ? 'chưa xếp nhà' : null].filter(Boolean).join(' · ');
-  const chi = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  chi.setAttribute('class', 'chi-khau'); chi.setAttribute('viewBox', '0 0 390 260'); chi.setAttribute('preserveAspectRatio', 'none'); chi.setAttribute('aria-hidden', 'true');
-  chi.innerHTML = '<path d="M150 248 C 210 200, 250 236, 300 196 S 372 150, 410 168" class="soi" stroke-dasharray="11 8"/><path d="M258 70 C 330 40, 380 92, 352 140 C 330 178, 268 160, 290 118 C 306 90, 372 96, 402 128" class="vong"/><path d="M196 224l8-14M226 218l8-14M256 210l8-14M286 198l8-14M316 184l8-14" class="mui-khau"/>';
-  const thuHomNay = new Intl.DateTimeFormat('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', weekday: 'long' }).format(new Date());
+  const moTa = [tenDep(S.toi.ho_ten), nha ? 'Nhà ' + S.toi.nha : null, S.toi.gen !== null && S.toi.gen !== undefined ? 'Gen ' + S.toi.gen : null, S.toi.cap, chuaNha ? 'chưa xếp nhà' : null].filter(Boolean).join(' · ');
   const conLai = (t) => { const p = Math.round((new Date(t) - Date.now()) / 60e3); if (p <= 0) return null; const g = Math.floor(p / 60); return 'Còn ' + (g ? g + ' giờ' : '') + (g && p % 60 ? ' ' : '') + (p % 60 ? (p % 60) + ' phút' : ''); };
   const ganBuoiToi = toi && Math.abs(new Date(toi.bat_dau) - Date.now()) < 4 * 3600e3;
+  const coQuet = toi && (S.toi.la_phu_trach || (S.toi.buoi_diem_danh || []).includes(toi.id));
   const tuyenQuanMo = !!(S.caiDat.tuyen_quan && S.caiDat.tuyen_quan.mo === true);
   const oNhanh = (ten, icon, viec, so) => typeof viec === 'string'
     ? h('a', { class: 'o-nhanh', href: viec }, so ? h('span', { class: 'so-nho' }, so) : null, h('span', { class: 'bieu-tuong' }, bieuTuong(icon)), h('span', null, ten))
     : h('button', { class: 'o-nhanh', type: 'button', onclick: viec }, so ? h('span', { class: 'so-nho' }, so) : null, h('span', { class: 'bieu-tuong' }, bieuTuong(icon)), h('span', null, ten));
+  // Một nút chính, nhiều nhất một nút phụ; "Chi tiết buổi, xin nghỉ" là dòng chữ.
+  const nutBuoi = toi ? [
+    ganBuoiToi ? h('button', { class: 'nut', type: 'button', onclick: moMaCuaToi }, bieuTuong('qr'), 'Mở mã điểm danh') : null,
+    coQuet ? h('a', { class: 'nut' + (ganBuoiToi ? ' phu' : ''), href: '#quan-ly/buoi/' + toi.id }, bieuTuong('quet'), 'Quét điểm danh') : null
+  ].filter(Boolean) : [];
 
   dat(vung,
-    h('section', { class: 'hero-hom-nay' }, chi,
+    h('section', { class: 'hero-hom-nay' },
       h('div', { class: 'hero-dau' },
         h('img', { class: 'logo-trang', src: 'img/logo.webp', alt: 'Logo CLB Ngoại khoa Trưng Vương' }),
-        h('span', { class: 'ten-dau' }, 'CLB Ngoại khoa', h('br'), 'Trưng Vương'),
+        h('span', { class: 'ten-dau' }, 'CLB Ngoại khoa Trưng Vương'),
         h('a', { href: '#ho-so', 'aria-label': 'Hồ sơ của tôi' }, anhDaiDien(S.toi))),
-      h('div', { class: 'kicker' }, thuHomNay, ' · ', ngay(Date.now())),
-      h('h1', null, 'Chào ' + canh),
+      h('h1', null, thuDai(Date.now()), ' ', ngayNgan(Date.now())),
+      h('p', { class: 'loi-chao' }, loiChao(toi)),
       moTa ? h('div', { class: 'phu' }, moTa) : null),
     toi ? h('div', { class: 'the-buoi' },
       h('div', { class: 'dau-the' },
-        h('span', { class: 'kicker' }, new Date(toi.bat_dau) - Date.now() < 12 * 3600e3 ? 'Buổi gần nhất' : 'Buổi sắp tới'),
+        h('span', { class: 'nhan-the' }, giaTriNgay(toi.bat_dau) === giaTriNgay(Date.now()) ? 'Buổi hôm nay' : 'Buổi sắp tới'),
         conLai(toi.bat_dau) && new Date(toi.bat_dau) - Date.now() < 24 * 3600e3 ? h('span', { class: 'the-nhan dung' }, conLai(toi.bat_dau)) : null),
       h('h2', null, toi.ten),
       h('div', { class: 'chi-tiet' },
         h('div', null, ngayGio(toi.bat_dau), toi.ket_thuc ? ' – ' + gio(toi.ket_thuc) : ''),
         toi.dia_diem ? h('div', null, toi.dia_diem) : null,
         toi.nhom_truc ? h('div', null, h('i', { class: 'cham-nha', style: NHA[toi.nhom_truc] ? `background:${NHA[toi.nhom_truc].mau}` : null }), 'Nhà trực: ', toi.nhom_truc) : null),
-      h('div', { class: 'cot-nut' },
-        ganBuoiToi ? h('button', { class: 'nut day', type: 'button', onclick: moMaCuaToi }, bieuTuong('qr'), 'Mở mã điểm danh') : null,
-        S.toi.la_phu_trach || (S.toi.buoi_diem_danh || []).includes(toi.id) ? h('a', { class: 'nut day' + (ganBuoiToi ? ' phu' : ''), href: '#quan-ly/buoi/' + toi.id }, bieuTuong('quet'), 'Quét điểm danh') : null,
-        h('button', { class: 'nut phu nho day', type: 'button', onclick: () => suKienBuoi(toi) }, 'Chi tiết buổi, xin nghỉ')))
+      nutBuoi.length ? h('div', { class: 'nut-buoi' + (nutBuoi.length === 2 ? ' hai' : '') }, nutBuoi) : null,
+      h('button', { class: 'nut-chu lien-ket-buoi', type: 'button', onclick: () => suKienBuoi(toi) }, 'Chi tiết buổi, xin nghỉ ›'))
       : h('div', { class: 'the-buoi' }, h('div', { class: 'chi-tiet' }, 'Chưa có buổi sinh hoạt nào sắp tới.')),
-    // Bốn việc hay dùng nằm cố định một chỗ.
+    // Bốn việc hay dùng nằm cố định một chỗ. Khi thẻ buổi đã có nút "Mở mã điểm danh", ô đầu đổi thành Lịch (anh Long 22/11/2026).
     h('div', { class: 'luoi-nhanh' },
-      oNhanh('Mã điểm danh', 'qr', moMaCuaToi),
+      ganBuoiToi ? oNhanh('Lịch', 'lich', '#lich') : oNhanh('Mã điểm danh', 'qr', moMaCuaToi),
       oNhanh('Điểm nhóm', 'sao', '#lich/diem-nhom'),
       oNhanh('Làm bài', 'test', '#post-test', baiMo.length || null),
       oNhanh('Gửi bài', 'gui', '#gui-bai')),
@@ -143,7 +186,6 @@ export async function manHomNay(vung) {
       truoc: h('div', { class: 'bieu-tuong' }, bieuTuong('test')), href: '#post-test'
     }))) : null,
     vungTB,
-    bannerCLB('banner-cuoi'),
     h('p', { class: 'chu-nho giua-chu' }, 'Năm học ' + nam.nhan));
   vung.classList.add('co-hero');
 }

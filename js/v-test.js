@@ -13,7 +13,7 @@ function trangThaiBai(b) {
   const chuaMo = b.mo_luc && new Date(b.mo_luc) > nay;
   if (chuaMo) return { chu: 'Mở ' + ngayGio(b.mo_luc), lop: '' };
   if (b.da_gui > 0) return { chu: 'Điểm ' + soVN(b.diem), lop: 'dat', xem: true, lam: !daDong && b.da_gui < b.so_lan && b.da_diem_danh };
-  if (daDong) return { chu: 'Đã đóng', lop: 'vang' };
+  if (daDong) return { chu: 'Đã đóng', lop: '' };
   if (!b.da_diem_danh) return { chu: 'Chờ điểm danh', lop: 'cho', khoa: true };
   return { chu: 'Đang mở', lop: 'dung', lam: true };
 }

@@ -43,7 +43,7 @@ export async function manQuanLy(vung) {
     qt ? S.db.hoatDongCho().catch(() => []) : []
   ]);
   const choXn = nl.length + hd.length;
-  const so = (n) => n ? h('span', { class: 'the-nhan cho' }, n) : null;
+  const so = (n) => n ? h('span', { class: 'so-dem' }, n) : null;
   dat(vung,
     h('h1', { class: 'tieu-de-lon' }, 'Quản lý'),
     nhom('Sinh hoạt',
@@ -56,9 +56,9 @@ export async function manQuanLy(vung) {
     nhom('Thành viên',
       dong({ tieu: 'Danh sách thành viên', truoc: icon('nguoi'), href: '#quan-ly/thanh-vien' }),
       ad ? dong({ tieu: 'Phân quyền', phu: 'Ban cố vấn, Senior, Junior, nhóm trưởng, nhóm phó', truoc: icon('khoa'), href: '#quan-ly/phan-quyen' }) : null,
-      ad ? dong({ tieu: 'Kích hoạt tài khoản', phu: 'Cấp mã lần đầu, cấp lại khi quên mật khẩu', truoc: icon('khoa'), href: '#quan-ly/kich-hoat' }) : null,
+      ad ? dong({ tieu: 'Kích hoạt tài khoản', phu: 'Cấp mã lần đầu, cấp lại khi quên mật khẩu', truoc: icon('chia_khoa'), href: '#quan-ly/kich-hoat' }) : null,
       // Migration 0020: ai đã đồng ý, ai chưa, yêu cầu xem, sửa, xóa dữ liệu.
-      ad ? dong({ tieu: 'Dữ liệu cá nhân', phu: 'Lời đồng ý và yêu cầu về dữ liệu', truoc: icon('ho_so'), href: '#quan-ly/du-lieu' }) : null),
+      ad ? dong({ tieu: 'Dữ liệu cá nhân', phu: 'Lời đồng ý và yêu cầu về dữ liệu', truoc: icon('khien'), href: '#quan-ly/du-lieu' }) : null),
     qt ? nhom('Học tập',
       dong({ tieu: 'Post-test và test đầu giờ', phu: 'Tải đề lên, xem điểm', truoc: icon('test'), href: '#quan-ly/post-test' }),
       dong({ tieu: 'Xác nhận năng lực và hoạt động', truoc: icon('sao'), sau: so(choXn), href: '#quan-ly/xac-nhan' }),

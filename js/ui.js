@@ -43,6 +43,8 @@ const SVG = {
   phieu: '<path d="M9 2.8h6a1 1 0 0 1 1 1v1.6a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V3.8a1 1 0 0 1 1-1Z" fill="currentColor"/><path d="M6.4 4.4h.6v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h.6A2.4 2.4 0 0 1 20 6.8v11.8a2.4 2.4 0 0 1-2.4 2.4H6.4A2.4 2.4 0 0 1 4 18.6V6.8a2.4 2.4 0 0 1 2.4-2.4Z" fill="currentColor"/><path d="m8 13.6 2 2 4.6-4.6" stroke="var(--tab-nen, #fff)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
   gui: '<path d="M3.5 10.3 19.9 3.7c.7-.3 1.4.4 1.1 1.1l-6.6 16.4c-.3.8-1.4.7-1.6-.1l-1.7-6.4-6.4-1.7c-.8-.2-.9-1.300-.1-1.600Z" fill="currentColor"/><path d="m11.1 12.9 4.6-4.6" stroke="var(--tab-nen, #fff)" stroke-width="1.8" stroke-linecap="round"/>',
   mo_ngoai: '<path d="M13.5 4H20v6.5M20 4l-8.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M17.5 14v3.6a2.4 2.4 0 0 1-2.4 2.4H6.4A2.4 2.4 0 0 1 4 17.6V8.9a2.4 2.4 0 0 1 2.4-2.4H10" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>',
+  chia_khoa: '<circle cx="8" cy="12" r="4.6" fill="currentColor"/><circle cx="8" cy="12" r="1.8" fill="var(--tab-nen, #fff)"/><path d="M12 12h8.6M17.4 12v3.2M20.2 12v2.4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/>',
+  khien: '<path d="M12 2.8 4.5 5.6v5.6c0 4.8 3.2 8.6 7.5 10 4.3-1.4 7.5-5.2 7.5-10V5.6Z" fill="currentColor"/><path d="m8.8 12 2.2 2.2 4.2-4.4" stroke="var(--tab-nen, #fff)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
   mui: '<path d="m1.500 1.500 5.500 5.500-5.500 5.500" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'
 };
 export function bieuTuong(ten) {
@@ -209,7 +211,8 @@ export const phanDoan = (ds, dang) => h('nav', { class: 'phan-doan', 'aria-label
   ds.map(([href, ten]) => h('a', { href, class: href === dang ? 'dang' : null, 'aria-current': href === dang ? 'page' : null }, ten)));
 export const BAI_LAM = [['#post-test', 'Post-test'], ['#gui-bai', 'Gửi bài nhóm']];
 export const rong = (chu) => h('div', { class: 'rong-chu' }, chu);
-export const soLieu = (ds) => h('div', { class: 'so-lieu' }, ds.map(d => h('div', { class: 'o-so ' + (d.lop || '') }, h('div', { class: 'so' }, d.so), h('div', { class: 'ten' }, d.ten))));
+export const soLieu = (ds) => h('div', { class: 'so-lieu' }, ds.map(d => h('div', { class: 'o-so ' + (d.lop || '') + (String(d.so) === '0' || d.so === '–' ? ' khong' : '') },
+  h('div', { class: 'so' }, d.so), h('div', { class: 'ten' }, d.ten), d.phu ? h('div', { class: 'phu-so' }, d.phu) : null)));
 
 /* ---------- Ngày giờ theo giờ Việt Nam, không phụ thuộc múi giờ máy ---------- */
 const TZ = 'Asia/Ho_Chi_Minh';
@@ -222,11 +225,16 @@ const THU = { Sun: 'CN', Mon: 'T2', Tue: 'T3', Wed: 'T4', Thu: 'T5', Fri: 'T6', 
 export const gio = (t) => t ? F_GIO.format(new Date(t)) : '';
 export const ngay = (t) => t ? F_NGAY.format(new Date(t)) : '';
 const tenThu = (t) => THU[phan(t).weekday];
-export const ngayGio = (t) => t ? `${gio(t)} · ${tenThu(t)} ${ngay(t)}` : '';
+const namNay = () => phan(Date.now()).year;
+/** Ngày ngắn: "22/11", thêm năm khi khác năm nay. */
+export const ngayNgan = (t) => { if (!t) return ''; const p = phan(t); return `${p.day}/${p.month}` + (p.year !== namNay() ? '/' + p.year : ''); };
+export const ngayGio = (t) => t ? `${tenThu(t)} ${ngayNgan(t)} · ${gio(t)}` : '';
+const THU_DAI = { Sun: 'Chủ nhật', Mon: 'Thứ hai', Tue: 'Thứ ba', Wed: 'Thứ tư', Thu: 'Thứ năm', Fri: 'Thứ sáu', Sat: 'Thứ bảy' };
+export const thuDai = (t) => THU_DAI[phan(t).weekday];
 export const giaTriNgay = (t) => { const p = phan(t); return `${p.year}-${p.month}-${p.day}`; };
 export const giaTriGio = (t) => { const p = phan(t); return `${p.hour === '24' ? '00' : p.hour}:${p.minute}`; };
 export const tuNhap = (d, g) => d ? new Date(`${d}T${g || '00:00'}:00+07:00`).toISOString() : null;
-export const dauNgay = (t) => h('div', { class: 'dau-ngay' }, h('div', { class: 'thu' }, tenThu(t)), h('div', { class: 'so' }, phan(t).day), h('div', { class: 'thang' }, 'th ' + Number(phan(t).month)));
+export const dauNgay = (t) => h('div', { class: 'dau-ngay' }, h('div', { class: 'thu' }, tenThu(t)), h('div', { class: 'so' }, phan(t).day), h('div', { class: 'thang' }, 'tháng ' + Number(phan(t).month)));
 export function namHoc(t = Date.now()) {
   const p = phan(t), y = Number(p.year), bd = Number(p.month) >= 9 ? y : y - 1;
   return { nhan: `${bd}–${bd + 1}`, tu: `${bd}-09-01T00:00:00+07:00`, den: `${bd + 1}-08-31T23:59:59+07:00` };

@@ -255,3 +255,106 @@ button, input, select, textarea { font-family: inherit; }
 .nhan-nhom[style*="1.25rem"] { font-family: var(--serif); text-transform: none; letter-spacing: 0 !important; font-feature-settings: "lnum" 1; }
 .nhan-nhom[style*="1.25rem"] span { font-family: var(--sans); text-transform: none; }
 .dau-ho-so + .so-lieu { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+
+/* ======================================================================
+   Bản 0.3 (22/11/2026) · rà soát unslop, anh Long duyệt hướng sửa.
+   Bớt màu ở khung, nhãn viết thường, lưới 4px, bốn mức bo góc, đầu trang gọn một hàng,
+   đường chỉ khâu (mũi rời + kim cong như logo) làm dấu riêng dưới tiêu đề.
+   ====================================================================== */
+:root { --chi-khau: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='112' height='20' viewBox='0 0 112 20' fill='none' stroke-linecap='round'%3E%3Cpath d='M3 12C17 11 31 13 45 12S63 11 70 12' stroke='%237E8FA0' stroke-opacity='.5' stroke-width='1.3'/%3E%3Cpath d='M10.8 17 13.2 7.4' stroke='%231D5C42' stroke-width='2.2'/%3E%3Cellipse cx='13.5' cy='5.8' rx='2.3' ry='1.6' stroke='%231D5C42' stroke-width='1.4'/%3E%3Cpath d='M26.8 17 29.2 7.4' stroke='%231D5C42' stroke-width='2.2'/%3E%3Cellipse cx='29.5' cy='5.8' rx='2.3' ry='1.6' stroke='%231D5C42' stroke-width='1.4'/%3E%3Cpath d='M42.8 17 45.2 7.4' stroke='%231D5C42' stroke-width='2.2'/%3E%3Cellipse cx='45.5' cy='5.8' rx='2.3' ry='1.6' stroke='%231D5C42' stroke-width='1.4'/%3E%3Cpath d='M58.8 17 61.2 7.4' stroke='%231D5C42' stroke-width='2.2'/%3E%3Cellipse cx='61.5' cy='5.8' rx='2.3' ry='1.6' stroke='%231D5C42' stroke-width='1.4'/%3E%3Cpath d='M63.8 5.6C72 2.6 76 15 85 13.4S93 9.6 95.5 9' stroke='%231D5C42' stroke-width='1.3'/%3E%3Cpath d='M95.5 9A7.2 7.2 0 0 1 109.6 11.2' stroke='%237E8FA0' stroke-width='2'/%3E%3Cpath d='M109.6 11.2l-.2 3.4' stroke='%237E8FA0' stroke-width='1.5'/%3E%3Ccircle cx='95.5' cy='9' r='1.1' fill='%237E8FA0' stroke='none'/%3E%3C/svg%3E"); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --nen: #12171C; --be-mat: #1A2026; --be-mat-2: #20272E; --ke: #262E36; --vien: #2C353E;
+    --kinh: rgba(18, 23, 28, 0.94); --chi-khau: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='112' height='20' viewBox='0 0 112 20' fill='none' stroke-linecap='round'%3E%3Cpath d='M3 12C17 11 31 13 45 12S63 11 70 12' stroke='%238292A2' stroke-opacity='.5' stroke-width='1.3'/%3E%3Cpath d='M10.8 17 13.2 7.4' stroke='%236FCF9C' stroke-width='2.2'/%3E%3Cellipse cx='13.5' cy='5.8' rx='2.3' ry='1.6' stroke='%236FCF9C' stroke-width='1.4'/%3E%3Cpath d='M26.8 17 29.2 7.4' stroke='%236FCF9C' stroke-width='2.2'/%3E%3Cellipse cx='29.5' cy='5.8' rx='2.3' ry='1.6' stroke='%236FCF9C' stroke-width='1.4'/%3E%3Cpath d='M42.8 17 45.2 7.4' stroke='%236FCF9C' stroke-width='2.2'/%3E%3Cellipse cx='45.5' cy='5.8' rx='2.3' ry='1.6' stroke='%236FCF9C' stroke-width='1.4'/%3E%3Cpath d='M58.8 17 61.2 7.4' stroke='%236FCF9C' stroke-width='2.2'/%3E%3Cellipse cx='61.5' cy='5.8' rx='2.3' ry='1.6' stroke='%236FCF9C' stroke-width='1.4'/%3E%3Cpath d='M63.8 5.6C72 2.6 76 15 85 13.4S93 9.6 95.5 9' stroke='%236FCF9C' stroke-width='1.3'/%3E%3Cpath d='M95.5 9A7.2 7.2 0 0 1 109.6 11.2' stroke='%238292A2' stroke-width='2'/%3E%3Cpath d='M109.6 11.2l-.2 3.4' stroke='%238292A2' stroke-width='1.5'/%3E%3Ccircle cx='95.5' cy='9' r='1.1' fill='%238292A2' stroke='none'/%3E%3C/svg%3E");
+  }
+}
+:root[data-theme="dark"] {
+  --nen: #12171C; --be-mat: #1A2026; --be-mat-2: #20272E; --ke: #262E36; --vien: #2C353E;
+  --kinh: rgba(18, 23, 28, 0.94); --chi-khau: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='112' height='20' viewBox='0 0 112 20' fill='none' stroke-linecap='round'%3E%3Cpath d='M3 12C17 11 31 13 45 12S63 11 70 12' stroke='%238292A2' stroke-opacity='.5' stroke-width='1.3'/%3E%3Cpath d='M10.8 17 13.2 7.4' stroke='%236FCF9C' stroke-width='2.2'/%3E%3Cellipse cx='13.5' cy='5.8' rx='2.3' ry='1.6' stroke='%236FCF9C' stroke-width='1.4'/%3E%3Cpath d='M26.8 17 29.2 7.4' stroke='%236FCF9C' stroke-width='2.2'/%3E%3Cellipse cx='29.5' cy='5.8' rx='2.3' ry='1.6' stroke='%236FCF9C' stroke-width='1.4'/%3E%3Cpath d='M42.8 17 45.2 7.4' stroke='%236FCF9C' stroke-width='2.2'/%3E%3Cellipse cx='45.5' cy='5.8' rx='2.3' ry='1.6' stroke='%236FCF9C' stroke-width='1.4'/%3E%3Cpath d='M58.8 17 61.2 7.4' stroke='%236FCF9C' stroke-width='2.2'/%3E%3Cellipse cx='61.5' cy='5.8' rx='2.3' ry='1.6' stroke='%236FCF9C' stroke-width='1.4'/%3E%3Cpath d='M63.8 5.6C72 2.6 76 15 85 13.4S93 9.6 95.5 9' stroke='%236FCF9C' stroke-width='1.3'/%3E%3Cpath d='M95.5 9A7.2 7.2 0 0 1 109.6 11.2' stroke='%238292A2' stroke-width='2'/%3E%3Cpath d='M109.6 11.2l-.2 3.4' stroke='%238292A2' stroke-width='1.5'/%3E%3Ccircle cx='95.5' cy='9' r='1.1' fill='%238292A2' stroke='none'/%3E%3C/svg%3E");
+}
+
+/* Dấu riêng: đường chỉ khâu dưới tiêu đề lớn và ở giao diện đăng nhập. */
+.tieu-de-lon::after, .gach-ngan { width: 96px; height: 18px; border-radius: 0; background: var(--chi-khau) no-repeat left center / 96px 18px; }
+.tieu-de-lon::after { margin: 6px 0 16px; }
+.gach-ngan { margin: 8px 0 16px; }
+.gach-ngan.giua { margin: 12px auto 20px; }
+
+/* Màu: xanh chỉ ở nút chính, mục đang chọn, ô ngày; biểu tượng trong dòng theo màu chữ phụ, không ô nền. */
+.dong .bieu-tuong { width: 24px; height: 24px; background: none; color: var(--chu-2); border-radius: 0; }
+.dong .bieu-tuong svg { width: 20px; height: 20px; }
+.man-ngoai .nhom > button.dong .bieu-tuong { width: 44px; height: 44px; border-radius: 12px; background: var(--chinh-nhat); color: var(--chinh); }
+.man-ngoai .nhom > button.dong .bieu-tuong svg { width: 24px; height: 24px; }
+.nut.phu { background: var(--be-mat); color: var(--chinh); box-shadow: inset 0 0 0 1px var(--vien); }
+.o-so { --mau: var(--chu); box-shadow: var(--bong); }
+.o-so.khong .so { color: var(--chu-3); }
+.o-so .phu-so { font-size: 0.75rem; color: var(--chu-3); margin-top: 2px; line-height: 1.3; }
+.so-dem, .cham, .o-nhanh .so-nho { background: var(--vang); color: #fff; }
+.so-dem { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Chữ: nhãn nhóm viết thường; hai độ đậm chính (500, 600). */
+.nhan-nhom { text-transform: none; letter-spacing: 0; font-size: 0.8125rem; font-weight: 500; color: var(--chu-2); padding: 0 16px 8px; }
+.nhan-nhom[style*="1.25rem"] { padding-bottom: 12px; }
+.dong .chinh { font-weight: 500; }
+.dong .phu { font-size: 0.8125rem; }
+.the-nhan { font-weight: 500; padding: 4px 8px; }
+.tab[aria-current="page"] { font-weight: 600; }
+.o-so .so { font-weight: 600; font-size: 1.375rem; }
+.o-so .ten { font-size: 0.75rem; font-weight: 500; color: var(--chu-2); }
+.dau-ho-so .nhan { text-transform: none; letter-spacing: 0; font-size: 0.8125rem; font-weight: 500; }
+.dau-ngay .thang { font-size: 0.65625rem; }
+
+/* Khoảng cách theo lưới 4px. */
+.dong { padding: 12px 16px; gap: 12px; min-height: 52px; }
+.nhom { margin-bottom: 24px; }
+.chu-nhom { margin: -16px 0 24px; padding: 0 16px; }
+.nut { padding: 12px 16px; min-height: 48px; }
+.nut.nho { padding: 8px 12px; min-height: 36px; }
+.so-lieu { gap: 8px; margin-bottom: 24px; }
+.o-so { padding: 12px; }
+.bang-tin { padding: 12px 16px; margin-bottom: 20px; }
+.luoi-nhanh { gap: 8px; margin-bottom: 24px; }
+.o-nhanh { padding: 12px 4px; gap: 8px; }
+.the-chon-nha { padding: 16px; margin-bottom: 24px; }
+.dong-y, .tom-dl { padding: 12px 16px; }
+
+/* Bốn mức bo góc: 8 ô nhỏ, 12 nút, 16 thẻ, 24 thẻ lớn. */
+.nut, .o-so, .lua-chon, .tim, .dau-ngay, .phan-doan, .o-nhanh .bieu-tuong, .soan-cau, .ket-qua-quet, .bang-tin { border-radius: 12px; }
+.nut.nho, .phan-doan a { border-radius: 8px; }
+.nhom, .o-nhanh, .the-chon-nha, .dong-y, .tom-dl, .the-cau-hoi, .khung-quet, .man-ngoai .nhom > button.dong { border-radius: 16px; }
+.the-buoi, .dau-ho-so, .the-cong-khai { border-radius: 24px; }
+.phan-doan { padding: 4px; }
+.sheet { border-radius: 24px 24px 0 0; }
+@media (min-width: 900px) { .sheet { border-radius: 24px; } }
+
+/* Đầu trang một hàng: logo bên trái tiêu đề, ảnh đại diện bên phải (điện thoại). */
+.khung { position: relative; }
+#app[data-dau-app="co"] .dau-app { position: absolute; top: calc(var(--dem-dau) + 12px); left: 0; right: 0; max-width: 720px; height: 44px; padding: 0 16px; margin: 0 auto; pointer-events: none; justify-content: space-between; }
+#app[data-dau-app="co"] .dau-app > * { pointer-events: auto; }
+#app[data-dau-app="co"] .dau-app .ten-dau { display: none; }
+#app[data-dau-app="co"] .dau-app .logo-dau { width: 32px; height: auto; }
+#app[data-dau-app="co"] .noi-dung { padding-top: calc(var(--dem-dau) + 12px); }
+#app[data-dau-app="co"] .noi-dung > .tieu-de-lon:first-child { padding: 4px 52px 0 44px; }
+@media (min-width: 900px) { #app[data-dau-app="co"] .noi-dung > .tieu-de-lon:first-child { padding: 8px 0 0; } }
+
+/* Hôm nay: tiêu đề là ngày, lời khích lệ, dòng phụ họ tên và nhà. */
+.hero-dau .ten-dau { text-transform: none; letter-spacing: 0; font-size: 0.8125rem; font-weight: 500; }
+.hero-hom-nay h1 { font-size: 2rem; margin: 4px 0 8px; }
+.hero-hom-nay .loi-chao { position: relative; margin: 0 0 8px; font-size: 1rem; line-height: 1.45; font-weight: 500; color: #fff; max-width: 32ch; }
+.hero-hom-nay .phu { font-size: 0.8125rem; color: #C9D9CF; }
+.the-buoi .nhan-the { font-size: 0.8125rem; font-weight: 500; color: var(--chinh); }
+.the-buoi .nut-buoi { display: grid; gap: 8px; margin-top: 16px; }
+/* Hai nút xếp dọc: nút chính trên, nút phụ dưới (đặt ngang thì chữ xuống dòng trên điện thoại). */
+.the-buoi .nut-buoi .nut { font-size: 0.9375rem; }
+.the-buoi .lien-ket-buoi { display: block; margin: 12px 0 -4px -6px; font-size: 0.875rem; }
+
+/* Quản lý trên máy tính: hai cột nhóm. */
+@media (min-width: 1100px) {
+  .noi-dung.hai-cot { max-width: 1040px; display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; align-items: start; }
+  .noi-dung.hai-cot > :not(.khoi-cot) { grid-column: 1 / -1; }
+}
+
+/* Giao diện đăng nhập: tranh không chữ, tên CLB bằng chữ thật. */
+.man-dang-nhap .ten-clb { font-size: 1.75rem; line-height: 1.15; margin: 4px 0 0; }
+.man-dang-nhap .khau-hieu { margin: 4px 0 0; font-size: 1rem; }
+.man-dang-nhap .kicker.giua-chu { margin: 4px 0 0; }

@@ -77,13 +77,27 @@ async function tuyen() {
     else if (tab === 'ho-so') await manHoSo(vung, con[0]);
     else if (tab === 'quan-ly') {
       if (con[0] === 'du-lieu') await manQlDuLieu(vung, thanhNho);
-      else if (con.length) await tuyenQuanLy(vung, con); else await manQuanLy(vung);
+      else if (con.length) await tuyenQuanLy(vung, con); else { await manQuanLy(vung); xepHaiCot(vung); }
     }
     else await manHomNay(vung);
   } catch (e) {
     console.error(e);
     dat(vung, h('div', { class: 'rong-chu' }, e.message || 'Không tải được dữ liệu.', h('div', { style: 'margin-top:14px' }, h('button', { class: 'nut phu nho', type: 'button', onclick: tuyen }, 'Thử lại'))));
   }
+}
+
+/** Gói mỗi nhãn nhóm với nhóm ngay sau nó, để màn hình rộng xếp được hai cột (Quản lý). */
+function xepHaiCot(vung) {
+  const con = [...vung.children];
+  con.forEach((el, i) => {
+    if (!el.classList.contains('nhom')) return;
+    const nhan = con[i - 1] && con[i - 1].classList.contains('nhan-nhom') ? con[i - 1] : null;
+    const khoi = h('div', { class: 'khoi-cot' });
+    el.before(khoi);
+    if (nhan) khoi.append(nhan);
+    khoi.append(el);
+  });
+  vung.classList.add('hai-cot');
 }
 
 /* Màn đăng nhập và thẻ công khai luôn nền sáng: logo nét đậm chìm trên nền tối, và không đặt nền tròn sau logo. */
@@ -215,10 +229,11 @@ const lienKetDuLieu = () => location.pathname + '?du-lieu' + (S.demo ? '&demo=' 
 const khungNgoai = (...con) => {
   nenSang(true);
   dat(goc, h('div', { class: 'man-ngoai man-dang-nhap' },
-    // Banner tập thể (anh Long gửi 21/11/2026): trong tranh đã có logo, tên CLB và câu chuyện trung tâm.
+    // Tranh tập thể bản không chữ (anh Long gửi 22/11/2026); tên CLB và câu chuyện trung tâm là chữ thật bên dưới.
     bannerCLB('banner-ngoai'),
-    h('h1', { class: 'an-sr' }, 'CLB Ngoại khoa Trưng Vương'),
     h('div', { class: 'kicker giua-chu' }, 'App thành viên'),
+    h('h1', { class: 'ten-clb' }, 'CLB Ngoại khoa', h('br'), 'Trưng Vương'),
+    h('p', { class: 'khau-hieu' }, 'Đón Nhận – Trưởng thành – Trao lại'),
     h('div', { class: 'gach-ngan giua' }),
     ...con,
     // Lối vào thông báo xử lý dữ liệu cá nhân, mở được khi chưa đăng nhập (migration 0020).
