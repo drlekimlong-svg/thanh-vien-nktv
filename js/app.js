@@ -13,6 +13,7 @@ import { manTuyenQuan } from './v-tuyenquan.js';
 import { tuyenTapHuan } from './v-dot.js';
 import { tuyenHocVien } from './v-hocvien.js';
 import { manGuiBai } from './v-guibai.js';
+import { manBaiGiay, manQlBaiGiay } from './v-baigiay.js';
 
 const goc = $('#app');
 const q = new URLSearchParams(location.search);
@@ -65,6 +66,8 @@ async function tuyen() {
     else if (tab === 'post-test') {
       if (con[0] === 'lam') await manLamBai(vung, con[1]);
       else if (con[0] === 'ket-qua') await manKetQua(vung, con[1]);
+      else if (con[0] === 'phieu') await manBaiGiay(vung, con[1]);
+      else if (con[0] === 'phieu-ql') await manQlBaiGiay(vung, con[1], con[2]);
       else await manPostTest(vung);
     } else if (tab === 'gui-bai') manGuiBai(vung);
     else if (tab === 'tuyen-quan') await manTuyenQuan(vung, con);

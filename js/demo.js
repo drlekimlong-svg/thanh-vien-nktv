@@ -3,6 +3,7 @@
 // Trong đợt XQ2627: admin là trưởng ban, tv là thư ký, diem là phụ trách điểm danh, gv là tập huấn viên.
 // hv là học viên đang trong đợt mở, hvxong là học viên chỉ còn đợt đã kết thúc (tài khoản chỉ xem).
 // Cùng tên hàm với api.js để thử giao diện mà không chạm vào dữ liệu thật.
+import { baiGiayGia } from './demo-baigiay.js';
 const uid = () => 'x' + Math.random().toString(36).slice(2, 12);
 const NHA = ['Seiryu', 'Suzaku', 'Byakko', 'Genbu', 'Kirin', 'Yin-Yang Kois'];
 
@@ -1154,6 +1155,9 @@ export function demo(vai) {
       const d = ls.map(l => l.diem);
       return { buoi_id: b.buoi_id, doi_tuong: ds.length, da_gui: ls.length, tb: d.length ? d.reduce((a, b) => a + b, 0) / d.length : null, cao: d.length ? Math.max(...d) : null, thap: d.length ? Math.min(...d) : null, ds,
         cau: cau.filter(c => c.bai_id === id).map(c => { const o = {}; ls.forEach(l => { const v = l.tra_loi[c.id]; if (v !== undefined) o[v] = (o[v] || 0) + 1; }); return { noi_dung: c.noi_dung, lua_chon: c.lua_chon, hinh: c.hinh, dung: c.dung, dem: o }; }) };
-    }
+    },
+
+    // Phiếu trả lời bài giấy (migration 0019).
+    ...baiGiayGia({ tv, buoi, dd, me })
   };
 }

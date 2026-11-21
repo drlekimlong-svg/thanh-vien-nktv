@@ -1,6 +1,7 @@
 // Post-test phía thành viên: danh sách, làm bài có đồng hồ và lưu tự động, xem kết quả.
 import { S, khiRoi } from './state.js';
 import { h, dat, dong, nhom, thu, toast, ngay, ngayGio, soVN, rong, xacNhan, rungThanhCong, rungLoi, hinhCau } from './ui.js';
+import { khoiBaiGiay } from './v-baigiay.js';
 
 const CHU = 'ABCDEFGH';
 const khoaNhap = (lam) => 'nktv-bai-' + lam;
@@ -22,10 +23,12 @@ export const laDauGio = (b) => !!b.buoi_id;
 export const baoChoDiemDanh = (b) => toast(`Bài này mở sau khi bạn điểm danh buổi ${ngay(b.buoi_bat_dau)}. Điểm danh xong, mở lại trang Post-test.`);
 
 export async function manPostTest(vung) {
-  const ds = await S.db.baiCuaToi();
+  // Phiếu trả lời bài giấy (v-baigiay.js) nằm trên cùng; khối đó không bao giờ báo lỗi.
+  const [ds, phieu] = await Promise.all([S.db.baiCuaToi(), khoiBaiGiay()]);
   dat(vung,
     h('h1', { class: 'tieu-de-lon' }, 'Post-test'),
-    ds.length ? nhom(null, ds.map(b => {
+    phieu,
+    ds.length ? nhom(phieu.length ? 'Post-test' : null, ds.map(b => {
       const tt = trangThaiBai(b);
       return dong({
         tieu: b.tieu_de,

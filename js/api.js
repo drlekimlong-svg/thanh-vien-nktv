@@ -174,6 +174,20 @@ export const api = {
   xoaBaiTest: (id) => xoa('bai_test', id),
   thongKeBai: (bai) => rpc('thong_ke_bai', { p_bai: bai }),
 
+  /* Phiếu trả lời cho bài làm trên giấy (migration 0019). Đáp án và mật khẩu không bao giờ về trình duyệt
+     của người làm bài; câu trả lời gửi lên là mảng chỉ số (0 = A, null = bỏ trống). */
+  baiGiayCuaToi: () => rpc('bai_giay_cua_toi'),
+  xemBaiGiay: (id) => rpc('xem_bai_giay', { p_bai: id }),
+  moBaiGiay: (id, mk) => rpc('mo_bai_giay', { p_bai: id, p_mat_khau: mk }),
+  guiBaiGiay: (id, tl) => rpc('gui_bai_giay', { p_bai: id, p_tra_loi: tl }),
+  dsBaiGiay: () => rpc('ds_bai_giay'),
+  tienDoBaiGiay: (id) => rpc('tien_do_bai_giay', { p_bai: id }),
+  nhapHoBaiGiay: (id, tv, tl) => rpc('nhap_ho_bai_giay', { p_bai: id, p_tv: tv, p_tra_loi: tl }),
+  xoaBaiGiayLam: (id, tv) => rpc('xoa_bai_giay_lam', { p_bai: id, p_tv: tv }),
+  ketQuaBaiGiay: (id) => rpc('ket_qua_bai_giay', { p_bai: id }),
+  luuBaiGiay: (p) => rpc('luu_bai_giay', { p }),
+  datMatKhauBaiGiay: (id, mk) => rpc('dat_mat_khau_bai_giay', { p_bai: id, p_mat_khau: mk }),
+
   /* Đợt tập huấn và học viên (migration 0013). Danh sách học viên, hồ sơ và mã kích hoạt
      chỉ đi qua hàm: hai bảng dot_hoc_vien, hv_ho_so không mở cho trình duyệt. */
   dsDot: () => rpc('ds_dot'),
