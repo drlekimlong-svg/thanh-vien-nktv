@@ -14,7 +14,8 @@ export async function taoMa(ma, biMat, gioMs) {
 /** Đọc chuỗi trong mã QR: mã động trên app, hoặc mã cố định trên thẻ in. */
 export function docMa(chu) {
   const s = String(chu || '').trim();
-  const m = s.match(/^NKTV1\.(NKTV-\d+)\.(\d{1,12})\.([0-9A-F]{12})$/i);
+  // Mã thành viên NKTV-xxx hoặc mã học viên tập huấn HVxxxxx; máy chủ (ghi_diem_danh) nhận cả hai.
+  const m = s.match(/^NKTV1\.(NKTV-\d+|HV\d+)\.(\d{1,12})\.([0-9A-F]{12})$/i);
   if (m) return { loai: 'dong', chu: s, ma: m[1].toUpperCase(), w: Number(m[2]) };
   const k = s.match(/[?&]the=([0-9a-zA-Z_-]+)/);
   if (k) return { loai: 'tinh', khoa: k[1] };
