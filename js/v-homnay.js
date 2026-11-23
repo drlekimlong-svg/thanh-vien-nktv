@@ -176,6 +176,8 @@ export async function manHomNay(vung) {
       chuaNha ? oNhanh('Hồ sơ', 'ho_so', '#ho-so') : oNhanh('Gửi bài', 'gui', '#gui-bai')),
     // Khảo sát đang mở chưa gửi (migration 0021); quản trị, Ban cố vấn thấy thêm dòng kết quả.
     khaoSat,
+    // Cùng điều kiện với v-lichtuan.js.
+    S.toi.loai === 'thanh_vien' && S.toi.hoat_dong === true ? nhom(null, dong({ truoc: h('div', { class: 'bieu-tuong' }, bieuTuong('lich')), tieu: 'Lịch tuần khả thi', phu: '15 phút mỗi tuần: xếp một lịch làm được, rồi rà soát.', href: '#lich-tuan' })) : null,
     tuyenQuanMo ? nhom(null, dong({ truoc: h('div', { class: 'bieu-tuong' }, bieuTuong('phieu')), tieu: 'Tuyển quân đang mở', phu: 'Phiếu đánh giá thí sinh', href: '#tuyen-quan' })) : null,
     // Junior Gen12 chọn nhà sau Tết Nguyên đán (anh Long, 20/11/2026).
     chuaNha ? h('a', { class: 'the-chon-nha', href: '#lich/diem-nhom' },

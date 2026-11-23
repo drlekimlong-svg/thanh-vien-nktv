@@ -68,6 +68,10 @@ Dùng lần đầu cho BM01, khảo sát trước workshop Quản lý thời gia
 - **Kết quả:** quản trị và Ban cố vấn mở `#khao-sat/<id>/ket-qua` (có lối vào ở màn Hôm nay khi khảo sát đang mở): số đã gửi, chưa gửi, chưa kích hoạt app; câu 1 đưa lên đầu thành ô số; biểu đồ từng câu; mở, đóng, đặt hạn; tải CSV câu trả lời và danh sách đã gửi, chưa gửi.
 - **Nội dung khảo sát** nằm trong tệp JSON ở `supabase/du_lieu/`; `tools/tao_khao_sat.py` kiểm tệp rồi tạo lệnh SQL nạp lên. Chưa có màn soạn khảo sát trên app.
 
+## Lịch tuần khả thi
+
+Công cụ nằm ở kho `lich-tuan` (web `/lich-tuan/`), app nhúng bằng iframe ở `#lich-tuan` với tham số `?nhung=1` (ẩn đầu trang, chân trang, bỏ trang mở đầu). Địa chỉ `../lich-tuan/` viết thẳng trong `js/v-lichtuan.js`. Chỉ thành viên CLB còn sinh hoạt (`loai = 'thanh_vien'` và `hoat_dong`) thấy thẻ ở màn Hôm nay và mở được trang; học viên gõ thẳng `#lich-tuan` vẫn không thấy công cụ. Dữ liệu nằm trên máy người dùng (localStorage của công cụ), app thành viên không lưu gì và không gọi máy chủ. Lúc chạy trên máy, đặt hai thư mục cạnh nhau dưới cùng một gốc.
+
 ## Thông tin học viên app thu thập
 
 App chỉ lưu **họ tên, email, MSSV và lớp** (anh Long chốt 18/11/2026). Bảng thư ký dán vào có thêm cột nào — số điện thoại, ngày sinh, giới tính, trường, ngành, năm học — app đọc qua rồi bỏ, không ghi vào cơ sở dữ liệu. Thu ít thì hồ sơ bảo vệ dữ liệu cá nhân nhẹ đi và rủi ro cũng nhẹ đi.

@@ -15,6 +15,7 @@ import { tuyenHocVien } from './v-hocvien.js';
 import { manGuiBai } from './v-guibai.js';
 import { manBaiGiay, manQlBaiGiay } from './v-baigiay.js';
 import { manKhaoSat } from './v-khaosat.js';
+import { manLichTuan } from './v-lichtuan.js';
 import { canHoi, noiDungHoiLai, noiDungTuChoi, noiDungThongBao, oDongY, manQlDuLieu, PHIEN_BAN } from './v-dulieu.js';
 
 const goc = $('#app');
@@ -25,7 +26,7 @@ const q = new URLSearchParams(location.search);
    - Tập huấn vào trong Quản lý; ai thuộc Ban tổ chức đợt mà không có tab Quản lý thì Tập huấn là tab thứ năm.
    - Tuyển quân không còn là tab: khi mở, lối vào là thẻ đầu màn hình Hôm nay và dòng trong Quản lý. */
 const TAB = [
-  { id: 'hom-nay', ten: 'Hôm nay', icon: 'hom_nay' },
+  { id: 'hom-nay', ten: 'Hôm nay', icon: 'hom_nay', cung: ['lich-tuan'] },
   { id: 'lich', ten: 'Lịch', icon: 'lich' },
   { id: 'post-test', ten: 'Bài làm', icon: 'test', cung: ['gui-bai'] },
   { id: 'ho-so', ten: 'Hồ sơ', icon: 'ho_so' },
@@ -53,7 +54,7 @@ async function tuyen() {
       h('span', { class: 'vien-tab' }, bieuTuong(t.icon)), h('span', { class: 'ten-tab' }, t.ten),
       t.id === 'quan-ly' && S.soCho ? h('span', { class: 'cham' }, S.soCho) : null)));
   // Thanh logo chỉ ở trang gốc của mỗi tab; Hôm nay đã có dải xanh riêng, trang con có thanh quay lại.
-  goc.dataset.dauApp = !con.length && !(tab === 'hom-nay' && !laHocVien()) ? 'co' : '';
+  goc.dataset.dauApp = !con.length && tab !== 'lich-tuan' && !(tab === 'hom-nay' && !laHocVien()) ? 'co' : '';
   const vung = $('#vung');
   vung.className = 'noi-dung';
   dat(vung, dangTai());
@@ -74,6 +75,7 @@ async function tuyen() {
       else await manPostTest(vung);
     } else if (tab === 'gui-bai') manGuiBai(vung);
     else if (tab === 'khao-sat') await manKhaoSat(vung, con);
+    else if (tab === 'lich-tuan') await manLichTuan(vung);
     else if (tab === 'tuyen-quan') await manTuyenQuan(vung, con);
     else if (tab === 'tap-huan') await tuyenTapHuan(vung, con);
     else if (tab === 'ho-so') await manHoSo(vung, con[0]);
