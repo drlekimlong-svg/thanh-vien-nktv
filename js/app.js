@@ -14,6 +14,7 @@ import { tuyenTapHuan } from './v-dot.js';
 import { tuyenHocVien } from './v-hocvien.js';
 import { manGuiBai } from './v-guibai.js';
 import { manBaiGiay, manQlBaiGiay } from './v-baigiay.js';
+import { manKhaoSat } from './v-khaosat.js';
 import { canHoi, noiDungHoiLai, noiDungTuChoi, noiDungThongBao, oDongY, manQlDuLieu, PHIEN_BAN } from './v-dulieu.js';
 
 const goc = $('#app');
@@ -72,6 +73,7 @@ async function tuyen() {
       else if (con[0] === 'phieu-ql') await manQlBaiGiay(vung, con[1], con[2]);
       else await manPostTest(vung);
     } else if (tab === 'gui-bai') manGuiBai(vung);
+    else if (tab === 'khao-sat') await manKhaoSat(vung, con);
     else if (tab === 'tuyen-quan') await manTuyenQuan(vung, con);
     else if (tab === 'tap-huan') await tuyenTapHuan(vung, con);
     else if (tab === 'ho-so') await manHoSo(vung, con[0]);

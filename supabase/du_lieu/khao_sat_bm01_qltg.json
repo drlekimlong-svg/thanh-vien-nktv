@@ -1,0 +1,183 @@
+{
+  "ma": "BM01-QLTG-2026",
+  "ten": "Khảo sát trước workshop Quản lý thời gian",
+  "mo_ta": "Workshop “Quản lý thời gian dành cho sinh viên y khoa”, Buổi 1: 19:00–20:30 thứ Tư 25/11/2026, phòng 302 khu A2, trong buổi Tập huấn Junior.\n\nPhiếu này giúp Ban tổ chức ước số tài liệu cần in và chọn ví dụ sát với lịch học thật của các bạn. Mất khoảng 5 phút. Nếu bạn không tham gia, chỉ cần trả lời câu đầu rồi gửi.",
+  "loi_ket": "Cảm ơn bạn. Kết quả chỉ trình bày ở dạng tổng hợp, không kèm tên. Hẹn gặp bạn tối thứ Tư 25/11, 19:00, phòng 302 khu A2.",
+  "an_danh": true,
+  "mo": true,
+  "han": "2026-11-25T12:00:00+07:00",
+  "doi_tuong": ["Junior", "Senior"],
+  "cau": [
+    {
+      "phan": "A. Tham gia",
+      "noi_dung": "Bạn có tham gia buổi workshop tối thứ Tư 25/11/2026 không?",
+      "ghi_chu": "19:00–20:30 · Phòng 302, khu A2. Ban tổ chức dùng câu này để ước số tài liệu cần in.",
+      "loai": "chon",
+      "lua_chon": ["Có", "Chưa chắc", "Không tham gia"]
+    },
+    {
+      "phan": "B. Lịch và quỹ thời gian của bạn trong học kỳ này",
+      "noi_dung": "Bạn đang học năm thứ mấy?",
+      "loai": "chon",
+      "lua_chon": ["Y1", "Y2", "Y3", "Y4", "Y5", "Y6"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Học kỳ này bạn có đi bệnh viện không?",
+      "loai": "chon",
+      "lua_chon": ["Chưa đi bệnh viện", "Có đi một số buổi trong tuần", "Đi bệnh viện hầu hết các ngày trong tuần"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Mỗi tuần bạn có khoảng bao nhiêu giờ theo lịch cố định?",
+      "ghi_chu": "Lên lớp, thực hành, bệnh viện; chưa tính trực đêm.",
+      "loai": "chon",
+      "lua_chon": ["Dưới 20 giờ", "20–29 giờ", "30–39 giờ", "40–49 giờ", "Từ 50 giờ"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Bạn trực đêm với tần suất nào?",
+      "loai": "chon",
+      "lua_chon": ["Không trực", "1–2 đêm mỗi tháng", "Khoảng 1 đêm mỗi tuần", "Từ 2 đêm mỗi tuần"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Mỗi ngày đi học, tổng thời gian di chuyển cả đi lẫn về của bạn là bao lâu?",
+      "loai": "chon",
+      "lua_chon": ["Dưới 30 phút", "30–59 phút", "60–89 phút", "Từ 90 phút"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Trong tuần học, trung bình mỗi đêm bạn ngủ bao lâu?",
+      "loai": "chon",
+      "lua_chon": ["Dưới 5 giờ", "5 đến dưới 6 giờ", "6 đến dưới 7 giờ", "7 đến dưới 8 giờ", "Từ 8 giờ"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Ngoài việc học, bạn đang có những việc nào sau đây?",
+      "ghi_chu": "Chọn tất cả các ý đúng.",
+      "loai": "nhieu",
+      "lua_chon": ["Làm thêm hoặc gia sư", "Câu lạc bộ, Đoàn, Hội", "Nghiên cứu khoa học", "Học ngoại ngữ hoặc chứng chỉ", "Chăm sóc người thân, việc gia đình", "Khác"],
+      "bat_buoc": false,
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "phan": "C. Cách bạn đang quản lý thời gian",
+      "noi_dung": "Bạn đang dùng gì để ghi lịch và việc cần làm?",
+      "ghi_chu": "Chọn tất cả các ý đúng.",
+      "loai": "nhieu",
+      "lua_chon": ["Không dùng gì, nhớ trong đầu", "Sổ hoặc giấy", "Lịch trên điện thoại hoặc Google Calendar", "Ứng dụng danh sách việc", "Notion", "Ghi chú trên điện thoại", "Khác"],
+      "bat_buoc": false,
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Bạn thường lập kế hoạch theo cách nào nhất?",
+      "loai": "chon",
+      "lua_chon": ["Không lập kế hoạch", "Chỉ khi sắp thi hoặc sắp hạn", "Theo từng ngày", "Theo từng tuần", "Theo tháng hoặc theo đợt học"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "phan": "Mức độ đúng với bạn trong 4 tuần gần đây",
+      "noi_dung": "Tôi biết khá rõ thời gian mỗi ngày của mình đi đâu.",
+      "loai": "thang5",
+      "nhan_thang": ["Hoàn toàn không đúng", "Hoàn toàn đúng"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Đầu tuần, tôi biết ba việc quan trọng nhất cần làm trong tuần.",
+      "loai": "thang5",
+      "nhan_thang": ["Hoàn toàn không đúng", "Hoàn toàn đúng"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Tôi thường ước lượng đúng thời gian cần để làm xong một việc.",
+      "loai": "thang5",
+      "nhan_thang": ["Hoàn toàn không đúng", "Hoàn toàn đúng"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Tôi thường bắt đầu việc quan trọng sớm, không để sát hạn.",
+      "loai": "thang5",
+      "nhan_thang": ["Hoàn toàn không đúng", "Hoàn toàn đúng"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Khi ngồi vào học, tôi giữ được tập trung ít nhất 30 phút liền.",
+      "loai": "thang5",
+      "nhan_thang": ["Hoàn toàn không đúng", "Hoàn toàn đúng"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Tôi ngủ đủ trong phần lớn các ngày trong tuần.",
+      "loai": "thang5",
+      "nhan_thang": ["Hoàn toàn không đúng", "Hoàn toàn đúng"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Cuối tuần, tôi có nhìn lại tuần vừa qua để điều chỉnh tuần sau.",
+      "loai": "thang5",
+      "nhan_thang": ["Hoàn toàn không đúng", "Hoàn toàn đúng"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Nhìn chung, tôi cảm thấy mình kiểm soát được thời gian của mình.",
+      "loai": "thang5",
+      "nhan_thang": ["Hoàn toàn không đúng", "Hoàn toàn đúng"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "phan": "Khó khăn lớn nhất",
+      "noi_dung": "Khó khăn lớn nhất của bạn về thời gian là gì?",
+      "ghi_chu": "Chọn tối đa 2 ý.",
+      "loai": "nhieu",
+      "toi_da": 2,
+      "lua_chon": ["Không biết thời gian đi đâu", "Quá nhiều việc cùng lúc", "Hay trì hoãn", "Dễ xao nhãng vì điện thoại", "Lịch thay đổi liên tục", "Mệt sau giờ bệnh viện hoặc sau trực nên không học nổi", "Không biết việc nào cần làm trước", "Lập kế hoạch rồi không làm theo", "Khác"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "phan": "D. Bạn nghĩ gì về bốn câu sau?",
+      "noi_dung": "Người bận rộn là người làm việc hiệu quả.",
+      "loai": "thang5",
+      "nhan_thang": ["Hoàn toàn không đồng ý", "Hoàn toàn đồng ý"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Lịch càng kín càng tốt.",
+      "loai": "thang5",
+      "nhan_thang": ["Hoàn toàn không đồng ý", "Hoàn toàn đồng ý"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Nghỉ ngơi trong mùa thi là lãng phí.",
+      "loai": "thang5",
+      "nhan_thang": ["Hoàn toàn không đồng ý", "Hoàn toàn đồng ý"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Chỉ cần cố gắng hơn là sẽ làm hết việc.",
+      "loai": "thang5",
+      "nhan_thang": ["Hoàn toàn không đồng ý", "Hoàn toàn đồng ý"],
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "phan": "E. Câu hỏi mở",
+      "noi_dung": "Kể ngắn một tình huống gần đây khiến bạn thấy “không đủ thời gian”.",
+      "ghi_chu": "2–3 câu. Không ghi tên người khác hay thông tin người bệnh.",
+      "loai": "doan",
+      "bat_buoc": false,
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Bạn mong mang về điều gì sau workshop?",
+      "loai": "chu",
+      "bat_buoc": false,
+      "dieu_kien": { "cau": 1, "trong": ["Có", "Chưa chắc"] }
+    },
+    {
+      "noi_dung": "Ban tổ chức có thể dùng tình huống bạn kể ở câu 24 làm ví dụ thảo luận, sau khi bỏ mọi chi tiết nhận dạng, được không?",
+      "loai": "chon",
+      "lua_chon": ["Được", "Không"],
+      "dieu_kien": { "cau": 24, "co": true }
+    }
+  ]
+}

@@ -58,6 +58,16 @@ Tab **Tuyển quân** hiện khi cài đặt `tuyen_quan` có `mo: true`. Quản
 - **Phiếu đánh giá:** theo form Google “[TQ2026] ĐÁNH GIÁ VÒNG 3”, gồm phần A (thuyết trình), phần B (tác phong, phẩm chất) và phần C (nhận xét, kết luận). Tên người đánh giá lấy từ tài khoản; nhà được điền sẵn theo hồ sơ và đổi được. Mỗi người một phiếu cho mỗi thí sinh và sửa được. Phiếu đang soạn được lưu tạm trên máy. Gửi qua hàm `luu_danh_gia_tq`, hàm này kiểm tra đủ mục.
 - **Xem kết quả:** quản trị, Ban cố vấn, và những người có id trong cài đặt `tq_xem_ket_qua` (mảng) đọc được mọi phiếu và mở được **Tổng hợp**. Trang Tổng hợp có điểm trung bình phần A, phần B, số phiếu Phù hợp, Cân nhắc, Không phù hợp, và tải được CSV. Tệp CSV từng phiếu có cùng cột với bảng trả lời của form Google. Người khác chỉ thấy phiếu của chính mình.
 
+## Khảo sát thành viên
+
+Dùng lần đầu cho BM01, khảo sát trước workshop Quản lý thời gian (anh Long yêu cầu 23/11/2026). Bảng và hàm ở migration `0021_khao_sat.sql`, tách hẳn khỏi phiếu của đợt tập huấn.
+
+- **Ai làm:** thành viên CLB còn hoạt động có cấp nằm trong đối tượng của khảo sát (BM01: Junior, Senior). Khảo sát đang mở mà chưa gửi hiện ở màn Hôm nay; trang làm bài là `#khao-sat/<id>`. Câu đã chọn được giữ trên máy cho tới khi gửi; gửi rồi không sửa được.
+- **Câu có điều kiện:** câu chỉ hiện khi một câu trước đó được trả lời đúng điều kiện. BM01: chọn "Không tham gia" ở câu 1 thì chỉ trả lời câu 1 rồi gửi. Máy chủ xét lại điều kiện, bỏ phần trả lời của câu không hiện và kiểm từng lựa chọn.
+- **Ẩn danh:** app ghi ai đã gửi, còn dòng trả lời không gắn tên, giờ gửi làm tròn theo ngày, danh sách người đã gửi không kèm giờ.
+- **Kết quả:** quản trị và Ban cố vấn mở `#khao-sat/<id>/ket-qua` (có lối vào ở màn Hôm nay khi khảo sát đang mở): số đã gửi, chưa gửi, chưa kích hoạt app; câu 1 đưa lên đầu thành ô số; biểu đồ từng câu; mở, đóng, đặt hạn; tải CSV câu trả lời và danh sách đã gửi, chưa gửi.
+- **Nội dung khảo sát** nằm trong tệp JSON ở `supabase/du_lieu/`; `tools/tao_khao_sat.py` kiểm tệp rồi tạo lệnh SQL nạp lên. Chưa có màn soạn khảo sát trên app.
+
 ## Thông tin học viên app thu thập
 
 App chỉ lưu **họ tên, email, MSSV và lớp** (anh Long chốt 18/11/2026). Bảng thư ký dán vào có thêm cột nào — số điện thoại, ngày sinh, giới tính, trường, ngành, năm học — app đọc qua rồi bỏ, không ghi vào cơ sở dữ liệu. Thu ít thì hồ sơ bảo vệ dữ liệu cá nhân nhẹ đi và rủi ro cũng nhẹ đi.
@@ -96,6 +106,7 @@ Edge Function `gui-thu` chạy được với Brevo (`BREVO_API_KEY`) lẫn Mail
 | `supabase/functions/kich-hoat/` | Hàm kích hoạt tài khoản |
 | `supabase/functions/gui-thu/` | Hàm gửi thư cho học viên; giữ khóa API của dịch vụ gửi thư |
 | `tools/nhap_thanh_vien.py` | Tạo lệnh SQL nhập danh sách từ CSV; tệp SQL tạo ra chứa họ tên nên không đưa lên kho |
+| `supabase/du_lieu/khao_sat_*.json`, `tools/tao_khao_sat.py` | Nội dung từng khảo sát thành viên và công cụ tạo lệnh SQL nạp lên (migration 0021) |
 
 ## Chạy thử trên máy
 

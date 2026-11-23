@@ -3,6 +3,7 @@ import { S } from './state.js';
 import { h, dat, dong, nhom, bieuTuong, moSheet, thu, gio, ngayGio, ngay, namHoc, oNhap, oBat, qrSvg, moTaTV, NHA, DS_NHA, anhDaiDien, tenDep, thuDai, ngayNgan, giaTriNgay } from './ui.js';
 import { suKienBuoi } from './v-lich.js';
 import { taoMa, BUOC } from './ma-dong.js';
+import { khoiKhaoSat } from './v-khaosat.js';
 
 const C = window.NKTV_CONFIG;
 export const linkThe = (khoa) => (S.demo ? location.origin + location.pathname + '?demo=tv&' : C.appUrl + '?') + 'the=' + khoa;
@@ -105,9 +106,9 @@ function loiChao(toi) {
 
 export async function manHomNay(vung) {
   const nam = namHoc();
-  const [buoi, tb, doc, bai] = await Promise.all([
+  const [buoi, tb, doc, bai, khaoSat] = await Promise.all([
     S.db.dsBuoi(new Date(Date.now() - 6 * 3600e3).toISOString()),
-    S.db.dsThongBao(), S.db.daDoc(S.toi.id), S.db.baiCuaToi().catch(() => [])
+    S.db.dsThongBao(), S.db.daDoc(S.toi.id), S.db.baiCuaToi().catch(() => []), khoiKhaoSat()
   ]);
   const toi = buoi[0];
   const daDoc = new Set(doc);
@@ -172,6 +173,8 @@ export async function manHomNay(vung) {
       oNhanh('Điểm nhóm', 'sao', '#lich/diem-nhom'),
       oNhanh('Làm bài', 'test', '#post-test', baiMo.length || null),
       oNhanh('Gửi bài', 'gui', '#gui-bai')),
+    // Khảo sát đang mở chưa gửi (migration 0021); quản trị, Ban cố vấn thấy thêm dòng kết quả.
+    khaoSat,
     tuyenQuanMo ? nhom(null, dong({ truoc: h('div', { class: 'bieu-tuong' }, bieuTuong('phieu')), tieu: 'Tuyển quân đang mở', phu: 'Phiếu đánh giá thí sinh', href: '#tuyen-quan' })) : null,
     // Junior Gen12 chọn nhà sau Tết Nguyên đán (anh Long, 20/11/2026).
     chuaNha ? h('a', { class: 'the-chon-nha', href: '#lich/diem-nhom' },

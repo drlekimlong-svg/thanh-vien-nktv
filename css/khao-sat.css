@@ -1,0 +1,58 @@
+/* Khảo sát thành viên (js/v-khaosat.js, migration 0021). Dùng lại biến màu của app.css. */
+.ks-tieu { font-size: 1.375rem; line-height: 1.22; letter-spacing: -0.015em; font-weight: 700; margin: 4px 0 10px; }
+.ks-mo-ta { color: var(--chu-2); line-height: 1.5; margin: 0 0 10px; }
+.ks-phan { font-size: 0.9375rem; font-weight: 700; color: var(--chinh); margin: 22px 4px 8px; letter-spacing: -0.005em; }
+.ks-cau { background: var(--be-mat); box-shadow: var(--bong); border-radius: 16px; padding: 14px 14px 12px; margin-bottom: 10px; }
+.ks-khoi.thieu .ks-cau { box-shadow: inset 0 0 0 1.5px var(--vang), var(--bong); }
+.ks-nd { font-weight: 600; line-height: 1.4; margin: 0 0 4px; }
+.ks-so { color: var(--chinh); font-variant-numeric: tabular-nums; }
+.ks-tuy { font-weight: 500; color: var(--chu-3); font-size: 0.875rem; }
+.ks-gc { color: var(--chu-2); font-size: 0.875rem; line-height: 1.4; margin: 0 0 6px; }
+
+.ks-ds { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.ks-lc {
+  display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; border: 0; cursor: pointer;
+  background: var(--be-mat-2); color: var(--chu); border-radius: 12px; padding: 11px 12px; font-size: 0.9375rem; line-height: 1.35;
+  transition: background-color 120ms ease-out, box-shadow 120ms ease-out, transform 100ms ease-out;
+}
+.ks-lc:active { transform: scale(0.985); }
+.ks-lc i { flex: none; width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--chu-3); position: relative; }
+.ks-lc.vuong i { border-radius: 6px; }
+.ks-lc[aria-checked="true"] { background: var(--chinh-nhat); box-shadow: inset 0 0 0 1.5px var(--chinh); }
+.ks-lc[aria-checked="true"] i { background: var(--chinh); box-shadow: none; }
+.ks-lc[aria-checked="true"] i::after { content: ""; position: absolute; inset: 6px; border-radius: 50%; background: var(--chinh-chu); }
+.ks-lc.vuong[aria-checked="true"] i::after { inset: 4px 7px 6px; border-radius: 0; background: none; border: solid var(--chinh-chu); border-width: 0 2.4px 2.4px 0; transform: rotate(45deg); }
+
+.ks-thang { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 8px; }
+.ks-muc {
+  border: 0; cursor: pointer; background: var(--be-mat-2); color: var(--chu); border-radius: 12px; min-height: 44px;
+  font-size: 1.0625rem; font-weight: 600; font-variant-numeric: tabular-nums;
+  transition: background-color 120ms ease-out, color 120ms ease-out, transform 100ms ease-out;
+}
+.ks-muc:active { transform: scale(0.95); }
+.ks-muc[aria-checked="true"] { background: var(--chinh); color: var(--chinh-chu); }
+.ks-nhan-thang { display: flex; justify-content: space-between; gap: 12px; margin-top: 6px; font-size: 0.75rem; color: var(--chu-3); line-height: 1.3; }
+.ks-nhan-thang span:last-child { text-align: right; }
+
+.ks-chu { width: 100%; margin-top: 8px; border: 0; border-radius: 12px; background: var(--be-mat-2); color: var(--chu); padding: 10px 12px; font: inherit; font-size: 0.9375rem; line-height: 1.45; outline: none; }
+.ks-chu:focus { box-shadow: inset 0 0 0 1.5px var(--chinh); }
+textarea.ks-chu { resize: vertical; min-height: 92px; }
+.ks-cuoi { margin: 18px 0 24px; }
+
+/* Kết quả */
+.ks-tt { padding: 13px 14px; }
+.ks-tt-nd { font-weight: 600; line-height: 1.35; }
+.ks-thanh { margin-bottom: 8px; }
+.ks-thanh-chu { display: flex; justify-content: space-between; gap: 10px; font-size: 0.875rem; line-height: 1.3; margin-bottom: 3px; }
+.ks-thanh-chu b { flex: none; font-variant-numeric: tabular-nums; }
+.ks-thanh-nen { height: 7px; border-radius: 4px; background: var(--ke); overflow: hidden; }
+.ks-thanh-nen i { display: block; height: 100%; background: var(--chinh); border-radius: 4px; }
+.ks-van { margin-top: 6px; padding-left: 10px; border-left: 3px solid var(--be-mat-2); line-height: 1.45; white-space: pre-wrap; }
+.ks-ds-nguoi { margin-bottom: 14px; }
+.ks-ds-nguoi summary { cursor: pointer; font-size: 0.875rem; font-weight: 600; color: var(--chu-2); padding: 6px 16px 8px; }
+.ks-ds-nguoi[open] summary { color: var(--chu); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ks-lc, .ks-muc { transition: none; }
+  .ks-lc:active, .ks-muc:active { transform: none; }
+}

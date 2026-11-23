@@ -188,6 +188,15 @@ export const api = {
   luuBaiGiay: (p) => rpc('luu_bai_giay', { p }),
   datMatKhauBaiGiay: (id, mk) => rpc('dat_mat_khau_bai_giay', { p_bai: id, p_mat_khau: mk }),
 
+  /* Khảo sát thành viên (migration 0021). Câu trả lời gửi lên là object khóa theo số thứ tự câu;
+     máy chủ bỏ câu không hiện theo điều kiện và kiểm lại từng lựa chọn. */
+  khaoSatCuaToi: () => rpc('khao_sat_cua_toi'),
+  xemKhaoSat: (id) => rpc('xem_khao_sat', { p_id: id }),
+  guiKhaoSat: (id, tl) => rpc('gui_khao_sat', { p_id: id, p_tra_loi: tl }),
+  dsKhaoSat: () => rpc('ds_khao_sat'),
+  tongHopKhaoSat: (id) => rpc('tong_hop_khao_sat', { p_id: id }),
+  datKhaoSat: (id, mo, han) => rpc('dat_khao_sat', { p_id: id, p_mo: mo, p_han: han || null }),
+
   /* Đợt tập huấn và học viên (migration 0013). Danh sách học viên, hồ sơ và mã kích hoạt
      chỉ đi qua hàm: hai bảng dot_hoc_vien, hv_ho_so không mở cho trình duyệt. */
   dsDot: () => rpc('ds_dot'),
