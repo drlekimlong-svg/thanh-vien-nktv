@@ -9,7 +9,11 @@ export const GUI_BAI_URL = 'https://script.google.com/macros/s/AKfycbzAAu3JBu68O
 
 const icon = (ten) => h('div', { class: 'bieu-tuong' }, bieuTuong(ten));
 
+// Junior chưa có nhà không gửi bài nhóm (anh Long 23/11/2026: ẩn Gửi bài với Junior, chọn nhà sau Tết Nguyên đán).
+export const duocGuiBai = () => !!S.toi.nha || S.toi.cap !== 'Junior';
+
 export function manGuiBai(vung) {
+  if (!duocGuiBai()) { location.hash = 'post-test'; return; }
   const nha = S.toi.nha && NHA[S.toi.nha];
   dat(vung,
     h('h1', { class: 'tieu-de-lon' }, 'Bài làm'),

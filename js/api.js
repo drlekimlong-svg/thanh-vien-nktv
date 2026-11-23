@@ -101,7 +101,7 @@ export const api = {
   datCaiDat: (khoa, gia_tri) => rest('cai_dat', { method: 'POST', body: JSON.stringify({ khoa, gia_tri }), headers: { Prefer: 'resolution=merge-duplicates' } }),
 
   // loai=eq.thanh_vien để các màn quản lý CLB không lẫn học viên các đợt tập huấn (migration 0013).
-  dsThanhVien: () => rest('thanh_vien?select=id,ma,ho_ten,gen,nha,cap,chuc_vu,hoat_dong,ghi_chu,khoa_qr,vai_tro,tham_gia_tu&loai=eq.thanh_vien&order=ma'),
+  dsThanhVien: () => rest('thanh_vien?select=id,ma,ho_ten,gen,nha,cap,chuc_vu,hoat_dong,ghi_chu,khoa_qr,vai_tro,tham_gia_tu,vao_nha_tu&loai=eq.thanh_vien&order=ma'),
   themThanhVien: async (o) => (await them('thanh_vien', o))[0],
   suaThanhVien: (id, o) => sua('thanh_vien', id, o),
   tinhTrangKichHoat: () => rpc('tinh_trang_kich_hoat'),

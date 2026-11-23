@@ -172,7 +172,8 @@ export async function manHomNay(vung) {
       ganBuoiToi ? oNhanh('Lịch', 'lich', '#lich') : oNhanh('Mã điểm danh', 'qr', moMaCuaToi),
       oNhanh('Điểm nhóm', 'sao', '#lich/diem-nhom'),
       oNhanh('Làm bài', 'test', '#post-test', baiMo.length || null),
-      oNhanh('Gửi bài', 'gui', '#gui-bai')),
+      // Junior chưa có nhà không gửi bài nhóm (anh Long 23/11/2026): ô thứ tư là Hồ sơ.
+      chuaNha ? oNhanh('Hồ sơ', 'ho_so', '#ho-so') : oNhanh('Gửi bài', 'gui', '#gui-bai')),
     // Khảo sát đang mở chưa gửi (migration 0021); quản trị, Ban cố vấn thấy thêm dòng kết quả.
     khaoSat,
     tuyenQuanMo ? nhom(null, dong({ truoc: h('div', { class: 'bieu-tuong' }, bieuTuong('phieu')), tieu: 'Tuyển quân đang mở', phu: 'Phiếu đánh giá thí sinh', href: '#tuyen-quan' })) : null,

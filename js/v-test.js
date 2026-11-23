@@ -2,6 +2,7 @@
 import { S, khiRoi } from './state.js';
 import { h, dat, dong, nhom, thu, toast, ngay, ngayGio, soVN, rong, xacNhan, rungThanhCong, rungLoi, hinhCau, phanDoan, BAI_LAM } from './ui.js';
 import { khoiBaiGiay } from './v-baigiay.js';
+import { duocGuiBai } from './v-guibai.js';
 
 const CHU = 'ABCDEFGH';
 const khoaNhap = (lam) => 'nktv-bai-' + lam;
@@ -27,7 +28,7 @@ export async function manPostTest(vung) {
   const [ds, phieu] = await Promise.all([S.db.baiCuaToi(), khoiBaiGiay()]);
   dat(vung,
     h('h1', { class: 'tieu-de-lon' }, 'Bài làm'),
-    phanDoan(BAI_LAM, '#post-test'),
+    duocGuiBai() ? phanDoan(BAI_LAM, '#post-test') : null,
     phieu,
     ds.length ? nhom(phieu.length ? 'Post-test' : null, ds.map(b => {
       const tt = trangThaiBai(b);

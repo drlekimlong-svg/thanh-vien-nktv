@@ -185,6 +185,11 @@ async function manGuiThu(vung) {
 /* ---------- Thành viên ---------- */
 const VAI = { thanh_vien: 'Thành viên', diem_danh: 'Phụ trách điểm danh', quan_tri: 'Quản trị' };
 const CHUC_VU = { nhom_truong: 'Nhóm trưởng', nhom_pho: 'Nhóm phó' };
+// Bộ lọc nhà ở các danh sách: '' là mọi người, KHONG_NHA là người chưa có nhà (Junior chờ chọn nhà).
+const KHONG_NHA = '__khong';
+const dungNha = (t, nha) => !nha || (nha === KHONG_NHA ? !t.nha : t.nha === nha);
+// Ngày tính điểm nhóm (thanh_vien.vao_nha_tu) cho ô ngày; '-infinity' (đã có nhà từ trước rồi bỏ nhà) hiện là trống.
+const ngayVaoNha = (t) => t && /^\d{4}-\d{2}-\d{2}$/.test(t.vao_nha_tu || '') ? t.vao_nha_tu : '';
 const nhanChucVu = (t) => t.chuc_vu ? CHUC_VU[t.chuc_vu] + (t.nha ? ' ' + t.nha : '') : null;
 
 function inMaQR(ds) {
@@ -202,11 +207,14 @@ function suaThanhVien(t, sauKhi) {
       const x = f.elements;
       const ten = x.ten.value.trim();
       if (!ten) { toast('Cần có họ và tên.', true); return; }
+      if (x.cv.value && !x.nha.value) { toast('Nhóm trưởng, nhóm phó cần thuộc một nhà. Chọn nhà, hoặc để Chức vụ là Không.', true); return; }
       const o = {
         ho_ten: ten, gen: x.gen.value === '' ? null : Number(x.gen.value), nha: x.nha.value || null, cap: x.cap.value || null,
         hoat_dong: x.hd.checked, ghi_chu: x.ghi.value.trim() || null, vai_tro: x.vai.value, tham_gia_tu: x.tg.value || null,
         chuc_vu: x.nha.value ? x.cv.value || null : null
       };
+      // Ngày tính điểm nhóm chỉ gửi khi quản trị sửa ô này; để nguyên thì máy chủ tự ghi lúc xếp nhà lần đầu.
+      if (x.vnt && x.vnt.value !== ngayVaoNha(t)) o.vao_nha_tu = x.vnt.value || null;
       if (t) {
         const ok = await thu(() => S.db.suaThanhVien(t.id, o), 'Đã lưu');
         if (ok) { s.dong(); sauKhi(); }
@@ -227,8 +235,11 @@ function suaThanhVien(t, sauKhi) {
       oChon('Cấp', [['', 'Chưa có'], 'Junior', 'Senior', 'Ban cố vấn'], t ? t.cap : '', { name: 'cap', disabled: !qt }),
       oChon('Chức vụ trong nhà', [['', 'Không'], ...Object.entries(CHUC_VU)], t ? t.chuc_vu || '' : '', { name: 'cv', disabled: !qt }),
       oBat('Còn hoạt động', { name: 'hd', checked: t ? t.hoat_dong : true, disabled: !qt }),
-      oNhap('Tính chuyên cần từ ngày', { name: 'tg', type: 'date', value: t ? t.tham_gia_tu : '', disabled: !qt }),
+      // Người mới mặc định tính chuyên cần từ hôm nay, để không bị ghi vắng ở các buổi trước khi vào CLB.
+      oNhap('Tính chuyên cần từ ngày', { name: 'tg', type: 'date', value: t ? t.tham_gia_tu : giaTriNgay(Date.now()), disabled: !qt }),
+      oNhap('Tính điểm nhóm từ ngày', { name: 'vnt', type: 'date', value: ngayVaoNha(t), disabled: !qt }),
       oNhap('Ghi chú', { name: 'ghi', value: t ? t.ghi_chu : '', disabled: !qt })),
+    qt ? h('p', { class: 'chu-nhom' }, 'Tính chuyên cần từ ngày: để trống là tính từ đầu năm học. Tính điểm nhóm từ ngày: app tự ghi ngày xếp nhà lần đầu (Junior chọn nhà); sửa được nếu cần, để trống là tính cho nhà mọi buổi.') : null,
     qt ? [h('div', { class: 'nhom' }, oChon('Vai trò trong app', Object.entries(VAI), t ? t.vai_tro : 'thanh_vien', { name: t && t.id === S.toi.id ? null : 'vai', disabled: t && t.id === S.toi.id })),
       t && t.id === S.toi.id ? h('p', { class: 'chu-nhom' }, 'Không tự đổi vai trò của chính mình, để app luôn còn người quản trị.') : null,
       t && t.id === S.toi.id ? h('input', { type: 'hidden', name: 'vai', value: t.vai_tro }) : null,
@@ -236,7 +247,14 @@ function suaThanhVien(t, sauKhi) {
     t && qt ? h('div', { class: 'nhom' },
       dong({ tieu: 'Xem hồ sơ năng lực', href: '#ho-so/' + t.id }),
       dong({ tieu: 'In mã QR của người này', onclick: () => inMaQR([t]) }),
-      dong({ tieu: 'Cấp mã kích hoạt', phu: 'Dùng khi kích hoạt lần đầu hoặc quên mật khẩu', onclick: async () => { s.dong(); hienMaKichHoat(await S.db.capMaKichHoat([t.id])); } })) : null);
+      dong({ tieu: 'Cấp mã kích hoạt', phu: 'Dùng khi kích hoạt lần đầu hoặc quên mật khẩu', onclick: async () => {
+        // Hỏi trước nếu người này đã có mã còn hạn (có thể đã in trên phiếu phát tay): cấp lại thì mã cũ hết dùng được.
+        const tt = (await S.db.tinhTrangKichHoat().catch(() => [])).find(x => x.thanh_vien_id === t.id);
+        if (tt && !tt.da_kich_hoat && tt.ma_con_han && !await xacNhan({ tieuDe: `Cấp lại mã cho ${t.ho_ten}?`, chu: 'Người này đã có mã còn hạn, có thể đã in trên phiếu phát tay. Cấp lại thì mã cũ không dùng được nữa.', nut: 'Cấp lại', nguy: true })) return;
+        s.dong();
+        const kq = await thu(() => S.db.capMaKichHoat([t.id]));
+        if (kq) hienMaKichHoat(kq);
+      } })) : null);
   const s = moSheet({ tieuDe: t ? t.ma : 'Thành viên mới', noiDung: f });
 }
 
@@ -249,14 +267,15 @@ async function manThanhVien(vung) {
   const dem = h('span');
   const ve = () => {
     const k = chuan(loc.tim);
-    const kq = ds.filter(t => (loc.hd === 'tat' || (loc.hd === 'co') === t.hoat_dong) && (!loc.nha || t.nha === loc.nha) && (!k || chuan(t.ho_ten + ' ' + t.ma + ' gen' + t.gen).includes(k)));
+    const kq = ds.filter(t => (loc.hd === 'tat' || (loc.hd === 'co') === t.hoat_dong) && dungNha(t, loc.nha) && (!k || chuan(t.ho_ten + ' ' + t.ma + ' gen' + t.gen + ' ' + moTaTV(t)).includes(k)));
     dem.textContent = kq.length + ' người';
     dat(vungDs, kq.length ? h('div', { class: 'nhom' }, kq.slice(0, 300).map(t => dong({ tieu: t.ho_ten, phu: [t.ma, moTaTV(t), t.chuc_vu ? CHUC_VU[t.chuc_vu] : null, t.ghi_chu].filter(Boolean).join(' · '), onclick: () => suaThanhVien(t, lai) }))) : rong('Không có ai khớp.'));
   };
   const vien = (nhan, duoc, bat) => { const n = h('button', { class: 'vien', type: 'button', 'aria-pressed': duoc() ? 'true' : 'false', onclick: () => { bat(); hang.querySelectorAll('.vien').forEach(v => v.__cn()); ve(); } }, nhan); n.__cn = () => n.setAttribute('aria-pressed', duoc() ? 'true' : 'false'); return n; };
   const hang = h('div', { class: 'chon-ngang' },
     vien('Còn hoạt động', () => loc.hd === 'co', () => { loc.hd = 'co'; }), vien('Đã ngừng', () => loc.hd === 'khong', () => { loc.hd = 'khong'; }), vien('Tất cả', () => loc.hd === 'tat', () => { loc.hd = 'tat'; }),
-    DS_NHA.map(n => vien(n, () => loc.nha === n, () => { loc.nha = loc.nha === n ? '' : n; })));
+    DS_NHA.map(n => vien(n, () => loc.nha === n, () => { loc.nha = loc.nha === n ? '' : n; })),
+    vien('Chưa có nhà', () => loc.nha === KHONG_NHA, () => { loc.nha = loc.nha === KHONG_NHA ? '' : KHONG_NHA; }));
   dat(vung,
     thanhNho('Thành viên', '#quan-ly', 'Quản lý', S.toi.la_admin ? h('button', { class: 'nut-lui', type: 'button', onclick: () => suaThanhVien(null, lai) }, 'Thêm') : null),
     h('input', { class: 'tim', type: 'search', placeholder: 'Tìm tên, mã, gen…', 'aria-label': 'Tìm thành viên', oninput: (e) => { loc.tim = e.target.value; ve(); } }),
@@ -487,7 +506,8 @@ export async function manMotBuoi(vung, id, tc) {
   };
   const veDs = () => {
     const k = chuan(timChu);
-    const kq = bang.filter(r => (loc === 'tat' || (loc === 'mat' ? (r.trang_thai === 'dung' || r.trang_thai === 'tre') : r.trang_thai === loc)) && (!k || chuan(r.ho_ten + ' ' + r.ma).includes(k)));
+    // Tìm được cả theo Gen, nhà, cấp (gõ "junior", "gen 12", "chưa có nhà") để ghi tay nhanh cho người mới.
+    const kq = bang.filter(r => (loc === 'tat' || (loc === 'mat' ? (r.trang_thai === 'dung' || r.trang_thai === 'tre') : r.trang_thai === loc)) && (!k || chuan(r.ho_ten + ' ' + r.ma + ' ' + moTaTV(r) + (!tc && !r.nha ? ' chưa có nhà' : '')).includes(k)));
     dat(vungDs, kq.length ? h('div', { class: 'nhom' }, kq.slice(0, 300).map(r => dong({
       tieu: r.ho_ten, phu: [moTaTV(r) || (tc ? r.ma : ''),
         r.luc && r.cach !== 'bo_sung' ? (coGioRa ? 'vào ' : '') + gio(r.luc) : null,
@@ -512,7 +532,8 @@ export async function manMotBuoi(vung, id, tc) {
           !coMat ? h('button', { class: 'nut', type: 'button', onclick: async () => { const ok = await thu(() => S.db.ghiDiemDanh({ buoi: id, tv: r.thanh_vien_id, luc: new Date(Date.now() + (S.lech || 0)).toISOString(), cach: 'tay' }), 'Đã ghi có mặt'); if (ok) { s.dong(); taiLai(); } } }, 'Ghi có mặt') : null,
           coGioRa && coMat && !r.ra_luc ? h('button', { class: 'nut', type: 'button', onclick: async () => { const ok = await thu(() => S.db.datGioRa(id, r.thanh_vien_id, new Date(Date.now() + (S.lech || 0)).toISOString()), 'Đã ghi giờ ra'); if (ok) { s.dong(); taiLai(); } } }, 'Ghi giờ ra bây giờ') : null,
           coGioRa && r.ra_luc ? h('button', { class: 'nut phu', type: 'button', onclick: async () => { const ok = await thu(() => S.db.datGioRa(id, r.thanh_vien_id, null), 'Đã xóa giờ ra'); if (ok) { s.dong(); taiLai(); } } }, 'Xóa giờ ra ' + gio(r.ra_luc)) : null,
-          r.trang_thai !== 'phep' && !coMat ? h('button', { class: 'nut phu', type: 'button', onclick: () => { s.dong(); ghiPhep(r); } }, 'Ghi vắng có phép') : null,
+          // Máy chủ chỉ cho người phụ trách ghi vắng có phép (ghi_vang_phep); người chỉ được giao quét thì không thấy nút.
+          S.toi.la_phu_trach && r.trang_thai !== 'phep' && !coMat ? h('button', { class: 'nut phu', type: 'button', onclick: () => { s.dong(); ghiPhep(r); } }, 'Ghi vắng có phép') : null,
           coMat ? h('button', { class: 'nut nguy', type: 'button', onclick: async () => { const ok = await thu(() => S.db.xoaDiemDanh(id, r.thanh_vien_id), 'Đã xóa lượt điểm danh'); if (ok) { s.dong(); taiLai(); } } }, 'Xóa lượt điểm danh') : null))
     });
   };
@@ -760,10 +781,17 @@ async function manKichHoat(vung) {
       const kq = await thu(() => S.db.capMaKichHoat(chuaCapMa.map(t => t.id)));
       if (kq) { await lai(); hienMaKichHoat(kq); }
     } }, `Cấp mã cho ${chuaCapMa.length} người chưa có`) : null,
-    chua.length ? nhom('Chưa kích hoạt', h('div', null, chua.map(t => dong({
-      tieu: t.ho_ten, phu: t.ma + ' · ' + (m.get(t.id) && m.get(t.id).ma_con_han ? 'Đã cấp mã' : 'Chưa cấp mã'),
-      sau: 'Cấp mã', onclick: async () => { const kq = await thu(() => S.db.capMaKichHoat([t.id])); if (kq) { await lai(); hienMaKichHoat(kq); } }
-    })))) : null,
+    chua.length ? nhom('Chưa kích hoạt', h('div', null, chua.map(t => {
+      // Mã còn hạn có thể đã in trên phiếu phát cho người đó: cấp lại thì mã cũ hết dùng được, nên phải hỏi trước.
+      const conMa = !!(m.get(t.id) && m.get(t.id).ma_con_han);
+      return dong({
+        tieu: t.ho_ten, phu: [t.ma, moTaTV(t), conMa ? 'Đã cấp mã' : 'Chưa cấp mã'].filter(Boolean).join(' · '),
+        sau: conMa ? 'Cấp lại' : 'Cấp mã', onclick: async () => {
+          if (conMa && !await xacNhan({ tieuDe: `Cấp lại mã cho ${t.ho_ten}?`, chu: 'Người này đã có mã còn hạn, có thể đã in trên phiếu phát tay. Cấp lại thì mã cũ không dùng được nữa.', nut: 'Cấp lại', nguy: true })) return;
+          const kq = await thu(() => S.db.capMaKichHoat([t.id])); if (kq) { await lai(); hienMaKichHoat(kq); }
+        }
+      });
+    }))) : null,
     daCo.length ? nhom('Đã kích hoạt · chạm để cấp lại khi quên mật khẩu', h('div', null, daCo.map(t => dong({
       tieu: t.ho_ten, phu: t.ma,
       onclick: async () => { if (!await xacNhan({ tieuDe: `Cấp lại mã cho ${t.ho_ten}?`, chu: 'Mật khẩu cũ vẫn dùng được cho đến khi người này đặt mật khẩu mới bằng mã.', nut: 'Cấp lại' })) return; const kq = await thu(() => S.db.capMaKichHoat([t.id])); if (kq) { await lai(); hienMaKichHoat(kq); } }
@@ -841,12 +869,12 @@ async function manBaoCao(vung) {
   const vungDs = h('div');
   const pt = (x) => x.tong ? Math.round((x.dung + x.tre) / x.tong * 100) : 0;
   const ve = () => {
-    const kq = ds.filter(x => !nha || x.nha === nha);
-    dat(vungDs, kq.length ? h('div', { class: 'nhom' }, kq.map(x => dong({ tieu: x.ho_ten, phu: `${moTaTV(x)} · ${x.dung + x.tre}/${x.tong} buổi · Trễ ${x.tre} · Phép ${x.phep} · Vắng ${x.vang}`, sau: pt(x) + '%' }))) : rong('Chưa có buổi nào đã đóng để tính chuyên cần.'));
+    const kq = ds.filter(x => dungNha(x, nha));
+    dat(vungDs, kq.length ? h('div', { class: 'nhom' }, kq.map(x => dong({ tieu: x.ho_ten, phu: `${moTaTV(x)} · ${x.dung + x.tre}/${x.tong} buổi · Trễ ${x.tre} · Phép ${x.phep} · Vắng ${x.vang}`, sau: pt(x) + '%' }))) : rong(ds.length ? 'Chưa có ai trong nhóm này ở các buổi đã đóng. Người mới chỉ được tính từ ngày vào CLB.' : 'Chưa có buổi nào đã đóng để tính chuyên cần.'));
   };
   dat(vung, thanhNho('Chuyên cần'),
     h('p', { class: 'tieu-de-phu', style: 'margin-top:4px;text-align:center' }, 'Năm học ' + nam.nhan + ' · Chỉ tính các buổi đã đóng'),
-    h('div', { class: 'chon-ngang' }, [['', 'Tất cả'], ...DS_NHA.map(n => [n, n])].map(([v, c]) => h('button', { class: 'vien', type: 'button', 'data-v': v, 'aria-pressed': nha === v ? 'true' : 'false', onclick: (e) => { nha = v; e.currentTarget.parentElement.querySelectorAll('.vien').forEach(n => n.setAttribute('aria-pressed', n.dataset.v === v ? 'true' : 'false')); ve(); } }, c))),
+    h('div', { class: 'chon-ngang' }, [['', 'Tất cả'], ...DS_NHA.map(n => [n, n]), [KHONG_NHA, 'Chưa có nhà']].map(([v, c]) => h('button', { class: 'vien', type: 'button', 'data-v': v, 'aria-pressed': nha === v ? 'true' : 'false', onclick: (e) => { nha = v; e.currentTarget.parentElement.querySelectorAll('.vien').forEach(n => n.setAttribute('aria-pressed', n.dataset.v === v ? 'true' : 'false')); ve(); } }, c))),
     vungDs,
     ds.length ? h('button', { class: 'nut phu day', type: 'button', onclick: () => taiCSV(`chuyen-can-${nam.nhan}.csv`, [['Mã', 'Họ và tên', 'Generation', 'Nhà', 'Cấp', 'Tổng buổi', 'Đúng giờ', 'Trễ', 'Có phép', 'Vắng', 'Chuyên cần (%)'], ...ds.map(x => [x.ma, x.ho_ten, x.gen, x.nha, x.cap, x.tong, x.dung, x.tre, x.phep, x.vang, pt(x)])]) }, 'Xuất CSV') : null);
   ve();

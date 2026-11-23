@@ -1,5 +1,5 @@
-// Bản chạy thử trên máy (localhost, ?demo=admin|diem|gv|bcv|nt|tv|hv|hvxong|dangnhap): dữ liệu giả trong bộ nhớ, không gọi máy chủ.
-// nt là nhóm trưởng nhà Genbu, bcv là Ban cố vấn không giữ vai trò quản trị.
+// Bản chạy thử trên máy (localhost, ?demo=admin|diem|gv|bcv|nt|tv|jr|hv|hvxong|dangnhap): dữ liệu giả trong bộ nhớ, không gọi máy chủ.
+// nt là nhóm trưởng nhà Genbu, bcv là Ban cố vấn không giữ vai trò quản trị, jr là Junior chưa xếp nhà (chọn nhà sau Tết Nguyên đán).
 // Trong đợt XQ2627: admin là trưởng ban, tv là thư ký, diem là phụ trách điểm danh, gv là tập huấn viên.
 // hv là học viên đang trong đợt mở, hvxong là học viên chỉ còn đợt đã kết thúc (tài khoản chỉ xem).
 // Cùng tên hàm với api.js để thử giao diện mà không chạm vào dữ liệu thật.
@@ -14,7 +14,10 @@ export function demo(vai) {
     id: 't' + i, ma: 'NKTV-' + String(i + 1).padStart(3, '0'), ho_ten: ['NGUYỄN VĂN', 'TRẦN THỊ', 'LÊ MINH'][i % 3] + ' ' + String.fromCharCode(65 + i),
     gen: 8 + (i % 4), nha: NHA[i % 6], cap: i === 0 || i === 4 ? 'Ban cố vấn' : i % 5 === 3 ? 'Junior' : 'Senior', chuc_vu: null, hoat_dong: i !== 17, ghi_chu: null, khoa_qr: String(i).padStart(16, 'a'), vai_tro: 'thanh_vien', loai: 'thanh_vien', tham_gia_tu: null, user_id: null
   }));
-  const dangNhap = { admin: 0, diem: 1, nt: 3, bcv: 4, gv: 5 }[vai] ?? 2;
+  // Junior chưa xếp nhà: nha để trống, vào CLB hôm nay (như Gen12 thật), vẫn điểm danh và làm test cá nhân, không vào điểm nhóm.
+  tv.push({ id: 't18', ma: 'NKTV-019', ho_ten: 'JUNIOR MẪU S', gen: 12, nha: null, cap: 'Junior', chuc_vu: null, hoat_dong: true, ghi_chu: null,
+    khoa_qr: '18'.padStart(16, 'a'), vai_tro: 'thanh_vien', loai: 'thanh_vien', tham_gia_tu: new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10), user_id: null });
+  const dangNhap = { admin: 0, diem: 1, nt: 3, bcv: 4, gv: 5, jr: 18 }[vai] ?? 2;
   tv[0].vai_tro = 'quan_tri'; tv[1].vai_tro = 'diem_danh'; tv[3].chuc_vu = 'nhom_truong';
   const khoaNha = (n) => n === 'Yin-Yang Kois' ? 'koi' : String(n || '').toLowerCase();
   const co = vai !== 'dangnhap';
@@ -258,7 +261,7 @@ export function demo(vai) {
      buổi CLB thì thành viên CLB, buổi đợt thì học viên của đợt, ca phải đăng ký thì người đã đăng ký. */
   const nguoiCuaBuoi = (b) => {
     if (!b) return [];
-    if (!b.dot_id) return tv.filter(t => t.hoat_dong);
+    if (!b.dot_id) return tv.filter(t => t.hoat_dong && (!t.tham_gia_tu || t.tham_gia_tu <= ngayVN(new Date(b.bat_dau).getTime())));
     if (b.can_dang_ky) return dangKy.filter(k => k.buoi_id === b.id).map(k => hv.find(h => h.id === k.thanh_vien_id)).filter(Boolean);
     return dotHv.filter(x => x.dot_id === b.dot_id && x.trang_thai === 'ghi_danh').map(x => hv.find(h => h.id === x.thanh_vien_id)).filter(Boolean);
   };
@@ -305,7 +308,12 @@ export function demo(vai) {
     async datNguoiDiemDanh(b, ids) { for (let i = giao.length - 1; i >= 0; i--) if (giao[i].buoi_id === b) giao.splice(i, 1); ids.forEach(x => giao.push({ buoi_id: b, thanh_vien_id: x })); },
     async dsThanhVien() { await gioi(); return tv.map(t => Object.assign({}, t)); },
     async themThanhVien(o) { const t = Object.assign({ id: uid(), khoa_qr: uid().padEnd(16, '0').slice(0, 16) }, o); tv.push(t); return t; },
-    async suaThanhVien(id, o) { coBoSung(tv.find(t => t.id === id), o); },
+    async suaThanhVien(id, o) {
+      const t = tv.find(x => x.id === id);
+      // Giống trigger ghi_ngay_vao_nha: xếp nhà lần đầu thì ghi hôm nay, trừ khi lệnh sửa đã ghi ngày khác.
+      if (!('vao_nha_tu' in o) && !t.nha && o.nha && !t.vao_nha_tu) o = Object.assign({}, o, { vao_nha_tu: ngayVN(Date.now()) });
+      coBoSung(t, o);
+    },
     async tinhTrangKichHoat() { return tv.map((t, i) => ({ thanh_vien_id: t.id, da_kich_hoat: i < 7, ma_con_han: i === 7 })); },
     async capMaKichHoat(ids) { return ids.map(i => { const t = tv.find(x => x.id === i); return { id: i, ma: t.ma, ho_ten: t.ho_ten, ma_kich_hoat: 'DEMO' + uid().slice(1, 5).toUpperCase() }; }); },
     async dsBuoi(tu, den) { await gioi(); return buoi.filter(b => !b.dot_id && (!tu || new Date(b.bat_dau) >= new Date(tu)) && (!den || new Date(b.bat_dau) <= new Date(den))).sort((a, b) => new Date(a.bat_dau) - new Date(b.bat_dau)).map(b => Object.assign({}, b)); },
@@ -381,7 +389,8 @@ export function demo(vai) {
       buoi.filter(b => !b.dot_id && b.dong && b.tinh_chuyen_can).forEach(b => {
         const bt = bai.filter(x => x.buoi_id === b.id && x.trang_thai === 'mo');
         NHA.forEach(n => {
-          const ds = tv.filter(t => t.hoat_dong && t.nha === n && t.cap !== 'Ban cố vấn').map(t => ({ t, s: tt(b, t).trang_thai }));
+          const ngB = ngayVN(new Date(b.bat_dau).getTime());
+          const ds = tv.filter(t => t.hoat_dong && t.nha === n && t.cap !== 'Ban cố vấn' && (!t.tham_gia_tu || t.tham_gia_tu <= ngB) && (!t.vao_nha_tu || t.vao_nha_tu <= ngB)).map(t => ({ t, s: tt(b, t).trang_thai }));
           if (!ds.length) return;
           const c = { dung: 0, tre: 0, phep: 0, vang: 0 }; ds.forEach(x => { c[x.s]++; });
           const coMat = ds.filter(x => x.s === 'dung' || x.s === 'tre');

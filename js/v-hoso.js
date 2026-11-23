@@ -113,8 +113,9 @@ export async function manHoSo(vung, idKhac) {
     h('div', { class: 'dau-ho-so' + (nha ? ' co-nha' : ''), style: nha ? `--nha-goc:${nha.mau}` : null },
       nha ? h('img', { class: 'mascot', src: `img/${nha.anh}.webp`, alt: '' }) : null,
       h('div', { class: 'nhan' }, nha ? `Nhà ${tv.nha} · ${nha.ten}` : 'Chưa có nhà'),
-      h('div', { class: 'ten' }, tenDep(tv.ho_ten)),
-      h('div', { class: 'phu' }, tv.ma, moTaTV(tv) ? ' · ' + moTaTV(tv) : '')),
+      // Không có mascot thì không cần chừa một phần ba bên phải cho ảnh.
+      h('div', { class: 'ten', style: nha ? null : 'max-width:none' }, tenDep(tv.ho_ten)),
+      h('div', { class: 'phu', style: nha ? null : 'max-width:none' }, tv.ma, moTaTV(tv) ? ' · ' + moTaTV(tv) : '')),
     soLieu([
       { so: cc && cc.tong ? Math.round((cc.dung + cc.tre) / cc.tong * 100) + '%' : '–', ten: 'Chuyên cần', phu: cc && cc.tong ? `${cc.dung + cc.tre}/${cc.tong} buổi · ${nam.nhan}` : nam.nhan },
       { so: tinh('chuyen_de').length, ten: 'Chuyên đề đã trình bày' },
