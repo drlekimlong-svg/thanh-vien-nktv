@@ -8,6 +8,7 @@ import {
 import { moMaCuaToi, moThongBao } from './v-homnay.js';
 import { moDuLieuCuaToi } from './v-dulieu.js';
 import { manCauHoi, moChecklist, soMucChecklist, hangTaiLieu } from './v-tronggio.js';
+import { khoiBaiGiay, manBaiGiay } from './v-baigiay.js';
 import { PHAN, MUC, LOAI_YC, giuNam, theKhoaHoc, anhDauKhoa, nhanDien, boKhoa, veDiemDanh } from './dot-chung.js';
 
 const TRANG_THAI = { soan: 'Chưa mở', mo: 'Đang mở', ket_thuc: 'Đã kết thúc' };
@@ -25,6 +26,7 @@ const thanh = (tieu, href, nhan) =>
 
 export async function tuyenHocVien(vung, tab, con = []) {
   if (tab === 'hom-nay' && con[0] === 'cau-hoi') return manHVCauHoi(vung, con[1], con[2]);
+  if (tab === 'hom-nay' && con[0] === 'phieu') return manBaiGiay(vung, con[1]);
   // #khoa/<id>: trang của một khóa. #lich/<id>, #tai-lieu/<id>, #ket-qua/<id>: chỉ khóa đó.
   if (tab === 'khoa') return manHVKhoa(vung, con[0]);
   if (tab === 'lich') return manHVLich(vung, con[0]);
@@ -146,6 +148,8 @@ export async function manHVHomNay(vung) {
   const mo = dotMo();
   const xong = ds.filter(d => d.trang_thai === 'ket_thuc');
   const tc = mo.length ? await S.db.hvTrangChu().catch(() => null) : null;
+  // Phiếu trả lời bài giấy của buổi mình đã điểm danh (migration 0025); máy chủ chưa có migration thì khối này rỗng.
+  const phieuGiay = mo.length ? await khoiBaiGiay() : [];
   // Phiếu đang mở của các đợt đang học, chưa gửi thì hiện lên như một việc cần làm.
   const phieu = [];
   for (const d of mo) {
@@ -207,6 +211,8 @@ export async function manHVHomNay(vung) {
 
     buoiGan.map(theBuoi),
 
+    phieuGiay,
+
     // Mỗi khóa là một thẻ mang ảnh của mùa đó; bấm vào là vào trang khóa.
     ds.length ? [
       h('div', { class: 'nhan-nhom' }, 'Khóa học của bạn'),
@@ -222,7 +228,7 @@ export async function manHVHomNay(vung) {
       truoc: icon('phieu'), onclick: () => moPhieu(p, lai)
     }))) : null,
 
-    mo.length && !buoiGan.length && !canChon.length && !phieu.length
+    mo.length && !buoiGan.length && !canChon.length && !phieu.length && !phieuGiay.length
       ? h('div', { class: 'bang-tin xanh' }, 'Bây giờ không có việc gì cần làm. Tới giờ buổi học, nút điểm danh sẽ hiện ngay ở đây. Lịch cả đợt nằm ở tab Lịch.')
       : null,
 

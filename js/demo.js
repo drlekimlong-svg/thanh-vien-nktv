@@ -1,4 +1,4 @@
-// Bản chạy thử trên máy (localhost, ?demo=admin|diem|gv|bcv|nt|tv|jr|hv|hvxong|dangnhap): dữ liệu giả trong bộ nhớ, không gọi máy chủ.
+// Bản chạy thử trên máy (localhost, ?demo=admin|diem|gv|bcv|nt|tv|jr|hv|hvchua|hvxong|dangnhap): dữ liệu giả trong bộ nhớ, không gọi máy chủ.
 // nt là nhóm trưởng nhà Genbu, bcv là Ban cố vấn không giữ vai trò quản trị, jr là Junior chưa xếp nhà (chọn nhà sau Tết Nguyên đán).
 // Trong đợt XQ2627: admin là trưởng ban, tv là thư ký, diem là phụ trách điểm danh, gv là tập huấn viên.
 // hv là học viên đang trong đợt mở, hvxong là học viên chỉ còn đợt đã kết thúc (tài khoản chỉ xem).
@@ -34,6 +34,8 @@ export function demo(vai) {
     { id: 'bd1', dot_id: 'o1', ten: 'Lý thuyết X-quang bụng', bat_dau: new Date(nay - 40 * 60e3).toISOString(), ket_thuc: new Date(nay + 110 * 60e3).toISOString(), dia_diem: 'Giảng đường 3', noi_dung: 'Mang theo máy tính.', nhom_truc: null, chu_tri: null, tre_sau_phut: 10, ra_sau_phut: 60, tinh_chuyen_can: true, dong: false, phan: 'ly_thuyet', nhom_chon: null, can_dang_ky: false, suc_chua: null, mo_dang_ky_tu: null, han_dang_ky: null },
     { id: 'bd2', dot_id: 'o1', ten: 'Thực hành ca sáng', bat_dau: new Date(nay + 3 * ngay).toISOString(), ket_thuc: null, dia_diem: 'Phòng đọc phim', noi_dung: null, nhom_truc: null, chu_tri: null, tre_sau_phut: 10, ra_sau_phut: null, tinh_chuyen_can: true, dong: false, phan: 'thuc_hanh', nhom_chon: 'Thực hành tuần 1', can_dang_ky: true, suc_chua: 2, mo_dang_ky_tu: null, han_dang_ky: new Date(nay + 2 * ngay).toISOString() },
     { id: 'bd3', dot_id: 'o1', ten: 'Thực hành ca chiều', bat_dau: new Date(nay + 3 * ngay + 5 * 3600e3).toISOString(), ket_thuc: null, dia_diem: 'Phòng đọc phim', noi_dung: null, nhom_truc: null, chu_tri: null, tre_sau_phut: 10, ra_sau_phut: null, tinh_chuyen_can: true, dong: false, phan: 'thuc_hanh', nhom_chon: 'Thực hành tuần 1', can_dang_ky: true, suc_chua: 3, mo_dang_ky_tu: null, han_dang_ky: new Date(nay + 2 * ngay).toISOString() },
+    // Buổi lượng giá của một nhóm: phiếu trả lời bài giấy g2, g3 gắn vào đây (demo-baigiay.js, migration 0025). h0 đã điểm danh, h1 chưa.
+    { id: 'bd5', dot_id: 'o1', ten: 'Lượng giá · Nhóm 1', bat_dau: new Date(nay - 30 * 60e3).toISOString(), ket_thuc: new Date(nay + 60 * 60e3).toISOString(), dia_diem: 'Phòng 1', noi_dung: null, nhom_truc: null, chu_tri: null, tre_sau_phut: 10, ra_sau_phut: null, tinh_chuyen_can: true, dong: false, phan: 'luong_gia', nhom_chon: null, can_dang_ky: false, suc_chua: null, mo_dang_ky_tu: null, han_dang_ky: null },
     { id: 'bd4', dot_id: 'o1', ten: 'Lượng giá cuối đợt', bat_dau: new Date(nay + 20 * ngay).toISOString(), ket_thuc: null, dia_diem: null, noi_dung: null, nhom_truc: null, chu_tri: null, tre_sau_phut: 5, ra_sau_phut: null, tinh_chuyen_can: true, dong: false, phan: 'luong_gia', nhom_chon: null, can_dang_ky: false, suc_chua: null, mo_dang_ky_tu: null, han_dang_ky: null }
   );
   const dd = [{ buoi_id: 'b1', thanh_vien_id: 't0', luc: buoi[0].bat_dau, cach: 'qr' }, { buoi_id: 'b1', thanh_vien_id: 't2', luc: new Date(new Date(buoi[0].bat_dau).getTime() + 15 * 60e3).toISOString(), cach: 'qr' }];
@@ -141,7 +143,8 @@ export function demo(vai) {
   [0, 1, 2, 3, 4, 5, 6].forEach(i => dotHv.push({ dot_id: 'o1', thanh_vien_id: 'h' + i, trang_thai: 'ghi_danh', ghi_danh_luc: new Date(nay - 2 * ngay).toISOString(), ghi_chu: null }));
   [0, 7].forEach(i => dotHv.push({ dot_id: 'o2', thanh_vien_id: 'h' + i, trang_thai: 'ghi_danh', ghi_danh_luc: new Date(nay - 300 * ngay).toISOString(), ghi_chu: null }));
   // ?demo=hv là học viên đang học (h0, có cả đợt cũ); ?demo=hvxong là người chỉ còn đợt đã kết thúc (h7).
-  const hvDangNhap = vai === 'hv' ? 'h0' : vai === 'hvxong' ? 'h7' : null;
+  // ?demo=hvchua là học viên đang học nhưng chưa điểm danh buổi lượng giá (h1): chưa thấy phiếu trả lời nào.
+  const hvDangNhap = vai === 'hv' ? 'h0' : vai === 'hvxong' ? 'h7' : vai === 'hvchua' ? 'h1' : null;
 
   /* ---------- Trong đợt (migration 0014): đăng ký ca, tài liệu, checklist, câu hỏi, thông báo ---------- */
   // h1 và h2 đã chọn ca sáng nên ca đó đủ 2 chỗ: bấm chọn thêm là thấy báo hết chỗ.
@@ -152,6 +155,8 @@ export function demo(vai) {
   // h0 đã điểm danh vào buổi lý thuyết 35 phút trước, chưa tới mốc 60 phút nên chưa ra được.
   dd.push({ buoi_id: 'bd1', thanh_vien_id: 'h0', luc: new Date(nay - 35 * 60e3).toISOString(), cach: 'ma_dong', ra_luc: null });
   dd.push({ buoi_id: 'bd1', thanh_vien_id: 'h3', luc: new Date(nay - 38 * 60e3).toISOString(), cach: 'ma_dong', ra_luc: null });
+  dd.push({ buoi_id: 'bd5', thanh_vien_id: 'h0', luc: new Date(nay - 25 * 60e3).toISOString(), cach: 'ma_dong', ra_luc: null });
+  dd.push({ buoi_id: 'bd5', thanh_vien_id: 'h3', luc: new Date(nay - 26 * 60e3).toISOString(), cach: 'ma_dong', ra_luc: null });
   const taiLieu = [
     { id: 'tl1', dot_id: 'o1', buoi_id: 'bd1', ten: 'Slide lý thuyết X-quang bụng', mo_ta: 'Bản PDF', lien_ket: 'https://drive.google.com/mau-slide', thu_tu: 1, mo_tu: null, can_diem_danh: false },
     { id: 'tl2', dot_id: 'o1', buoi_id: 'bd1', ten: 'Bộ phim tập đọc', mo_ta: null, lien_ket: 'https://drive.google.com/mau-phim', thu_tu: 2, mo_tu: null, can_diem_danh: true },
@@ -1189,7 +1194,7 @@ export function demo(vai) {
     },
 
     // Phiếu trả lời bài giấy (migration 0019).
-    ...baiGiayGia({ tv, buoi, dd, me }),
+    ...baiGiayGia({ tv, hv, dot, dotHv, buoi, dd, me, toiId }),
     // Dữ liệu cá nhân (migration 0020).
     ...duLieuGia({ tv, hv, me, toiId }),
     // Khảo sát thành viên (migration 0021).

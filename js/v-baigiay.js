@@ -1,14 +1,18 @@
 // Phiếu trả lời cho bài làm trên giấy (migration 0019; anh Long yêu cầu 21/11/2026 cho pretest thống kê 22/11/2026).
 // Thành viên làm bài trên giấy. Hết giờ, Ban cố vấn đọc mật khẩu; người đã điểm danh buổi đó mở phiếu rồi chọn lại
 // đáp án đã ghi trên giấy. App chỉ hiện "Câu n" với các chữ A, B, C…, không hiện nội dung câu. Không tính điểm.
+// Từ migration 0025 học viên đang ghi danh một đợt cũng làm được phiếu gắn buổi của đợt đó (buổi lượng giá XQ2627): lối vào ở tab Hôm nay.
 // Đáp án nằm ở máy chủ: chỉ màn quản trị đọc được, máy người làm bài không bao giờ nhận.
 import { S } from './state.js';
 import { h, dat, dong, nhom, thu, toast, ngay, ngayGio, soVN, moSheet, oNhap, oChon, oBat, soLieu, taiCSV, rungThanhCong, rungLoi, moTaTV, bieuTuong, xacNhan, DS_NHA } from './ui.js';
 
 const CHU = 'ABCDEFGH';
 const CAP = ['Junior', 'Senior', 'Ban cố vấn'];
+// Người làm là học viên của một đợt tập huấn (migration 0025): chữ không nhắc pretest hay Ban cố vấn, và không nói "không tính điểm".
+const laHV = () => !!S.toi && S.toi.loai === 'hoc_vien';
 const chuCua = (i) => i === null || i === undefined ? '–' : CHU[i];
-const khoaNhap = (id) => 'nktv-bai-giay-' + id;
+// Khóa lưu tạm theo từng người: máy dùng chung thì người sau không thấy lựa chọn chưa gửi của người trước.
+const khoaNhap = (id) => 'nktv-bai-giay-' + (S.toi ? S.toi.id : '') + '-' + id;
 const phanTram = (a, b) => b ? Math.round(a / b * 100) : null;
 const tb = (a) => a.length ? a.reduce((s, v) => s + v, 0) / a.length : null;
 const icon = (ten) => h('div', { class: 'bieu-tuong' }, bieuTuong(ten));
@@ -27,7 +31,7 @@ function trangThai(b) {
   return { chu: 'Đang chọn', lop: 'dung' };
 }
 
-/** Khối đầu tab Post-test. Không bao giờ báo lỗi: máy chủ chưa có migration 0019 thì không hiện gì. */
+/** Khối đầu tab Post-test (thành viên) hoặc tab Hôm nay (học viên). Không bao giờ báo lỗi: máy chủ chưa có migration 0019 thì không hiện gì. */
 export async function khoiBaiGiay() {
   try {
     const [ds, ql] = await Promise.all([
@@ -37,7 +41,7 @@ export async function khoiBaiGiay() {
     const kq = [];
     if (ds.length) kq.push(nhom('Phiếu trả lời bài giấy', ds.map(b => {
       const tt = trangThai(b);
-      return dong({ tieu: b.ten, phu: `Chọn lại đáp án đã ghi trên giấy · ${b.so_cau} câu · buổi ${ngay(b.buoi_bat_dau)}`, sau: h('span', { class: 'the-nhan ' + tt.lop }, tt.chu), href: '#post-test/phieu/' + b.id });
+      return dong({ tieu: b.ten, phu: `${laHV() ? 'Chọn đáp án trên app' : 'Chọn lại đáp án đã ghi trên giấy'} · ${b.so_cau} câu · buổi ${ngay(b.buoi_bat_dau)}`, sau: h('span', { class: 'the-nhan ' + tt.lop }, tt.chu), href: (laHV() ? '#hom-nay/phieu/' : '#post-test/phieu/') + b.id });
     })));
     if (ql && (ql.length || S.toi.la_admin)) kq.push(nhom('Phiếu trả lời · quản lý',
       ql.map(b => dong({ tieu: b.ten, phu: `${b.mo ? 'Đang mở' : 'Chưa mở hoặc đã đóng'} · buổi ${ngay(b.buoi_bat_dau)} · đã gửi ${b.da_gui}, đã điểm danh ${b.da_diem_danh}`, href: '#post-test/phieu-ql/' + b.id })),
@@ -75,10 +79,12 @@ const bangXemLai = (tl) => h('div', { class: 'bg-xem-lai' }, tl.map((x, i) => h(
 export async function manBaiGiay(vung, id) {
   const b = await S.db.xemBaiGiay(id);
   const lai = () => manBaiGiay(vung, id);
-  const dau = [thanhNho('Phiếu trả lời', '#post-test', 'Post-test'), dauPhieu(b, 'không tính điểm')];
+  const dau = [laHV() ? thanhNho('Phiếu trả lời', '#hom-nay', 'Hôm nay') : thanhNho('Phiếu trả lời', '#post-test', 'Post-test'), dauPhieu(b, laHV() ? null : 'không tính điểm')];
   if (b.gui_luc) return manDaGui(vung, b, dau);
   if (!b.da_diem_danh) return dat(vung, dau,
-    h('div', { class: 'bang-tin' }, 'Phiếu chỉ mở cho người đã điểm danh buổi này. Nhờ người điểm danh quét mã của bạn, rồi bấm Thử lại.'),
+    h('div', { class: 'bang-tin' }, laHV()
+      ? 'Phiếu chỉ mở cho người đã điểm danh buổi này. Đưa mã điểm danh của bạn (tab Hôm nay) cho người điểm danh quét, rồi bấm Thử lại.'
+      : 'Phiếu chỉ mở cho người đã điểm danh buổi này. Nhờ người điểm danh quét mã của bạn, rồi bấm Thử lại.'),
     h('button', { class: 'nut phu day', type: 'button', onclick: lai }, 'Thử lại'));
   if (!b.da_mo) return manMatKhau(vung, b, dau, lai);
   manChon(vung, b, dau, lai);
@@ -106,7 +112,7 @@ function manMatKhau(vung, b, dau, lai) {
     }
   }, h('div', { class: 'nhom' }, o, loi), nut);
   dat(vung, dau,
-    h('p', { class: 'bg-mo-ta' }, 'Làm xong bài trên giấy, chờ Ban cố vấn đọc mật khẩu rồi nhập vào đây. Chữ hoa, chữ thường hay khoảng trắng đều được.'),
+    h('p', { class: 'bg-mo-ta' }, `${laHV() ? 'Chờ giám thị đọc mật khẩu rồi nhập vào đây để mở phiếu.' : 'Làm xong bài trên giấy, chờ Ban cố vấn đọc mật khẩu rồi nhập vào đây.'} Chữ hoa, chữ thường hay khoảng trắng đều được.`),
     f);
   o.querySelector('input').focus({ preventScroll: true });
 }
@@ -116,6 +122,7 @@ function manChon(vung, b, dau, lai) {
   try {
     const cu = JSON.parse(localStorage.getItem(khoaNhap(b.id)));
     if (Array.isArray(cu) && cu.length === b.so_cau) tl = cu.map(x => Number.isInteger(x) && x >= 0 && x < b.so_lua_chon ? x : null);
+    localStorage.removeItem('nktv-bai-giay-' + b.id); // khóa cũ không có mã người (trước 0025), có thể là của người dùng máy trước
   } catch (_) {}
   const dem = () => tl.filter(x => x !== null).length;
   const nutGui = h('button', { class: 'nut day lon', type: 'button', onclick: () => xemLai() });
@@ -136,7 +143,7 @@ function manChon(vung, b, dau, lai) {
     }, 'Gửi phiếu');
     const s = moSheet({
       tieuDe: 'Xem lại trước khi gửi', noiDung: h('div', null,
-        h('p', { style: 'margin-bottom:12px;line-height:1.45' }, 'So từng câu với bài giấy của bạn. Gửi rồi không tự sửa được; cần sửa thì báo Ban cố vấn.'),
+        h('p', { style: 'margin-bottom:12px;line-height:1.45' }, laHV() ? 'Kiểm lại từng câu. Gửi rồi không tự sửa được; cần sửa thì báo giám thị.' : 'So từng câu với bài giấy của bạn. Gửi rồi không tự sửa được; cần sửa thì báo Ban cố vấn.'),
         bangXemLai(tl),
         trong.length ? h('div', { class: 'bang-tin' }, `Còn ${trong.length} câu bỏ trống: ${trong.join(', ')}.`) : null,
         nut)
@@ -144,7 +151,9 @@ function manChon(vung, b, dau, lai) {
   };
   dat(vung, dau,
     b.chu_thich ? h('div', { class: 'bang-tin xanh' }, b.chu_thich) : null,
-    h('p', { class: 'bg-mo-ta' }, 'Chọn đúng như đã ghi trên bài giấy. Chạm lần nữa để bỏ chọn.'),
+    h('p', { class: 'bg-mo-ta' }, laHV()
+      ? 'Chạm vào đáp án bạn chọn cho từng câu; chạm lần nữa để bỏ chọn. Mạng trục trặc thì khoanh vào bảng bài làm in trên đề giấy.'
+      : 'Chọn đúng như đã ghi trên bài giấy. Chạm lần nữa để bỏ chọn.'),
     luoiChon({ soCau: b.so_cau, soLc: b.so_lua_chon, chuaHieu: b.chua_hieu, tl, khiDoi: () => { capNhat(); luu(); } }),
     nutGui,
     h('p', { class: 'chu-nho giua-chu', style: 'margin-top:10px' }, 'Lựa chọn được giữ trên máy này cho tới khi gửi.'));
@@ -156,8 +165,8 @@ function manDaGui(vung, b, dau) {
   dat(vung, dau,
     h('div', { class: 'nhom diem-lon' },
       coSo ? [h('div', { class: 'so' }, `${b.so_dung}/${b.so_cau}`), h('div', { class: 'phu' }, 'câu đúng')] : h('div', { class: 'so', style: 'font-size:2rem' }, 'Đã gửi'),
-      h('p', { class: 'chu-nho', style: 'margin-top:10px' }, 'Gửi ' + ngayGio(b.gui_luc), b.nhap_ho ? ' · quản trị đã sửa theo bài giấy' : '')),
-    h('div', { class: 'bang-tin xanh' }, 'Cảm ơn bạn. Bài này không tính điểm. Cần sửa phiếu thì báo Ban cố vấn.'),
+      h('p', { class: 'chu-nho', style: 'margin-top:10px' }, 'Gửi ' + ngayGio(b.gui_luc), b.nhap_ho ? (laHV() ? ' · đã sửa theo bài giấy của bạn' : ' · quản trị đã sửa theo bài giấy') : '')),
+    h('div', { class: 'bang-tin xanh' }, laHV() ? 'Cảm ơn bạn. Phiếu của bạn đã được ghi nhận. Cần sửa phiếu thì báo giám thị.' : 'Cảm ơn bạn. Bài này không tính điểm. Cần sửa phiếu thì báo Ban cố vấn.'),
     b.tra_loi ? [h('div', { class: 'nhan-nhom' }, 'Phiếu bạn đã gửi'), luoiChon({ soCau: b.so_cau, soLc: b.so_lua_chon, chuaHieu: b.chua_hieu, tl: b.tra_loi, chiXem: true })] : null);
 }
 
@@ -358,8 +367,29 @@ async function manThongTin(vung, b) {
   if (!S.toi.la_admin) throw new Error('Chỉ quản trị tạo và sửa phiếu.');
   const nay = Date.now(), ngay1 = 864e5;
   const dsB = await S.db.dsBuoi(new Date(nay - 60 * ngay1).toISOString(), new Date(nay + 60 * ngay1).toISOString());
+  // Buổi của các đợt tập huấn chưa kết thúc (phiếu lượng giá gắn vào buổi của từng nhóm; migration 0025). dsBuoi chỉ trả buổi CLB.
+  const dsDot = (await S.db.dsDot().catch(() => [])).filter(d => d.trang_thai !== 'ket_thuc');
+  (await Promise.all(dsDot.map(d => S.db.dsBuoiDot(d.id).catch(() => []).then(ds => ds.map(x => Object.assign({}, x, { ten: `${x.ten} (${d.ma})`, dot_id: d.id }))))))
+    .flat().filter(x => Math.abs(new Date(x.bat_dau).getTime() - nay) <= 60 * ngay1).forEach(x => dsB.push(x));
+  dsB.sort((x, y) => new Date(x.bat_dau) - new Date(y.bat_dau));
   if (b && !dsB.some(x => x.id === b.buoi_id)) dsB.unshift({ id: b.buoi_id, ten: b.buoi_ten, bat_dau: b.buoi_bat_dau });
-  const macDinh = b ? b.buoi_id : (dsB.find(x => new Date(x.bat_dau).getTime() >= nay - 12 * 3600e3) || dsB[dsB.length - 1] || {}).id;
+  // Mặc định chọn trong các buổi CLB (phiếu pretest), để buổi của đợt không bị chọn nhầm.
+  const buoiCLB = dsB.filter(x => !x.dot_id);
+  const macDinh = b ? b.buoi_id : (buoiCLB.find(x => new Date(x.bat_dau).getTime() >= nay - 12 * 3600e3) || buoiCLB[buoiCLB.length - 1] || dsB[dsB.length - 1] || {}).id;
+  // Mặc định của phiếu mới theo loại buổi: buổi CLB giữ mặc định pretest (5 phương án, E "chưa hiểu", ba phần); buổi của đợt
+  // (lượng giá) là 4 phương án, không có "chưa hiểu", không chú thích, không chia phần. Đổi buổi thì ô nào còn nguyên mặc định cũ mới đổi theo.
+  const MD = {
+    clb: { lc: '5', ch: '4', ct: 'E: Em hoàn toàn chưa hiểu khái niệm trong câu hỏi', phan: 'Nền: 1-7; Áp dụng: 8-15; Dẫn dắt: 16-20' },
+    dot: { lc: '4', ch: '', ct: '', phan: '' }
+  };
+  const loaiBuoi = (id) => (dsB.find(y => y.id === id) || {}).dot_id ? 'dot' : 'clb';
+  let loai = loaiBuoi(macDinh);
+  const doiBuoi = (e) => {
+    const den = loaiBuoi(e.target.value);
+    if (b || den === loai) return;
+    for (const k of Object.keys(MD.clb)) { const o = f.elements[k]; if (o.value === MD[loai][k]) o.value = MD[den][k]; }
+    loai = den;
+  };
   const f = h('form', {
     onsubmit: async (e) => {
       e.preventDefault();
@@ -376,18 +406,21 @@ async function manThongTin(vung, b) {
       const p = { ten: x.ten.value.trim(), buoi_id: x.buoi.value, so_cau: so, so_lua_chon: lc, chua_hieu: ch, chu_thich: x.ct.value, phan };
       if (b) p.id = b.id;
       const moi = await thu(() => S.db.luuBaiGiay(p), b ? 'Đã lưu' : 'Đã tạo phiếu');
+      // Phiếu mới của buổi thuộc đợt: tắt hiện số câu đúng ngay khi tạo (4 đề dùng cho nhiều nhóm, người gửi sớm sẽ lộ đáp án sang ca sau). Bật lại ở trang phiếu nếu cần.
+      if (moi && !b && (dsB.find(y => y.id === p.buoi_id) || {}).dot_id) await thu(() => S.db.luuBaiGiay({ id: moi, hien_diem: false }));
       if (moi) location.hash = 'post-test/phieu-ql/' + moi;
     }
   },
     h('div', { class: 'nhom' },
       oNhap('Tên phiếu', { name: 'ten', value: b ? b.ten : 'Pretest thống kê y sinh', maxlength: 120 }),
-      oChon('Buổi', dsB.map(x => [x.id, `${ngay(x.bat_dau)} · ${x.ten}`]), macDinh, { name: 'buoi' }),
+      oChon('Buổi', dsB.map(x => [x.id, `${ngay(x.bat_dau)} · ${x.ten}`]), macDinh, { name: 'buoi', onchange: doiBuoi }),
       oNhap('Số câu', { name: 'so', type: 'number', min: 1, max: 100, value: b ? b.so_cau : 20, inputmode: 'numeric' }),
-      oChon('Số phương án', [2, 3, 4, 5, 6, 7, 8].map(n => [n, `${n} (A–${CHU[n - 1]})`]), b ? b.so_lua_chon : 5, { name: 'lc' }),
-      oChon('Phương án "chưa hiểu" (chấm sai, đếm riêng)', [['', 'Không có'], ...CHU.split('').map((c, i) => [i, c])], b ? (b.chua_hieu ?? '') : 4, { name: 'ch' }),
-      oNhap('Chú thích hiện trên phiếu', { name: 'ct', value: b ? (b.chu_thich || '') : 'E: Em hoàn toàn chưa hiểu khái niệm trong câu hỏi', maxlength: 300 }),
-      oNhap('Các phần, để tính điểm từng phần', { name: 'phan', value: b ? phanThanhChu(b.phan) : 'Nền: 1-7; Áp dụng: 8-15; Dẫn dắt: 16-20', placeholder: 'Phần 1: 1-7; Phần 2: 8-15' })),
+      oChon('Số phương án', [2, 3, 4, 5, 6, 7, 8].map(n => [n, `${n} (A–${CHU[n - 1]})`]), b ? b.so_lua_chon : MD[loai].lc, { name: 'lc' }),
+      oChon('Phương án "chưa hiểu" (chấm sai, đếm riêng)', [['', 'Không có'], ...CHU.split('').map((c, i) => [i, c])], b ? (b.chua_hieu ?? '') : MD[loai].ch, { name: 'ch' }),
+      oNhap('Chú thích hiện trên phiếu', { name: 'ct', value: b ? (b.chu_thich || '') : MD[loai].ct, maxlength: 300 }),
+      oNhap('Các phần, để tính điểm từng phần', { name: 'phan', value: b ? phanThanhChu(b.phan) : MD[loai].phan, placeholder: 'Phần 1: 1-7; Phần 2: 8-15' })),
     h('p', { class: 'chu-nhom' }, 'Chỉ người đã điểm danh buổi này mở được phiếu. Đã có người gửi thì không đổi được số câu, số phương án.'),
+    b ? null : h('p', { class: 'chu-nhom' }, 'Buổi có tên đợt trong ngoặc (ví dụ XQ2627) là buổi của đợt tập huấn: phiếu tạo ra sẽ tắt "Cho người làm xem số câu đúng", để người gửi sớm không lộ đáp án cho các nhóm sau. Bật lại ở trang phiếu nếu cần.'),
     h('button', { class: 'nut day', type: 'submit' }, b ? 'Lưu' : 'Tạo phiếu'));
   dat(vung,
     thanhNho(b ? 'Sửa phiếu' : 'Phiếu mới', b ? '#post-test/phieu-ql/' + b.id : '#post-test', b ? 'Phiếu' : 'Post-test'),
