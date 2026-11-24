@@ -11,7 +11,12 @@ const THONG_DICH = [
   [/Failed to fetch|NetworkError|Load failed/i, 'Không có mạng hoặc máy chủ đang tạm dừng. Thử lại sau ít phút.'],
   [/JWT expired/i, 'Phiên đăng nhập đã hết hạn. Đăng nhập lại.'],
   [/thanh_vien_chuc_vu_nha/, 'Nhóm trưởng, nhóm phó cần thuộc một nhà. Chọn nhà cho người này trước.'],
-  [/cau_hoi_hinh_check/, 'Hình quá lớn. Chọn hình khác hoặc cắt nhỏ lại.']
+  [/cau_hoi_hinh_check/, 'Hình quá lớn. Chọn hình khác hoặc cắt nhỏ lại.'],
+  [/exceeded the maximum allowed size|Payload too large/i, 'Ảnh quá nặng, kho ảnh nhận tối đa 600 KB một ảnh. Chọn ảnh ít chi tiết hơn.'],
+  [/row-level security policy/i, 'Bạn không có quyền ghi vào mục này.'],
+  [/Bucket not found/i, 'Kho ảnh chưa được tạo trên máy chủ. Báo cho quản trị.'],
+  [/invalid mime type|mime type .* is not supported/i, 'Kho ảnh chỉ nhận ảnh WebP, PNG hoặc JPEG.'],
+  [/already exists|Duplicate/i, 'Tên tệp bị trùng. Bấm Lưu thêm một lần nữa.']
 ];
 const loiViet = (m) => { for (const [a, b] of THONG_DICH) if (a.test(m)) return b; return m; };
 
@@ -60,6 +65,10 @@ const them = (bang, o) => rest(bang, { method: 'POST', body: JSON.stringify(o), 
 const sua = (bang, id, o) => rest(`${bang}?id=eq.${id}`, { method: 'PATCH', body: JSON.stringify(o), headers: { Prefer: 'return=representation' } });
 const xoa = (bang, id) => rest(`${bang}?id=eq.${id}`, { method: 'DELETE' });
 
+// Ảnh nhận diện của đợt (migration 0023): máy chủ lưu đường dẫn trong kho "anh-dot", trình duyệt dùng địa chỉ đầy đủ.
+const KHO_ANH = `${C.supabaseUrl}/storage/v1/object/public/anh-dot/`;
+const anhDay = (nd) => nd && Object.fromEntries(Object.entries(nd).map(([k, v]) => [k, k === 'mau' ? v : KHO_ANH + v]));
+
 export const emailTu = (ma) => `${ma.toLowerCase()}@${C.mienTaiKhoan}`;
 /** Chuẩn hóa mã đăng nhập. Gõ sẵn tiền tố thì theo tiền tố; không thì theo cửa đã chọn.
     Thành viên CLB: "NKTV-001", "nktv001", "1" đều ra NKTV-001.
@@ -96,7 +105,7 @@ export const api = {
     method: 'POST', headers: { apikey: C.supabaseKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ p_khoa: khoa })
   }),
 
-  toi: () => rpc('toi_la_ai'),
+  toi: async () => { const t = await rpc('toi_la_ai'); if (t && t.dot) t.dot.forEach(d => { d.nhan_dien = anhDay(d.nhan_dien); }); return t; },
   caiDat: async () => { const r = await rest('cai_dat?select=khoa,gia_tri'); const o = {}; r.forEach(x => { o[x.khoa] = x.gia_tri; }); return o; },
   datCaiDat: (khoa, gia_tri) => rest('cai_dat', { method: 'POST', body: JSON.stringify({ khoa, gia_tri }), headers: { Prefer: 'resolution=merge-duplicates' } }),
 
@@ -199,7 +208,29 @@ export const api = {
 
   /* Đợt tập huấn và học viên (migration 0013). Danh sách học viên, hồ sơ và mã kích hoạt
      chỉ đi qua hàm: hai bảng dot_hoc_vien, hv_ho_so không mở cho trình duyệt. */
-  dsDot: () => rpc('ds_dot'),
+  dsDot: async () => (await rpc('ds_dot')).map(d => Object.assign(d, { nhan_dien: anhDay(d.nhan_dien) })),
+  /* Ảnh nhận diện (migration 0023). nd: ô nào là data URL (ảnh vừa chọn, đã nén) thì tải lên kho, ô nào đã là địa chỉ
+     trong kho thì giữ; sau khi lưu xóa các tệp của đợt không còn được dùng. */
+  luuNhanDienDot: async (dot, nd) => {
+    const moi = {};
+    for (const [k, v] of Object.entries(nd || {})) {
+      if (k === 'mau' || !v.startsWith('data:')) { moi[k] = v.startsWith(KHO_ANH) ? v.slice(KHO_ANH.length) : v; continue; }
+      const blob = await (await fetch(v)).blob();
+      const ten = `${dot}/${k}-${Date.now().toString(36)}.${{ 'image/webp': 'webp', 'image/png': 'png' }[blob.type] || 'jpg'}`;
+      await goiFetch(`${C.supabaseUrl}/storage/v1/object/anh-dot/${ten}`, {
+        method: 'POST', body: blob, headers: await dauDe({ 'Content-Type': blob.type, 'cache-control': 'max-age=31536000' })
+      });
+      moi[k] = ten;
+    }
+    await rpc('luu_nhan_dien_dot', { p_dot: dot, p: moi });
+    try { // dọn tệp cũ: lỗi ở đây không làm hỏng việc đã lưu
+      const giu = new Set(Object.entries(moi).filter(([k]) => k !== 'mau').map(([, v]) => v));
+      const cu = Date.now() - 15 * 60e3; // tệp mới tải lên có thể là của người khác chưa kịp lưu
+      const co = await goiFetch(`${C.supabaseUrl}/storage/v1/object/list/anh-dot`, { method: 'POST', headers: await dauDe(), body: JSON.stringify({ prefix: dot, limit: 100 }) });
+      const bo = co.filter(f => f.created_at && Date.parse(f.created_at) < cu).map(f => `${dot}/${f.name}`).filter(t => !giu.has(t));
+      if (bo.length) await goiFetch(`${C.supabaseUrl}/storage/v1/object/anh-dot`, { method: 'DELETE', headers: await dauDe(), body: JSON.stringify({ prefixes: bo }) });
+    } catch (_) {}
+  },
   luuDot: (id, p) => rpc('luu_dot', { p_id: id, p }),
   btcCuaDot: (dot) => rest(`dot_ban_to_chuc?select=thanh_vien_id,vai&dot_id=eq.${dot}`),
   datBtcDot: (dot, p) => rpc('dat_btc_dot', { p_dot: dot, p }),

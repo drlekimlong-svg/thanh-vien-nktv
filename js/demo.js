@@ -108,8 +108,11 @@ export function demo(vai) {
      t0 (quản trị) là trưởng ban, t2 là thư ký của đợt đang mở, nên ?demo=tv cũng thử được màn thư ký. */
   const dot = [
     { id: 'o1', ma: 'XQ2627', ten: 'Tập huấn X-quang bụng 2026–2027', nam_hoc: '2026–2027', mo_ta: 'Một buổi lý thuyết, ba buổi thực hành, ba buổi lượng giá.', bat_dau: ngayVN(nay + 10 * ngay), ket_thuc: ngayVN(nay + 40 * ngay), trang_thai: 'mo',
+      // Bộ ảnh nhận diện giả lập (20/11/2026): cắt từ poster mùa 2025–2026, chỉ để thử; Ban Truyền thông sẽ làm bộ thật.
+      nhan_dien: { the: 'img/demo-dot/xq2627-the.webp', dau: 'img/demo-dot/xq2627-dau.webp', bieu_tuong: 'img/demo-dot/xq2627-bieu-tuong.webp', ve: 'img/demo-dot/xq2627-ve.webp', mau: '#2559b8' },
       zalo_link: 'https://zalo.me/g/vidudientap', zalo_qr: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMjAnIGhlaWdodD0nMTIwJz48cmVjdCB3aWR0aD0nMTIwJyBoZWlnaHQ9JzEyMCcgZmlsbD0nI2ZmZicvPjxnIGZpbGw9JyMxMTEnPjxyZWN0IHg9JzEwJyB5PScxMCcgd2lkdGg9JzMwJyBoZWlnaHQ9JzMwJy8+PHJlY3QgeD0nMTgnIHk9JzE4JyB3aWR0aD0nMTQnIGhlaWdodD0nMTQnIGZpbGw9JyNmZmYnLz48cmVjdCB4PSc4MCcgeT0nMTAnIHdpZHRoPSczMCcgaGVpZ2h0PSczMCcvPjxyZWN0IHg9Jzg4JyB5PScxOCcgd2lkdGg9JzE0JyBoZWlnaHQ9JzE0JyBmaWxsPScjZmZmJy8+PHJlY3QgeD0nMTAnIHk9JzgwJyB3aWR0aD0nMzAnIGhlaWdodD0nMzAnLz48cmVjdCB4PScxOCcgeT0nODgnIHdpZHRoPScxNCcgaGVpZ2h0PScxNCcgZmlsbD0nI2ZmZicvPjxyZWN0IHg9JzUyJyB5PSc1Micgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJy8+PHJlY3QgeD0nNzAnIHk9JzYwJyB3aWR0aD0nMTAnIGhlaWdodD0nMTAnLz48cmVjdCB4PSc2MCcgeT0nODYnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCcvPjxyZWN0IHg9Jzg2JyB5PSc3MCcgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJy8+PHJlY3QgeD0nNTInIHk9JzE2JyB3aWR0aD0nMTAnIGhlaWdodD0nMTAnLz48cmVjdCB4PScxNicgeT0nNTInIHdpZHRoPScxMCcgaGVpZ2h0PScxMCcvPjwvZz48L3N2Zz4=' },
-    { id: 'o2', ma: 'KHAU2526', ten: 'Tập huấn khâu cơ bản 2025–2026', nam_hoc: '2025–2026', mo_ta: null, bat_dau: ngayVN(nay - 300 * ngay), ket_thuc: ngayVN(nay - 270 * ngay), trang_thai: 'ket_thuc' },
+    { id: 'o2', ma: 'KHAU2526', ten: 'Tập huấn khâu cơ bản 2025–2026', nam_hoc: '2025–2026', mo_ta: null, bat_dau: ngayVN(nay - 300 * ngay), ket_thuc: ngayVN(nay - 270 * ngay), trang_thai: 'ket_thuc',
+      nhan_dien: { the: 'img/demo-dot/khau2526-the.webp', dau: 'img/demo-dot/khau2526-dau.webp', mau: '#17766a' } },
     { id: 'o3', ma: 'CTBUNG27', ten: 'Tập huấn CT bụng 2027', nam_hoc: '2026–2027', mo_ta: null, bat_dau: null, ket_thuc: null, trang_thai: 'soan' }
   ];
   const dotBtc = [
@@ -172,7 +175,7 @@ export function demo(vai) {
   const laBtcDot = (id) => { const t = me(); return t.vai_tro === 'quan_tri' || t.cap === 'Ban cố vấn' || dotBtc.some(b => b.dot_id === id && b.thanh_vien_id === t.id && (b.vai === 'truong_ban' || b.vai === 'thu_ky')); };
   const dotCuaHV = (id) => dotHv.filter(x => x.thanh_vien_id === id && x.trang_thai === 'ghi_danh')
     .map(x => dot.find(d => d.id === x.dot_id)).filter(Boolean)
-    .map(d => ({ id: d.id, ma: d.ma, ten: d.ten, bat_dau: d.bat_dau, ket_thuc: d.ket_thuc, trang_thai: d.trang_thai }));
+    .map(d => ({ id: d.id, ma: d.ma, ten: d.ten, bat_dau: d.bat_dau, ket_thuc: d.ket_thuc, trang_thai: d.trang_thai, nhan_dien: d.nhan_dien || null }));
 
 
   /* ---------- Sau buổi (migration 0015): yêu cầu, bài thi, phiếu, tiêu chí, chứng nhận ---------- */
@@ -284,7 +287,7 @@ export function demo(vai) {
     async toi() {
       if (hvDangNhap) {
         const t = hv.find(x => x.id === hvDangNhap), ds = dotCuaHV(t.id);
-        return { id: t.id, ma: t.ma, ho_ten: t.ho_ten, loai: 'hoc_vien', hoat_dong: t.hoat_dong, khoa_qr: t.khoa_qr, email: t.email,
+        return { id: t.id, ma: t.ma, ho_ten: t.ho_ten, loai: 'hoc_vien', hoat_dong: t.hoat_dong, khoa_qr: t.khoa_qr, email: t.email, lop: t.lop, mssv: t.mssv,
           dot: ds, chi_doc: !ds.some(d => d.trang_thai === 'mo'), bay_gio: new Date().toISOString() };
       }
       const t = me(), bcv = t.cap === 'Ban cố vấn', pt = t.vai_tro !== 'thanh_vien' || bcv;
@@ -534,6 +537,18 @@ export function demo(vai) {
       ['ten', 'nam_hoc', 'mo_ta', 'bat_dau', 'ket_thuc', 'trang_thai'].forEach(k => { if (p[k]) d[k] = p[k]; });
       ['zalo_link', 'zalo_qr'].forEach(k => { if (k in p) d[k] = String(p[k] || '').trim() || null; });
       if (d.zalo_link && !/^https?:\/\//i.test(d.zalo_link)) throw new Error('Link nhóm Zalo phải bắt đầu bằng https://');
+      return id;
+    },
+    // Ảnh nhận diện của đợt: bản giả lập của api.luuNhanDienDot, giữ trong bộ nhớ.
+    async luuNhanDienDot(id, nd) {
+      await gioi();
+      if (!laBtcDot(id)) throw new Error('Chỉ quản trị, Ban cố vấn, trưởng ban và thư ký của đợt đặt được ảnh nhận diện');
+      const d = dot.find(x => x.id === id);
+      if (!d) throw new Error('Không tìm thấy đợt');
+      if (nd.mau && !/^#[0-9a-f]{6}$/i.test(nd.mau)) throw new Error('Màu nhấn phải là mã dạng #RRGGBB');
+      const moi = {};
+      ['the', 'dau', 'bieu_tuong', 've', 'moc', 'mau'].forEach(k => { if (nd[k]) moi[k] = nd[k]; });
+      d.nhan_dien = Object.keys(moi).length ? moi : null;
       return id;
     },
     async btcCuaDot(id) { await gioi(); return dotBtc.filter(b => b.dot_id === id).map(b => ({ thanh_vien_id: b.thanh_vien_id, vai: b.vai })); },

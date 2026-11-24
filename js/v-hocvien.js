@@ -8,9 +8,12 @@ import {
 import { moMaCuaToi, moThongBao } from './v-homnay.js';
 import { moDuLieuCuaToi } from './v-dulieu.js';
 import { manCauHoi, moChecklist, soMucChecklist, hangTaiLieu } from './v-tronggio.js';
-import { PHAN, MUC, LOAI_YC } from './dot-chung.js';
+import { PHAN, MUC, LOAI_YC, giuNam, theKhoaHoc, anhDauKhoa, nhanDien, boKhoa, veDiemDanh } from './dot-chung.js';
 
 const TRANG_THAI = { soan: 'Chưa mở', mo: 'Đang mở', ket_thuc: 'Đã kết thúc' };
+// Nhãn trên thẻ khóa học, nói theo phía học viên.
+const TT_HV = { mo: ['Đang học', 'dung'], soan: ['Sắp mở', 'cho'], ket_thuc: ['Đã học xong', ''] };
+const THU_TU = { mo: 0, soan: 1, ket_thuc: 2 };
 const LOP_TT = { soan: 'cho', mo: 'dung', ket_thuc: '' };
 const ngayVN = (d) => d ? ngay(d + 'T12:00:00+07:00') : null;
 const khoang = (d) => [ngayVN(d.bat_dau), ngayVN(d.ket_thuc)].filter(Boolean).join(' – ') || 'Chưa ghi ngày';
@@ -22,9 +25,11 @@ const thanh = (tieu, href, nhan) =>
 
 export async function tuyenHocVien(vung, tab, con = []) {
   if (tab === 'hom-nay' && con[0] === 'cau-hoi') return manHVCauHoi(vung, con[1], con[2]);
-  if (tab === 'lich') return manHVLich(vung);
-  if (tab === 'tai-lieu') return manHVTaiLieu(vung);
-  if (tab === 'ket-qua') return manHVKetQua(vung);
+  // #khoa/<id>: trang của một khóa. #lich/<id>, #tai-lieu/<id>, #ket-qua/<id>: chỉ khóa đó.
+  if (tab === 'khoa') return manHVKhoa(vung, con[0]);
+  if (tab === 'lich') return manHVLich(vung, con[0]);
+  if (tab === 'tai-lieu') return manHVTaiLieu(vung, con[0]);
+  if (tab === 'ket-qua') return manHVKetQua(vung, con[0]);
   if (tab === 'ho-so') return manHVHoSo(vung);
   return manHVHomNay(vung);
 }
@@ -81,8 +86,16 @@ function moPhieu(f, sauKhi) {
 }
 
 /* ---------- Kết quả và giấy chứng nhận ---------- */
-async function manHVKetQua(vung) {
-  const ds = await S.db.ketQuaCuaToi();
+/** Màn lọc theo một khóa: thêm lối về trang khóa và mặc màu của khóa đó. Không lọc thì giữ nguyên như cũ. */
+function trongKhoa(vung, loc, ...con) {
+  const d = loc && (S.toi.dot || []).find(x => x.id === loc);
+  if (!d) return dat(vung, ...con);
+  return dat(vung, boKhoa(d,
+    h('a', { class: 'nut-lui ve-khoa', href: '#khoa/' + d.id }, '‹ ' + d.ten), ...con));
+}
+
+async function manHVKetQua(vung, loc) {
+  const ds = (await S.db.ketQuaCuaToi()).filter(d => !loc || d.dot_id === loc);
   const inGiay = (k, d) => {
     const the = h('div', { class: 'trang-in' }, h('div', { class: 'in-giay' },
       h('div', { class: 'ten-clb' }, 'CLB NGOẠI KHOA TRƯNG VƯƠNG'),
@@ -101,7 +114,7 @@ async function manHVKetQua(vung) {
     setTimeout(() => the.remove(), 500);
   };
 
-  dat(vung,
+  trongKhoa(vung, loc,
     h('h1', { class: 'tieu-de-lon' }, 'Kết quả'),
     !ds.length ? rong('Bạn chưa có đợt tập huấn nào.') : null,
     ds.map(d => [
@@ -194,6 +207,13 @@ export async function manHVHomNay(vung) {
 
     buoiGan.map(theBuoi),
 
+    // Mỗi khóa là một thẻ mang ảnh của mùa đó; bấm vào là vào trang khóa.
+    ds.length ? [
+      h('div', { class: 'nhan-nhom' }, 'Khóa học của bạn'),
+      h('div', { class: 'luoi-khoa' }, ds.slice().sort((a, b) => THU_TU[a.trang_thai] - THU_TU[b.trang_thai]).map(d =>
+        theKhoaHoc(d, { nhanTT: TT_HV[d.trang_thai][0], lopTT: TT_HV[d.trang_thai][1], phu: khoang(d), href: '#khoa/' + d.id })))
+    ] : null,
+
     canChon.length ? nhom('Cần chọn ca', canChon.map(hangChon)) : null,
 
     phieu.length ? nhom('Phiếu đánh giá đang mở', phieu.map(p => dong({
@@ -221,23 +241,8 @@ export async function manHVHomNay(vung) {
           h('a', { class: 'nut', href: z.link, target: '_blank', rel: 'noopener', style: 'text-decoration:none;text-align:center' }, 'Mở nhóm Zalo')) : null))
     ] : null,
 
-    mo.length ? nhom('Đợt đang học', mo.map(d => dong({
-      tieu: d.ten, phu: `${d.ma} · ${khoang(d)}`,
-      sau: h('span', { class: 'the-nhan dung' }, 'Đang mở'), muiTen: false
-    }))) : null,
-
     S.toi.chi_doc && ds.length ? h('div', { class: 'bang-tin' },
       'Các đợt của bạn đã kết thúc nên tài khoản đang ở chế độ chỉ xem. Khi bạn đăng ký đợt mới và Ban tổ chức nạp danh sách, tài khoản mở lại bằng chính mật khẩu này.') : null,
-
-    ds.filter(d => d.trang_thai === 'soan').length ? nhom('Đợt sắp tới', ds.filter(d => d.trang_thai === 'soan').map(d => dong({
-      tieu: d.ten, phu: `${d.ma} · ${khoang(d)}`,
-      sau: h('span', { class: 'the-nhan cho' }, 'Chưa mở'), muiTen: false
-    }))) : null,
-
-    xong.length ? nhom('Đã học xong', xong.map(d => dong({
-      tieu: d.ten, phu: `${d.ma} · ${khoang(d)}`,
-      sau: h('span', { class: 'the-nhan' }, 'Đã kết thúc'), muiTen: false
-    }))) : null,
 
     xong.length ? h('p', { class: 'chu-nho', style: 'margin-bottom:22px' }, 'Kết quả và giấy chứng nhận của các đợt đã xong sẽ hiện ở mục này khi Ban tổ chức nhập điểm và duyệt.') : null,
 
@@ -247,6 +252,54 @@ export async function manHVHomNay(vung) {
         truoc: icon('don'), onclick: () => guiYeuCau((mo[0] || ds[0]).id, lai) }) : null),
 
     h('p', { class: 'chu-nho giua-chu' }, 'CLB Ngoại Khoa Trưng Vương · Đón Nhận – Trưởng thành – Trao lại'));
+}
+
+/* ---------- Trang của một khóa học ----------
+   Mở từ thẻ trên màn Hôm nay. Ảnh đầu trang, biểu tượng và màu nhấn lấy từ bộ ảnh nhận diện của đợt;
+   các mục bên dưới dẫn sang tab Lịch học, Tài liệu, Kết quả đã lọc riêng khóa này. */
+async function manHVKhoa(vung, id) {
+  const d = (S.toi.dot || []).find(x => x.id === id);
+  if (!d) return dat(vung, thanh('Khóa học', '#hom-nay', 'Hôm nay'), rong('Không thấy khóa học này trong tài khoản của bạn.'));
+  const nd = nhanDien(d);
+  const [buoi, z] = await Promise.all([
+    S.db.dsBuoiDot(d.id).catch(() => []),
+    d.trang_thai === 'mo' ? S.db.zaloCuaDot(d.id).catch(() => null) : null
+  ]);
+  const nay = Date.now() + (S.lech || 0);
+  const sap = buoi.filter(b => new Date(b.bat_dau).getTime() >= nay - 3 * 3600e3).slice(0, 3);
+  const [nhanTT, lopTT] = TT_HV[d.trang_thai];
+
+  dat(vung, boKhoa(d,
+    thanh(d.ma, '#hom-nay', 'Hôm nay'),
+    anhDauKhoa(d),
+    h('div', { class: 'khoa-tieu' },
+      nd.bieu_tuong ? h('img', { class: 'khoa-bt', src: nd.bieu_tuong, alt: '' }) : null,
+      h('div', { class: 'khoa-tieu-chu' },
+        h('h1', null, giuNam(d.ten)),
+        h('div', { class: 'chi-tiet' }, khoang(d), ' ', h('span', { class: 'the-nhan ' + lopTT }, nhanTT)))),
+
+    // Vé điểm danh như vé giấy các khóa trước: buổi đã điểm danh thì ô hiện con mộc.
+    h('div', { class: 'nhan-nhom' }, 'Vé điểm danh'),
+    veDiemDanh(d, buoi, { ho_ten: S.toi.ho_ten, ma: S.toi.ma, lop: S.toi.lop, mssv: S.toi.mssv }),
+
+    sap.length ? nhom('Buổi sắp tới', sap.map(b => dong({
+      tieu: b.ten, phu: [ngayGio(b.bat_dau), b.phan ? PHAN[b.phan] : null, b.dia_diem].filter(Boolean).join(' · '),
+      truoc: icon('lich'), href: '#lich/' + d.id
+    })))
+      : null, // chưa có buổi thì vé đã báo, không lặp lại ở đây
+
+    nhom('Trong khóa học',
+      dong({ tieu: 'Lịch học', phu: buoi.length ? `${buoi.length} buổi` : 'Chưa có buổi nào', truoc: icon('lich'), href: '#lich/' + d.id }),
+      dong({ tieu: 'Tài liệu và checklist', truoc: icon('test'), href: '#tai-lieu/' + d.id }),
+      dong({ tieu: 'Kết quả', phu: 'Điểm, tiêu chí hoàn thành, giấy chứng nhận', truoc: icon('sao'), href: '#ket-qua/' + d.id }),
+      d.trang_thai !== 'soan' ? dong({ tieu: 'Gửi thắc mắc, phản hồi', phu: 'Ban tổ chức khóa này đọc và trả lời trong app', truoc: icon('don'), onclick: () => guiYeuCau(d.id) }) : null),
+
+    z && (z.link || z.qr) ? h('div', { class: 'the-buoi' },
+      h('div', { class: 'nhan' }, 'Nhóm Zalo của lớp'),
+      h('div', { class: 'chi-tiet' }, 'Vào nhóm để nhận thông báo nhanh từ Ban tổ chức.'),
+      z.qr ? h('img', { src: z.qr, alt: 'Mã QR nhóm Zalo', style: 'display:block;width:170px;height:auto;margin:12px auto 2px;border-radius:10px' }) : null,
+      z.link ? h('div', { class: 'hang-nut' },
+        h('a', { class: 'nut', href: z.link, target: '_blank', rel: 'noopener', style: 'text-decoration:none;text-align:center' }, 'Mở nhóm Zalo')) : null) : null));
 }
 
 /* ---------- Thông báo của các đợt ---------- */
@@ -269,10 +322,10 @@ async function moThongBaoHV(sauKhi) {
 }
 
 /* ---------- Lịch học của đợt ---------- */
-async function manHVLich(vung) {
-  const dot = S.toi.dot || [];
+async function manHVLich(vung, loc) {
+  const dot = (S.toi.dot || []).filter(d => !loc || d.id === loc);
   if (!dot.length) return dat(vung, h('h1', { class: 'tieu-de-lon' }, 'Lịch học'), rong('Bạn chưa có đợt tập huấn nào.'));
-  const lai = () => manHVLich(vung);
+  const lai = () => manHVLich(vung, loc);
   const nay = Date.now() + (S.lech || 0);
   const theoDot = [];
   for (const d of dot) theoDot.push({ d, buoi: await S.db.dsBuoiDot(d.id).catch(() => []) });
@@ -340,7 +393,7 @@ async function manHVLich(vung) {
     });
   };
 
-  dat(vung,
+  trongKhoa(vung, loc,
     h('h1', { class: 'tieu-de-lon' }, 'Lịch học'),
     theoDot.map(({ d, buoi }) => {
       const sap = buoi.filter(b => new Date(b.bat_dau).getTime() >= nay - 12 * 3600e3);
@@ -356,15 +409,15 @@ async function manHVLich(vung) {
 }
 
 /* ---------- Tài liệu và checklist ---------- */
-async function manHVTaiLieu(vung) {
-  const dot = S.toi.dot || [];
+async function manHVTaiLieu(vung, loc) {
+  const dot = (S.toi.dot || []).filter(d => !loc || d.id === loc);
   if (!dot.length) return dat(vung, h('h1', { class: 'tieu-de-lon' }, 'Tài liệu'), rong('Bạn chưa có đợt tập huấn nào.'));
   const theoDot = [];
   for (const d of dot) {
     const [tl, ck] = await Promise.all([S.db.dsTaiLieuDot(d.id).catch(() => []), S.db.dsChecklistDot(d.id).catch(() => [])]);
     theoDot.push({ d, tl, ck });
   }
-  dat(vung,
+  trongKhoa(vung, loc,
     h('h1', { class: 'tieu-de-lon' }, 'Tài liệu'),
     theoDot.map(({ d, tl, ck }) => [
       h('div', { class: 'nhan-nhom' }, d.ma),

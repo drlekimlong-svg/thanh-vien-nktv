@@ -489,3 +489,90 @@ button.dong:active, a.dong:active { background: var(--ke); transition: none; }
 .tq-hang.thieu legend, .o.thieu > span { color: var(--vang); }
 .tq-hang.thieu .tq-muc span { box-shadow: inset 0 0 0 1.5px var(--vang); }
 .o.thieu { box-shadow: inset 3px 0 0 var(--vang); }
+
+/* ---------- Ảnh nhận diện của đợt: thẻ khóa học, trang khóa, màn thư ký ---------- */
+.luoi-khoa { display: grid; gap: 14px; margin-bottom: 22px; }
+@media (min-width: 700px) { .luoi-khoa { grid-template-columns: 1fr 1fr; } }
+.the-khoa { --mau-khoa: var(--chinh); display: block; background: var(--be-mat); border-radius: 20px; box-shadow: var(--bong); overflow: hidden; color: var(--chu); text-decoration: none; -webkit-tap-highlight-color: transparent; transition: transform 160ms ease-out; }
+.the-khoa:active { transform: scale(0.985); }
+.the-khoa:focus-visible { outline: 2px solid var(--chinh); outline-offset: 3px; }
+.the-khoa-anh { position: relative; aspect-ratio: 2 / 1; background: var(--mau-khoa); }
+.the-khoa-anh img, .khoa-dau img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.the-khoa-nen { width: 100%; height: 100%; display: flex; align-items: flex-end; padding: 16px 18px; color: #fff;
+  background: linear-gradient(135deg, var(--mau-khoa), color-mix(in srgb, var(--mau-khoa) 55%, #000)); }
+.the-khoa-nen span { font-size: 1.25rem; font-weight: 700; line-height: 1.2; letter-spacing: -0.015em; max-width: 85%; }
+.the-khoa-nhan { position: absolute; top: 10px; right: 10px; font-size: 0.75rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; color: #fff;
+  background: rgba(10, 14, 12, 0.55); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.the-khoa-nhan.dung::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #5be08f; margin-right: 6px; vertical-align: 1px; }
+.the-khoa-chan { display: flex; align-items: center; gap: 11px; padding: 11px 14px 12px; }
+.the-khoa-bt { width: 34px; height: 34px; border-radius: 9px; object-fit: cover; flex: none; }
+.the-khoa-chu { flex: 1; min-width: 0; }
+.the-khoa-chu .ten { font-weight: 600; font-size: 0.9375rem; line-height: 1.25; }
+.the-khoa-chu .phu { color: var(--chu-2); font-size: 0.8125rem; margin-top: 2px; }
+.the-khoa-mui { color: var(--chu-3); font-size: 1.5rem; line-height: 1; }
+.the-khoa.xong .the-khoa-anh { filter: grayscale(0.7); opacity: 0.78; }
+
+/* Trong trang một khóa, nút và nhãn mặc màu nhấn của khóa; ở chế độ tối thì pha sáng cho đủ tương phản. */
+.trang-khoa { --mau-khoa: var(--chinh); --chinh: var(--mau-khoa); --chinh-chu: #fff; --nut-nen: var(--mau-khoa); --nut-chu: #fff; --chinh-nhat: color-mix(in srgb, var(--mau-khoa) 13%, transparent); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .trang-khoa { --chinh: color-mix(in srgb, var(--mau-khoa) 55%, #fff); --chinh-chu: #0b0f0d; }
+}
+:root[data-theme="dark"] .trang-khoa { --chinh: color-mix(in srgb, var(--mau-khoa) 55%, #fff); --chinh-chu: #0b0f0d; }
+.khoa-dau { --mau-khoa: var(--chinh); aspect-ratio: 3 / 1; border-radius: 18px; overflow: hidden; margin: 4px 0 14px; background: var(--mau-khoa); box-shadow: var(--bong); }
+.khoa-tieu { display: flex; gap: 12px; align-items: center; margin: 0 2px 20px; }
+.khoa-bt { width: 52px; height: 52px; border-radius: 13px; object-fit: cover; flex: none; box-shadow: var(--bong); }
+.khoa-tieu-chu { min-width: 0; }
+.khoa-tieu h1 { font-size: 1.375rem; line-height: 1.2; font-weight: 700; letter-spacing: -0.018em; margin: 0 0 5px; }
+.khoa-tieu .chi-tiet { color: var(--chu-2); font-size: 0.875rem; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ve-khoa { display: inline-block; margin: 0 0 4px -8px; text-decoration: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+/* Màn thư ký đặt ảnh nhận diện */
+.o-anh-nhom { padding: 14px 16px 12px; }
+.o-anh-tieu { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+.o-anh-tieu span, .o-anh-tieu code { color: var(--chu-2); font-size: 0.8125rem; }
+.o-anh-dot { width: 100%; border-radius: 12px; background: var(--be-mat-2); border: 1px dashed var(--ke); display: flex; align-items: center; justify-content: center; overflow: hidden; margin-top: 10px; color: var(--chu-3); font-size: 0.875rem; }
+.o-anh-dot.vuong { width: 132px; }
+.o-anh-dot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hang-nut-chu { display: flex; gap: 14px; margin-top: 8px; }
+.o-mau { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.o-mau input { width: 46px; height: 34px; padding: 0; border: 0; background: none; cursor: pointer; }
+.o-anh-dot.doc { width: 62%; }
+
+/* ---------- Vé điểm danh: như vé giấy các khóa trước, buổi đã điểm danh có con mộc ---------- */
+/* Ảnh nền vé phủ theo chiều ngang, không cắt hai mép; vé dài hơn ảnh thì phần dưới là màu trơn tối pha từ màu nhấn,
+   nên Ban Truyền thông làm mép dưới ảnh tối dần (xem bản yêu cầu). */
+.ve { --mau-khoa: var(--chinh); position: relative; isolation: isolate; overflow: hidden; border-radius: 20px; margin: 0 auto 24px; max-width: 460px; color: #fff; box-shadow: var(--bong);
+  background: color-mix(in srgb, var(--mau-khoa) 32%, #050a14); }
+.ve-nen { position: absolute; top: 0; left: 0; width: 100%; height: auto; z-index: -1;
+  -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent); mask-image: linear-gradient(to bottom, #000 82%, transparent); }
+.ve-nen-mau { position: absolute; inset: 0; z-index: -1; display: flex; align-items: flex-start; padding: 22px 20px; background: linear-gradient(165deg, var(--mau-khoa), color-mix(in srgb, var(--mau-khoa) 40%, #000)); }
+.ve-nen-mau span { font-size: 1.35rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.01em; max-width: 80%; }
+.ve-dau { aspect-ratio: 1080 / 380; }
+/* Đường xé vé: nét đứt giữa hai khấc tròn ở mép. */
+.ve-xe { position: relative; margin: 0 18px; border-top: 2px dashed rgba(255, 255, 255, 0.42); }
+.ve-xe::before, .ve-xe::after { content: ''; position: absolute; top: -12px; width: 22px; height: 22px; border-radius: 50%; background: var(--nen); }
+.ve-xe::before { left: -29px; }
+.ve-xe::after { right: -29px; }
+.ve-than { display: grid; gap: 16px; padding: 16px 14px 18px; }
+.ve-the { background: rgba(255, 255, 255, 0.95); color: #17231e; border-radius: 14px; padding: 6px 14px; }
+.ve-dong { display: flex; align-items: baseline; gap: 10px; padding: 7px 0; border-bottom: 1.5px dashed rgba(23, 35, 30, 0.22); }
+.ve-dong:last-child { border-bottom: 0; }
+.ve-nhan { flex: none; width: 96px; font-size: 0.6875rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #4a524d; }
+.ve-gt { min-width: 0; font-weight: 600; font-size: 0.9375rem; overflow-wrap: anywhere; }
+.ve-o-hang { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 12px 10px; padding: 12px 10px; border-radius: 16px; background: rgba(5, 10, 20, 0.52); }
+.ve-o { text-align: center; }
+.ve-o-khung { aspect-ratio: 1; max-width: 96px; margin: 0 auto; display: flex; align-items: center; justify-content: center; border-radius: 18px; background: rgba(255, 255, 255, 0.96); }
+.ve-o-so { margin-top: 7px; font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.85; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+.ve-o-nhan { font-size: 0.8125rem; font-weight: 800; letter-spacing: 0.03em; line-height: 1.25; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+.ve-o-ngay { margin-top: 2px; font-size: 0.6875rem; opacity: 0.82; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+.ve-moc { display: flex; width: 90%; aspect-ratio: 1; height: auto; color: #b3261e; opacity: 0.9; mix-blend-mode: multiply; transform: rotate(var(--xoay, -8deg)); }
+.ve-moc svg { width: 100%; height: 100%; }
+img.ve-moc { object-fit: contain; }
+.ve-moc.dap { animation: dap-moc 560ms cubic-bezier(0.2, 0.9, 0.3, 1.25) 250ms both; }
+@keyframes dap-moc {
+  0% { transform: rotate(var(--xoay)) scale(1.9); opacity: 0; }
+  60% { transform: rotate(var(--xoay)) scale(0.93); opacity: 0.95; }
+  100% { transform: rotate(var(--xoay)) scale(1); opacity: 0.9; }
+}
+@media (prefers-reduced-motion: reduce) { .ve-moc.dap { animation: none; } }
+.ve-trong { font-size: 0.875rem; line-height: 1.4; background: rgba(0, 0, 0, 0.35); border-radius: 12px; padding: 10px 12px; }

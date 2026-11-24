@@ -8,7 +8,10 @@ import {
 } from './ui.js';
 import { manMotBuoi } from './v-quanly.js';
 import { manCauHoi, docMucChecklist, vietMucChecklist, soMucChecklist, moChecklist, hangTaiLieu } from './v-tronggio.js';
-import { TRANG_THAI, LOP_TT, VAI, PHAN, icon, thanh, laBtcQuanLy, laGiangVien, laDiemDanh, thayDuocDot } from './dot-chung.js';
+import {
+  TRANG_THAI, LOP_TT, VAI, PHAN, icon, thanh, laBtcQuanLy, laGiangVien, laDiemDanh, thayDuocDot,
+  ANH_DOT, MAU_MAC_DINH, nhanDien, theKhoaHoc, veDiemDanh
+} from './dot-chung.js';
 import { manYeuCauDot, manBaiThiDot, manPhieuDot, manTieuChiDot, manKetQuaDot } from './v-ketqua.js';
 
 // Nhãn, vai trò và thanh tiêu đề nằm ở dot-chung.js vì v-ketqua.js cũng dùng.
@@ -25,6 +28,7 @@ export async function tuyenTapHuan(vung, con) {
   if (a && b === 'hoc-vien') return manHocVien(vung, a);
   if (a && b === 'thu') return manThuDot(vung, a);
   if (a && b === 'zalo') return manZaloDot(vung, a);
+  if (a && b === 'anh') return manAnhDot(vung, a);
   if (a && b === 'buoi' && c) return manBuoiDot(vung, a, c);
   if (a && b === 'buoi') return manDsBuoiDot(vung, a);
   if (a && b === 'tai-lieu') return manTaiLieuDot(vung, a);
@@ -152,6 +156,12 @@ async function manMotDot(vung, id) {
         tieu: 'Nhóm Zalo của đợt', truoc: icon('nguoi'), href: `#tap-huan/${id}/zalo`,
         phu: d.zalo_link ? 'Đã có link' + (d.co_zalo_qr ? ' và mã QR' : ', chưa có mã QR') : 'Chưa có — dán vào trước khi nạp danh sách'
       }) : null),
+    // Bộ ảnh theo mùa của đợt.
+    ql ? nhom('Giao diện cho học viên', dong({
+      tieu: 'Ảnh nhận diện khóa học', truoc: icon('sao'), href: `#tap-huan/${id}/anh`,
+      phu: (() => { const nd = nhanDien(d); const co = Object.keys(ANH_DOT).filter(k => nd[k]).length;
+        return co ? `Đã có ${co}/${Object.keys(ANH_DOT).length} ảnh` + (nd.mau ? ' và màu nhấn' : '') : 'Chưa có — học viên đang thấy thẻ nền màu'; })()
+    })) : null,
     nhom('Trong buổi',
       dong({ tieu: 'Buổi và điểm danh', truoc: icon('lich'), href: `#tap-huan/${id}/buoi`,
         phu: buoi.length ? `${buoi.length} buổi · ${buoi.filter(b => b.dong).length} đã đóng` : 'Chưa có buổi nào' }),
@@ -663,6 +673,134 @@ async function manZaloDot(vung, id) {
     h('div', { class: 'bang-tin xanh' }, 'Tạo nhóm Zalo trước khi nạp danh sách. Link và mã QR ở đây sẽ đi kèm thư báo mã kích hoạt, hiện trên màn hình Hôm nay của học viên và in lên phiếu.'),
     f,
     h('p', { class: 'chu-nho', style: 'margin-top:14px' }, 'Trong Zalo: mở nhóm → Tùy chọn → Link tham gia nhóm. Chép link và lưu ảnh QR về máy, rồi dán vào đây. Đổi link thì các thư đã gửi vẫn mang link cũ.'));
+}
+
+/* ---------- Ảnh nhận diện khóa học ----------
+
+   Ban Truyền thông làm ảnh theo bản yêu cầu; thư ký chọn tệp ở đây. App tự cắt giữa cho đúng tỉ lệ,
+   thu về đúng cỡ trong ANH_DOT rồi nén WebP, nên thư ký không phải tự cắt ảnh.
+   Ảnh vừa chọn giữ dạng data URL tới khi bấm Lưu; api.luuNhanDienDot đưa lên kho ảnh Supabase Storage
+   rồi lưu đường dẫn vào dot.nhan_dien (migration 0023). Kho nhận tối đa 600 KB một ảnh. */
+async function nenAnhDot(tep, c) {
+  const u = URL.createObjectURL(tep);
+  try {
+    const anh = await new Promise((ok, loi) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => loi(new Error('Không đọc được hình này.')); i.src = u; });
+    const W = anh.naturalWidth, H = anh.naturalHeight, tiLe = c.w / c.h;
+    // Cắt phần giữa cho đúng tỉ lệ yêu cầu.
+    let sw = W, sh = Math.round(W / tiLe);
+    if (sh > H) { sh = H; sw = Math.round(H * tiLe); }
+    const sx = Math.round((W - sw) / 2), sy = Math.round((H - sh) / 2);
+    const cv = document.createElement('canvas');
+    cv.width = c.w; cv.height = c.h;
+    const ctx = cv.getContext('2d');
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(anh, sx, sy, sw, sh, 0, 0, c.w, c.h);
+    // Safari cũ không xuất được WebP thì trả PNG: khi đó dùng JPEG cho ảnh nền, PNG cho biểu tượng (giữ nền trong).
+    // Kho ảnh nhận tối đa 600 KB: hạ dần chất lượng nén tới khi vừa. Safari cũ không xuất được WebP thì dùng PNG cho ảnh vuông, JPEG cho ảnh còn lại.
+    const kich = (u) => (u.length - u.indexOf(',') - 1) * 0.75;
+    let kq;
+    for (const q of [0.82, 0.7, 0.6, 0.5]) {
+      kq = cv.toDataURL('image/webp', q);
+      if (!kq.startsWith('data:image/webp')) kq = c.w === c.h ? cv.toDataURL('image/png') : cv.toDataURL('image/jpeg', q);
+      if (kich(kq) <= 614400) break;
+    }
+    const nang = kich(kq) > 614400;
+    const canhBao = [];
+    if (Math.abs(W / H - tiLe) > 0.03) canhBao.push(`Ảnh gốc ${W}×${H} không đúng tỉ lệ nên app đã cắt phần giữa. Xem lại phần bị cắt ở khung xem trước.`);
+    if (W < c.w || H < c.h) canhBao.push(`Ảnh gốc nhỏ hơn cỡ yêu cầu ${c.w}×${c.h} nên sẽ hơi nhòe trên điện thoại. Nên xin Ban Truyền thông bản lớn hơn.`);
+    if (nang) canhBao.push('Ảnh này vẫn quá 600 KB dù đã nén tối đa nên kho ảnh sẽ không nhận. Xin Ban Truyền thông bản ít chi tiết hơn rồi chọn lại.');
+    return { url: kq, canhBao, nang };
+  } finally { URL.revokeObjectURL(u); }
+}
+
+/** Độ tương phản giữa chữ trắng và màu nhấn, theo công thức WCAG. Dưới 4,5 thì chữ trên nút khó đọc. */
+function tuongPhanVoiTrang(hex) {
+  const kenh = (i) => { const v = parseInt(hex.slice(i, i + 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
+  const L = 0.2126 * kenh(1) + 0.7152 * kenh(3) + 0.0722 * kenh(5);
+  return 1.05 / (L + 0.05);
+}
+
+async function manAnhDot(vung, id) {
+  const dsDot = await S.db.dsDot();
+  const d = dsDot.find(x => x.id === id);
+  if (!d) return dat(vung, thanh('Ảnh nhận diện', '#tap-huan'), rong('Không tìm thấy đợt này.'));
+  if (!laBtcQuanLy(id)) return dat(vung, thanh('Ảnh nhận diện', '#tap-huan/' + id, d.ma),
+    rong('Chỉ quản trị, Ban cố vấn, trưởng ban và thư ký của đợt đặt được ảnh nhận diện.'));
+  const o = Object.assign({}, nhanDien(d));
+  const lai = () => manAnhDot(vung, id);
+  // Vé xem trước: lấy đúng các buổi của đợt, giả như học viên đã điểm danh buổi đầu để thấy con mộc.
+  const buoiDot = await S.db.dsBuoiDot(id).catch(() => []);
+  const dau = buoiDot.slice().sort((a, b) => new Date(a.bat_dau) - new Date(b.bat_dau))[0];
+  const buoiMau = buoiDot.map(b => Object.assign({}, b, { toi_vao: dau && b.id === dau.id ? (b.bat_dau || new Date().toISOString()) : null }));
+  const nguoiMau = { ho_ten: 'Học Viên Mẫu', ma: 'HV00000', lop: 'Y2022A', mssv: '2250000' };
+
+  const xemThu = h('div');
+  const veXemThu = () => { const dd = Object.assign({}, d, { trang_thai: 'mo', nhan_dien: o });
+    dat(xemThu, theKhoaHoc(dd, { nhanTT: 'Đang học', lopTT: 'dung', phu: khoang(d) }),
+      h('div', { style: 'height:14px' }), veDiemDanh(dd, buoiMau, nguoiMau, { xemThu: true })); };
+
+  // Ảnh nào còn quá nặng thì khóa nút Lưu và nói rõ ảnh nào.
+  const nang = new Set(), canhNang = h('div');
+  let nutLuu = null;
+  const capNhatLuu = () => {
+    if (nutLuu) nutLuu.disabled = nang.size > 0;
+    dat(canhNang, nang.size ? h('div', { class: 'bang-tin', style: 'margin:8px 0 0' }, 'Chưa lưu được: ' + [...nang].map(k => ANH_DOT[k].ten).join(', ') + ' quá 600 KB. Chọn lại ảnh nhẹ hơn hoặc bỏ ảnh đó.') : null);
+  };
+  const o_anh = (k) => {
+    const c = ANH_DOT[k];
+    const khung = h('div', { class: 'o-anh-dot' + (c.w === c.h ? ' vuong' : c.h > c.w ? ' doc' : ''), style: `aspect-ratio:${c.w} / ${c.h}` });
+    const ghiChu = h('div');
+    const chon = h('input', { type: 'file', accept: 'image/*', hidden: true, onchange: async (e) => {
+      const t = e.target.files[0]; e.target.value = ''; if (!t) return;
+      const kq = await thu(() => nenAnhDot(t, c));
+      if (!kq) return;
+      o[k] = kq.url; kq.nang ? nang.add(k) : nang.delete(k); capNhatLuu(); ve();
+      dat(ghiChu, kq.canhBao.map(x => h('div', { class: 'bang-tin', style: 'margin:8px 0 0' }, x)));
+    } });
+    const ve = () => {
+      dat(khung, o[k] ? h('img', { src: o[k], alt: c.ten }) : h('span', null, `${c.w} × ${c.h}`));
+      dat(nut,
+        h('button', { class: 'nut-chu', type: 'button', onclick: () => chon.click() }, o[k] ? 'Đổi ảnh' : 'Chọn ảnh'),
+        o[k] ? h('button', { class: 'nut-chu', type: 'button', style: 'color:var(--vang)', onclick: () => { delete o[k]; nang.delete(k); capNhatLuu(); dat(ghiChu); ve(); } }, 'Bỏ ảnh') : null);
+      veXemThu();
+    };
+    const nut = h('div', { class: 'hang-nut-chu' });
+    ve();
+    return h('div', { class: 'nhom o-anh-nhom' },
+      h('div', { class: 'o-anh-tieu' }, h('b', null, c.ten), h('span', null, `${c.w} × ${c.h} px`)),
+      h('p', { class: 'chu-nho' }, c.chu),
+      khung, chon, nut, ghiChu);
+  };
+
+  const canhBaoMau = h('div');
+  const kiemMau = () => {
+    const m = o.mau || MAU_MAC_DINH;
+    const tp = tuongPhanVoiTrang(m);
+    dat(canhBaoMau, tp < 4.5 ? h('div', { class: 'bang-tin', style: 'margin:8px 0 0' },
+      `Chữ trắng trên màu này chỉ đạt độ tương phản ${tp.toFixed(1).replace('.', ',')}:1, dưới mức 4,5:1 nên khó đọc. Chọn màu đậm hơn.`) : null);
+  };
+  const oMau = h('input', { type: 'color', value: o.mau || MAU_MAC_DINH, oninput: (e) => { o.mau = e.target.value; maMau.textContent = o.mau; kiemMau(); veXemThu(); } });
+  const maMau = h('code', null, o.mau || 'chưa đặt');
+  kiemMau();
+
+  dat(vung,
+    thanh('Ảnh nhận diện', '#tap-huan/' + id, d.ma),
+    h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:16px' }, d.ten),
+    h('div', { class: 'bang-tin xanh' }, 'Ban Truyền thông làm ảnh theo bản "Yêu cầu ảnh nhận diện khóa học". Chọn tệp ảnh ở từng ô, app tự cắt phần giữa cho đúng tỉ lệ và nén nhẹ lại. Thiếu ảnh nào thì app dùng nền màu ở chỗ đó.'),
+    h('div', { class: 'nhan-nhom' }, 'Học viên sẽ thấy'),
+    xemThu,
+    Object.keys(ANH_DOT).map(o_anh),
+    h('div', { class: 'nhom o-anh-nhom' },
+      h('div', { class: 'o-anh-tieu' }, h('b', null, 'Màu nhấn của khóa'), maMau),
+      h('p', { class: 'chu-nho' }, 'Màu của nút và nhãn khi học viên ở trong trang khóa này. Lấy theo màu chủ đạo của bộ ảnh.'),
+      h('label', { class: 'o-mau' }, oMau, h('span', null, 'Chọn màu')),
+      canhBaoMau),
+    canhNang,
+    nutLuu = h('button', { class: 'nut day', type: 'button', style: 'margin-top:6px', onclick: async () => {
+      if (await thu(() => S.db.luuNhanDienDot(id, o), 'Đã lưu ảnh nhận diện')) lai();
+    } }, 'Lưu'),
+    h('p', { class: 'chu-nho', style: 'margin-top:14px' }, 'Không dùng ảnh có mặt người tham dự (ảnh recap, ảnh lớp học) làm ảnh nền khi chưa có đồng ý của họ.'));
+  veXemThu();
 }
 
 /* ============================================================ Buổi của đợt (migration 0014)
