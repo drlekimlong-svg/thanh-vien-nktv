@@ -38,8 +38,13 @@ export function demo(vai) {
   );
   const dd = [{ buoi_id: 'b1', thanh_vien_id: 't0', luc: buoi[0].bat_dau, cach: 'qr' }, { buoi_id: 'b1', thanh_vien_id: 't2', luc: new Date(new Date(buoi[0].bat_dau).getTime() + 15 * 60e3).toISOString(), cach: 'qr' }];
   [1, 3, 5, 6, 7, 8, 10, 11, 13, 14].forEach((i, k) => dd.push({ buoi_id: 'b1', thanh_vien_id: 't' + i, luc: new Date(new Date(buoi[0].bat_dau).getTime() + (k % 4 === 3 ? 20 : 2) * 60e3).toISOString(), cach: 'qr' }));
-  [0, 3].forEach(i => dd.push({ buoi_id: 'b2', thanh_vien_id: 't' + i, luc: buoi[1].bat_dau, cach: 'qr' }));
-  const don = [{ id: 'd1', buoi_id: 'b3', thanh_vien_id: 't3', ly_do: 'Trùng lịch thi', trang_thai: 'cho', gui_luc: new Date(nay - 3600e3).toISOString(), phan_hoi: null }];
+  // Buổi đang diễn ra: vài người đã điểm danh để thử bảng đếm theo cấp và công cụ gọi ngẫu nhiên.
+  [0, 3, 1, 5, 8, 9, 13, 14].forEach((i, k) => dd.push({ buoi_id: 'b2', thanh_vien_id: 't' + i, luc: new Date(new Date(buoi[1].bat_dau).getTime() + (k === 5 ? 14 : 1) * 60e3).toISOString(), cach: 'qr' }));
+  const don = [{ id: 'd1', buoi_id: 'b3', thanh_vien_id: 't3', ly_do: 'Trùng lịch thi', trang_thai: 'cho', gui_luc: new Date(nay - 3600e3).toISOString(), phan_hoi: null },
+    { id: 'd2', buoi_id: 'b3', thanh_vien_id: 't8', ly_do: 'Về quê', trang_thai: 'cho', gui_luc: new Date(nay - 2 * 3600e3).toISOString(), phan_hoi: null },
+    { id: 'd3', buoi_id: 'b2', thanh_vien_id: 't10', ly_do: 'Trực bệnh viện', trang_thai: 'duyet', gui_luc: new Date(nay - ngay).toISOString(), phan_hoi: null },
+    { id: 'd4', buoi_id: 'b1', thanh_vien_id: 't12', ly_do: 'Ốm', trang_thai: 'duyet', gui_luc: new Date(nay - 8 * ngay).toISOString(), phan_hoi: null },
+    { id: 'd5', buoi_id: 'b1', thanh_vien_id: 't15', ly_do: 'Bận việc riêng', trang_thai: 'tu_choi', gui_luc: new Date(nay - 7 * ngay - 3600e3).toISOString(), phan_hoi: 'Gửi sau giờ bắt đầu' }];
   const tb = [{ id: 'n1', tieu_de: 'Lịch tuần này', noi_dung: 'Nội dung mẫu của thông báo.\nDòng thứ hai.', ghim: true, dang_luc: new Date(nay - 3600e3).toISOString() }, { id: 'n2', tieu_de: 'Thông báo cũ', noi_dung: 'Mẫu.', ghim: false, dang_luc: new Date(nay - 5 * ngay).toISOString() }];
   const doc = [];
   const nl = ['Lãnh đạo', 'Tổ chức sự kiện', 'Làm việc nhóm', 'Khâu cơ bản', 'Đọc CT-scan bụng', 'Đọc X-quang bụng'].map((ten, i) => ({ id: 'l' + i, nhom: i < 3 ? 'A' : 'B', ten, mo_ta: null, thu_tu: i, dang_dung: true }));
@@ -633,7 +638,7 @@ export function demo(vai) {
         return { ok: true };
       }
       if (!laBtcDot(than.dot_id)) throw new Error('Chỉ trưởng ban, thư ký của đợt và quản trị được gửi thư.');
-      if (caiDat.thu.bat !== true) throw new Error('Gửi thư đang tắt. Quản trị bật ở Quản lý › Gửi thư.');
+      if (caiDat.thu.bat !== true) throw new Error('Gửi thư đang tắt. Quản trị bật ở Công cụ › Gửi thư.');
       const ds = (than.ds || []).map((x, i) => {
         const n = hv.find(z => z.id === x.id);
         const trong = n && dotHv.some(g => g.dot_id === than.dot_id && g.thanh_vien_id === n.id && g.trang_thai === 'ghi_danh');

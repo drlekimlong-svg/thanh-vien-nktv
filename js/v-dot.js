@@ -454,7 +454,7 @@ function hienMaHV(ds, d) {
         onclick: (e) => guiMaQuaEmail(d, coMa, e.currentTarget)
       }, `Gửi email cho ${coMa.length} người`) : null,
       coMa.length && !batGuiThu() ? h('p', { class: 'chu-nho', style: 'margin-bottom:12px' },
-        'Gửi thư tự động đang tắt. Quản trị bật ở Quản lý › Gửi thư, rồi quay lại cấp mã là gửi được.') : null,
+        'Gửi thư tự động đang tắt. Quản trị bật ở Công cụ › Gửi thư, rồi quay lại cấp mã là gửi được.') : null,
       h('div', { class: 'hang-nut', style: 'margin-bottom:16px' },
         h('button', { class: 'nut phu', type: 'button', onclick: inPhieu }, 'In phiếu'),
         h('button', { class: 'nut phu', type: 'button', onclick: chepTin }, 'Chép tất cả'),
@@ -589,7 +589,7 @@ async function manThuDot(vung, id) {
     h('p', { class: 'chu-nho giua-chu', style: 'margin-bottom:16px' }, d.ten),
     !ds.length ? rong(batGuiThu()
       ? 'Chưa gửi thư nào. Vào Danh sách học viên, cấp mã rồi bấm gửi email.'
-      : 'Chưa gửi thư nào, và gửi thư tự động đang tắt. Quản trị bật ở Quản lý › Gửi thư.') : null,
+      : 'Chưa gửi thư nào, và gửi thư tự động đang tắt. Quản trị bật ở Công cụ › Gửi thư.') : null,
     ds.length ? soLieu([
       { so: thanhCong.length, ten: 'Đã gửi', lop: 'dung' },
       { so: hong.length, ten: 'Chưa gửi được', lop: hong.length ? 'vang' : '' }

@@ -17,11 +17,11 @@ function chenStyle() {
 export async function manLichTuan(vung) {
   vung.classList.add('rong');
   if (!duocDungLichTuan()) {
-    return dat(vung, thanhNho('Lịch tuần khả thi', '#hom-nay', 'Hôm nay'),
+    return dat(vung, thanhNho('Lịch tuần khả thi'),
       h('div', { class: 'rong-chu' }, 'Lịch tuần khả thi hiện dành cho thành viên CLB đang sinh hoạt.'));
   }
   chenStyle();
-  dat(vung, thanhNho('Lịch tuần khả thi', '#hom-nay', 'Hôm nay'),
+  dat(vung, thanhNho('Lịch tuần khả thi'),
     h('iframe', { class: 'lt-khung', src: '../lich-tuan/?nhung=1', title: 'Lịch tuần khả thi' }),
     h('p', { class: 'chu-nho giua-chu', style: 'margin-top:8px' }, 'Lịch tuần chỉ lưu trong trình duyệt trên máy này, CLB không nhận được; người dùng chung trình duyệt này sẽ thấy lịch của bạn.'));
 }

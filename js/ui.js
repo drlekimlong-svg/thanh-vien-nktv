@@ -44,6 +44,9 @@ const SVG = {
   gui: '<path d="M3.5 10.3 19.9 3.7c.7-.3 1.4.4 1.1 1.1l-6.6 16.4c-.3.8-1.4.7-1.6-.1l-1.7-6.4-6.4-1.7c-.8-.2-.9-1.300-.1-1.600Z" fill="currentColor"/><path d="m11.1 12.9 4.6-4.6" stroke="var(--tab-nen, #fff)" stroke-width="1.8" stroke-linecap="round"/>',
   mo_ngoai: '<path d="M13.5 4H20v6.5M20 4l-8.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M17.5 14v3.6a2.4 2.4 0 0 1-2.4 2.4H6.4A2.4 2.4 0 0 1 4 17.6V8.9a2.4 2.4 0 0 1 2.4-2.4H10" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/>',
   chia_khoa: '<circle cx="8" cy="12" r="4.6" fill="currentColor"/><circle cx="8" cy="12" r="1.8" fill="var(--tab-nen, #fff)"/><path d="M12 12h8.6M17.4 12v3.2M20.2 12v2.4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" fill="none"/>',
+  ghim: '<path d="M12 21.4s-6.6-5.7-6.6-11.2a6.6 6.6 0 0 1 13.2 0c0 5.5-6.6 11.2-6.6 11.2Z" fill="currentColor"/><circle cx="12" cy="10.2" r="2.5" fill="var(--tab-nen, #fff)"/>',
+  dong_ho: '<circle cx="12" cy="12" r="9" fill="currentColor"/><path d="M12 7.2V12l3.2 2" stroke="var(--tab-nen, #fff)" stroke-width="2" stroke-linecap="round" fill="none"/>',
+  xuc_xac: '<rect x="3.5" y="3.5" width="17" height="17" rx="4" fill="currentColor"/><g fill="var(--tab-nen, #fff)"><circle cx="8.3" cy="8.3" r="1.6"/><circle cx="15.7" cy="8.3" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="8.3" cy="15.7" r="1.6"/><circle cx="15.7" cy="15.7" r="1.6"/></g>',
   khien: '<path d="M12 2.8 4.5 5.6v5.6c0 4.8 3.2 8.6 7.5 10 4.3-1.4 7.5-5.2 7.5-10V5.6Z" fill="currentColor"/><path d="m8.8 12 2.2 2.2 4.2-4.4" stroke="var(--tab-nen, #fff)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>',
   mui: '<path d="m1.500 1.500 5.500 5.500-5.500 5.500" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>'
 };

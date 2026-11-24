@@ -8,7 +8,8 @@ import { manSoanLich, manKhoLich } from './v-soanlich.js';
 import { manDiemNhom } from './v-diemnhom.js';
 import { manPostTest, manLamBai, manKetQua } from './v-test.js';
 import { manHoSo } from './v-hoso.js';
-import { manQuanLy, tuyenQuanLy, thanhNho } from './v-quanly.js';
+import { tuyenQuanLy, thanhNho } from './v-quanly.js';
+import { manCongCu, manGoiNgauNhien, coCongCu } from './v-congcu.js';
 import { manTuyenQuan } from './v-tuyenquan.js';
 import { tuyenTapHuan } from './v-dot.js';
 import { tuyenHocVien } from './v-hocvien.js';
@@ -16,6 +17,8 @@ import { manGuiBai } from './v-guibai.js';
 import { manBaiGiay, manQlBaiGiay } from './v-baigiay.js';
 import { manKhaoSat } from './v-khaosat.js';
 import { manLichTuan } from './v-lichtuan.js';
+import { nutGiaoDien, apGiaoDienDaLuu } from './nut-giao-dien.js';
+import { oNoi, dongLoi, baoLoi, nutGo, dangKiem } from './o-dang-nhap.js';
 import { canHoi, noiDungHoiLai, noiDungTuChoi, noiDungThongBao, oDongY, manQlDuLieu, PHIEN_BAN } from './v-dulieu.js';
 
 const goc = $('#app');
@@ -23,15 +26,14 @@ const q = new URLSearchParams(location.search);
 
 /* Thanh tab tối đa 5 mục (anh Long chốt 21/11/2026). `cung`: các trang con vẫn tô sáng tab này.
    - Post-test và Gửi bài chung tab "Bài làm", chuyển qua lại bằng nút hai nửa ở đầu màn hình.
-   - Tập huấn vào trong Quản lý; ai thuộc Ban tổ chức đợt mà không có tab Quản lý thì Tập huấn là tab thứ năm.
-   - Tuyển quân không còn là tab: khi mở, lối vào là thẻ đầu màn hình Hôm nay và dòng trong Quản lý. */
+   - Tab Công cụ (24/11/2026) thay tab Quản lý và tab Tập huấn, đường dẫn vẫn là #quan-ly; Lịch tuần khả thi chuyển vào đây.
+   - Tuyển quân không còn là tab: khi mở, lối vào là thẻ đầu màn hình Hôm nay và dòng trong Công cụ. */
 const TAB = [
-  { id: 'hom-nay', ten: 'Hôm nay', icon: 'hom_nay', cung: ['lich-tuan'] },
+  { id: 'hom-nay', ten: 'Hôm nay', icon: 'hom_nay' },
   { id: 'lich', ten: 'Lịch', icon: 'lich' },
   { id: 'post-test', ten: 'Bài làm', icon: 'test', cung: ['gui-bai'] },
   { id: 'ho-so', ten: 'Hồ sơ', icon: 'ho_so' },
-  { id: 'quan-ly', ten: 'Quản lý', icon: 'quan_ly', dk: () => S.toi.xem_duoc_ten, cung: ['tap-huan', 'tuyen-quan'] },
-  { id: 'tap-huan', ten: 'Tập huấn', icon: 'nguoi', dk: () => !S.toi.xem_duoc_ten && !!(S.toi.btc_dot && S.toi.btc_dot.length) }
+  { id: 'quan-ly', ten: 'Công cụ', icon: 'quan_ly', dk: coCongCu, cung: ['tap-huan', 'tuyen-quan', 'lich-tuan'] }
 ];
 // Học viên các đợt tập huấn dùng bộ tab riêng: không có lịch CLB, post-test, quản lý.
 const TAB_HV = [
@@ -81,7 +83,8 @@ async function tuyen() {
     else if (tab === 'ho-so') await manHoSo(vung, con[0]);
     else if (tab === 'quan-ly') {
       if (con[0] === 'du-lieu') await manQlDuLieu(vung, thanhNho);
-      else if (con.length) await tuyenQuanLy(vung, con); else { await manQuanLy(vung); xepHaiCot(vung); }
+      else if (con[0] === 'goi') await manGoiNgauNhien(vung, con[1]);
+      else if (con.length) await tuyenQuanLy(vung, con); else { await manCongCu(vung); xepHaiCot(vung); }
     }
     else await manHomNay(vung);
   } catch (e) {
@@ -90,7 +93,7 @@ async function tuyen() {
   }
 }
 
-/** Gói mỗi nhãn nhóm với nhóm ngay sau nó, để màn hình rộng xếp được hai cột (Quản lý). */
+/** Gói mỗi nhãn nhóm với nhóm ngay sau nó, để màn hình rộng xếp được hai cột (Công cụ). */
 function xepHaiCot(vung) {
   const con = [...vung.children];
   con.forEach((el, i) => {
@@ -112,18 +115,18 @@ function nenSang(bat) {
 }
 
 function dungKhung() {
-  nenSang(false);
+  apGiaoDienDaLuu();
   const nha = S.toi.nha && NHA[S.toi.nha];
   document.documentElement.style.setProperty('--tab-nen', 'var(--be-mat)');
   dat(goc, h('div', { class: 'khung' },
     h('nav', { class: 'thanh-tab', 'aria-label': 'Điều hướng chính', id: 'thanh-tab' },
-      h('div', { class: 'logo-ben' }, h('img', { src: 'img/logo.webp', alt: '' }), h('span', null, 'CLB Ngoại khoa', h('br'), 'Trưng Vương')),
+      h('div', { class: 'logo-ben' }, h('img', { src: 'img/logo.webp', alt: '' }), h('span', null, 'CLB Ngoại khoa', h('br'), 'Trưng Vương'), nutGiaoDien()),
       h('div', { id: 'khung-tab', style: 'display:contents' })),
     // Logo CLB ở đầu mỗi màn trên điện thoại (máy tính đã có ở thanh bên).
     h('header', { class: 'dau-app' },
       h('img', { class: 'logo-dau', src: 'img/logo.webp', alt: 'Logo CLB Ngoại khoa Trưng Vương' }),
       h('span', { class: 'ten-dau' }, 'CLB Ngoại khoa', h('br'), 'Trưng Vương'),
-      h('a', { href: '#ho-so', 'aria-label': 'Hồ sơ của tôi' }, anhDaiDien(S.toi))),
+      h('div', { class: 'dau-phai' }, nutGiaoDien(), h('a', { href: '#ho-so', 'aria-label': 'Hồ sơ của tôi' }, anhDaiDien(S.toi)))),
     h('main', { id: 'vung', class: 'noi-dung' })));
   if (nha) { goc.classList.add('co-nha'); goc.style.setProperty('--nha-goc', nha.mau); }
   window.addEventListener('hashchange', tuyen);
@@ -272,48 +275,54 @@ function manChonViec(loai) {
     nutLui(() => manDangNhap()));
 }
 
-function manNhap(loai, cheDo, baoLoi = '') {
+function manNhap(loai, cheDo, baoLoiDau = '') {
   const v = CUA[loai], kh = cheDo === 'kich-hoat';
-  const ma = oNhap(loai === 'hoc_vien' ? 'Mã học viên' : 'Mã thành viên',
-    { name: 'ma', autocomplete: 'username', placeholder: v.mau, autocapitalize: 'characters', required: true });
-  const code = kh ? oNhap('Mã kích hoạt', { name: 'code', autocomplete: 'one-time-code', autocapitalize: 'characters', required: true }) : null;
-  const mk = oNhap(kh ? 'Mật khẩu tự đặt (ít nhất 8 ký tự)' : 'Mật khẩu',
-    { name: 'mk', type: 'password', autocomplete: kh ? 'new-password' : 'current-password', required: true });
-  const loi = oLoi(baoLoi);
-  const nut = h('button', { class: 'nut day', type: 'submit', disabled: kh }, kh ? 'Kích hoạt và đăng nhập' : 'Đăng nhập');
+  // Ô nhập kiểu nhãn nổi (Lucian #403, anh Long chọn 24/11/2026); tên ô, gợi ý, tự điền giữ như cũ.
+  const ma = oNoi(loai === 'hoc_vien' ? 'Mã học viên' : 'Mã thành viên',
+    { name: 'ma', autocomplete: 'username', placeholder: v.mau, autocapitalize: 'characters', spellcheck: 'false', required: true });
+  const code = kh ? oNoi('Mã kích hoạt', { name: 'code', autocomplete: 'one-time-code', autocapitalize: 'characters', spellcheck: 'false', required: true }) : null;
+  const mk = oNoi(kh ? 'Mật khẩu tự đặt (ít nhất 8 ký tự)' : 'Mật khẩu',
+    { name: 'mk', type: 'password', autocomplete: kh ? 'new-password' : 'current-password', required: true }, true);
+  const msg = dongLoi(baoLoiDau);
+  const live = h('p', { class: 'u403-live', role: 'status' });
+  const nut = nutGo(kh ? 'Kích hoạt và đăng nhập' : 'Đăng nhập', { disabled: kh });
   // Kích hoạt lần đầu: hai ô đồng ý, không đánh dấu sẵn; nút chỉ bấm được khi đã chọn ô bắt buộc.
   const dongY = kh ? oDongY((ok) => { nut.disabled = !ok; }) : null;
   const form = h('form', {
-    novalidate: true,
+    class: 'u403 u403-form', novalidate: true,
     onsubmit: async (e) => {
       e.preventDefault();
+      if (nut.classList.contains('is-busy') || nut.classList.contains('is-ok')) return;
       const f = form.elements, m = chuanMa(f.ma.value, loai);
-      loi.hidden = true;
-      const baoSai = (c) => { loi.textContent = c; loi.hidden = false; };
-      if (!m) return baoSai('Cần nhập mã, ví dụ ' + v.mau + '.');
-      if (!f.mk.value) return baoSai('Cần nhập mật khẩu.');
-      nut.disabled = true;
+      msg.classList.remove('is-on');
+      if (!m) return baoLoi(ma, msg, 'Cần nhập mã, ví dụ ' + v.mau + '.');
+      if (kh && !f.code.value.trim()) return baoLoi(code, msg, 'Cần nhập mã kích hoạt.');
+      if (!f.mk.value) return baoLoi(mk, msg, 'Cần nhập mật khẩu.');
+      if (kh && f.mk.value.length < 8) return baoLoi(mk, msg, 'Mật khẩu cần ít nhất 8 ký tự.');
+      if (kh && !dongY.giaTri().dong_y) return baoLoi(null, msg, 'Cần đọc và chọn ô đồng ý bắt buộc.');
+      dangKiem(nut, true); live.textContent = 'Đang kiểm tra';
       try {
-        if (kh) {
-          if (!f.code.value.trim()) throw new Error('Cần nhập mã kích hoạt.');
-          if (f.mk.value.length < 8) throw new Error('Mật khẩu cần ít nhất 8 ký tự.');
-          if (!dongY.giaTri().dong_y) throw new Error('Cần đọc và chọn ô đồng ý bắt buộc.');
-          await S.db.kichHoat(m, f.code.value, f.mk.value, loai);
-        }
+        if (kh) await S.db.kichHoat(m, f.code.value, f.mk.value, loai);
         await S.db.dangNhap(m, f.mk.value, loai);
-        // Ghi lời đồng ý ngay sau khi có phiên. Ghi hỏng thì màn hỏi lại sẽ hiện, nên không chặn đăng nhập.
+        // Ghi lời đồng ý ngay sau khi có phiên. Ghi hỏng thì màn hình hỏi lại sẽ hiện, nên không chặn đăng nhập.
         if (kh) { const d = dongY.giaTri(); await S.db.ghiDongY(PHIEN_BAN, true, d.dang_anh, 'kich_hoat').catch(e => console.warn(e)); }
+        dangKiem(nut, false); nut.classList.add('is-ok'); live.textContent = 'Đã đăng nhập';
+        // Để dấu tích kịp hiện trước khi vào app.
+        await new Promise(r => setTimeout(r, matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 650));
         await vaoApp();
-      } catch (er) { baoSai(er.message); nut.disabled = kh && !dongY.giaTri().dong_y; }
+      } catch (er) {
+        dangKiem(nut, false); nut.classList.remove('is-ok'); live.textContent = '';
+        baoLoi(kh ? code : mk, msg, er.message);
+      }
     }
   },
-    h('div', { class: 'nhom' }, ma, code, mk), dongY ? dongY.el : null, loi, nut);
+    ma, code, mk, dongY ? dongY.el : null, msg, nut, live);
   khungNgoai(
     hoi(v.ten + ' · ' + (kh ? 'kích hoạt bằng mã' : 'đăng nhập')),
     form,
     kh ? h('p', { class: 'chu-nho giua-chu', style: 'margin-top:12px' }, `Mã kích hoạt dùng một lần và hết hạn sau ${v.han} ngày. Ô mật khẩu là mật khẩu bạn tự đặt từ bây giờ, không phải mã kích hoạt.`) : null,
     nutLui(() => manChonViec(loai)));
-  (ma.querySelector('input')).focus({ preventScroll: true });
+  ma.querySelector('input').focus({ preventScroll: true });
 }
 
 async function vaoApp() {

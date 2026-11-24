@@ -33,7 +33,7 @@ export async function manDsBai(vung) {
     if (b.mo_luc && new Date(b.mo_luc) > nay) return h('span', { class: 'the-nhan cho' }, 'Chờ mở');
     return h('span', { class: 'the-nhan dung' }, 'Đang mở');
   };
-  dat(vung, thanhNho('Post-test', '#quan-ly', 'Quản lý', h('a', { class: 'nut-lui', href: '#quan-ly/post-test/moi', style: 'text-decoration:none' }, 'Thêm')),
+  dat(vung, thanhNho('Post-test', '#quan-ly', 'Công cụ', h('a', { class: 'nut-lui', href: '#quan-ly/post-test/moi', style: 'text-decoration:none' }, 'Thêm')),
     ds.length ? h('div', { class: 'nhom' }, ds.map(b => dong({
       tieu: b.tieu_de, phu: (b.buoi ? `Đầu giờ buổi ${ngay(b.buoi.bat_dau)} · ` : '') + `${b.cau_hoi.length} câu · ${b.thoi_gian_phut} phút` + (b.dong_luc ? ' · Hạn ' + ngay(b.dong_luc) : ''), sau: nhan(b),
       href: b.trang_thai === 'nhap' ? '#quan-ly/post-test/' + b.id : '#quan-ly/post-test/tk/' + b.id

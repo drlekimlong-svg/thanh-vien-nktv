@@ -1,4 +1,5 @@
 // Lịch sinh hoạt và xin nghỉ của thành viên.
+import { veNoiDung } from './noi-dung-tb.js';
 import { S } from './state.js';
 import { h, dat, dong, nhom, moSheet, thu, gio, ngay, ngayGio, namHoc, oNhap, rong, dauNgay, soLieu, xacNhan, bieuTuong, TT_DIEM_DANH } from './ui.js';
 
@@ -41,7 +42,7 @@ export async function suKienBuoi(b, sauKhi) {
       b.chu_tri ? dong({ tieu: b.chu_tri, phu: 'Chủ trì' }) : null,
       toi && (coMat || b.dong) ? dong({ tieu: TT_DIEM_DANH[toi.trang_thai] + (toi.tre_phut ? ` ${toi.tre_phut} phút` : ''), phu: 'Điểm danh của tôi' + (toi.luc ? ' · ' + gio(toi.luc) : '') }) : null,
       lichBuoi ? dong({ tieu: 'Xem ảnh lịch', onclick: async () => { const { moLich } = await import('./v-soanlich.js'); s.dong(); moLich(lichBuoi, sauKhi); } }) : null),
-    b.noi_dung ? h('div', { class: 'nhom', style: 'padding:13px 16px' }, h('div', { class: 'noi-dung-tb' }, b.noi_dung)) : null,
+    b.noi_dung ? h('div', { class: 'nhom', style: 'padding:12px 16px' }, veNoiDung(b.noi_dung)) : null,
     toiDon ? nhom('Đơn của tôi',
       dong({ tieu: toiDon.ly_do, phu: 'Gửi ' + ngayGio(toiDon.gui_luc) + (toiDon.phan_hoi ? ' · Phản hồi: ' + toiDon.phan_hoi : ''), sau: nhanDon(toiDon) }),
       toiDon.trang_thai !== 'duyet' ? h('button', {

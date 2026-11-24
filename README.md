@@ -16,7 +16,7 @@ Kho này chỉ chứa giao diện và lược đồ cơ sở dữ liệu. Danh s
 | Ban cố vấn | Gần đủ quyền quản trị: thêm thông báo, post-test, xác nhận năng lực; không phân quyền, không sửa danh sách, không cấp mã |
 | Quản trị | Toàn quyền, kể cả phân quyền, sửa danh sách thành viên, cấp mã kích hoạt |
 
-Quản trị phân quyền ở **Quản lý → Phân quyền** cho tài khoản đã kích hoạt. Cấp (Junior, Senior, Ban cố vấn) và chức vụ trong nhà (nhóm trưởng, nhóm phó) là hai ô riêng. App luôn giữ ít nhất một quản trị đã kích hoạt.
+Quản trị phân quyền ở **Công cụ → Phân quyền** cho tài khoản đã kích hoạt. Cấp (Junior, Senior, Ban cố vấn) và chức vụ trong nhà (nhóm trưởng, nhóm phó) là hai ô riêng. App luôn giữ ít nhất một quản trị đã kích hoạt.
 
 ## Đăng nhập
 
@@ -25,13 +25,13 @@ Thành viên không cần email. Ban nhân sự cấp mã kích hoạt trong app
 ## Điểm danh
 
 - **Mã của thành viên:** Hôm nay → Mã điểm danh. Mã đổi sau mỗi 20 giây, ký bằng khóa riêng của từng người (`js/ma-dong.js`, hàm `ghi_diem_danh`), kèm đồng hồ chạy từng giây. Ảnh chụp mã chỉ còn dùng được khoảng một phút.
-- **Cài đặt “Chỉ nhận mã đang chạy trên app”** (Quản lý → Buổi sinh hoạt, mặc định bật): mã cố định trên thẻ in và ảnh chụp mã không quét được; ai quên điện thoại thì người quét nhìn mặt rồi ghi tay.
+- **Cài đặt “Chỉ nhận mã đang chạy trên app”** (Công cụ → Buổi sinh hoạt, mặc định bật): mã cố định trên thẻ in và ảnh chụp mã không quét được; ai quên điện thoại thì người quét nhìn mặt rồi ghi tay.
 - **Người quét:** quản trị, Ban cố vấn, phụ trách điểm danh, và người được giao cho từng buổi (trang của buổi → Người điểm danh buổi này). Quyền được giao hết khi buổi đóng.
 - **Báo hiệu khi quét:** kết quả phủ lên khung camera (xanh: đúng giờ, vàng: trễ, xanh dương: đã điểm danh trước đó, đỏ: lỗi), kèm hai nốt nhạc, rung và giọng đọc “Đã điểm danh” nếu máy có giọng tiếng Việt. Cùng một mã đưa lại trong 8 giây thì bỏ qua.
 
 ## Soạn lịch sinh hoạt
 
-Ngoài nhóm trưởng, nhóm phó, quản trị và Ban cố vấn phân công thêm người soạn lịch cho từng nhà ở **Quản lý → Phân công soạn lịch** (bảng `phan_cong_lich`, hàm `dat_phan_cong_lich`). Phân công có thể kèm ngày hết hạn; qua ngày đó quyền tự gỡ.
+Ngoài nhóm trưởng, nhóm phó, quản trị và Ban cố vấn phân công thêm người soạn lịch cho từng nhà ở **Công cụ → Phân công soạn lịch** (bảng `phan_cong_lich`, hàm `dat_phan_cong_lich`). Phân công có thể kèm ngày hết hạn; qua ngày đó quyền tự gỡ.
 
 Nhóm trưởng, nhóm phó soạn lịch tuần hoặc chương trình đặc biệt cho nhà mình, xem trước ảnh theo mascot nhóm trực, tải PNG hoặc Excel. Bản nháp tự lưu và nhóm trưởng, nhóm phó cùng nhà soạn tiếp được. Khi gửi, lịch vào kho, tạo buổi ở tab Lịch để điểm danh và đăng một thông báo. Ảnh không lưu thành tệp: dữ liệu được giữ nguyên nên vẽ lại được bất cứ lúc nào.
 
@@ -70,7 +70,7 @@ Dùng lần đầu cho BM01, khảo sát trước workshop Quản lý thời gia
 
 ## Lịch tuần khả thi
 
-Công cụ nằm ở kho `lich-tuan` (web `/lich-tuan/`), app nhúng bằng iframe ở `#lich-tuan` với tham số `?nhung=1` (ẩn đầu trang, chân trang, bỏ trang mở đầu). Địa chỉ `../lich-tuan/` viết thẳng trong `js/v-lichtuan.js`. Chỉ thành viên CLB còn sinh hoạt (`loai = 'thanh_vien'` và `hoat_dong`) thấy thẻ ở màn Hôm nay và mở được trang; học viên gõ thẳng `#lich-tuan` vẫn không thấy công cụ. Dữ liệu nằm trên máy người dùng (localStorage của công cụ), app thành viên không lưu gì và không gọi máy chủ. Lúc chạy trên máy, đặt hai thư mục cạnh nhau dưới cùng một gốc.
+Công cụ nằm ở kho `lich-tuan` (web `/lich-tuan/`), app nhúng bằng iframe ở `#lich-tuan` với tham số `?nhung=1` (ẩn đầu trang, chân trang, bỏ trang mở đầu). Địa chỉ `../lich-tuan/` viết thẳng trong `js/v-lichtuan.js`. Chỉ thành viên CLB còn sinh hoạt (`loai = 'thanh_vien'` và `hoat_dong`) thấy dòng Lịch tuần khả thi ở tab Công cụ và mở được trang; học viên gõ thẳng `#lich-tuan` vẫn không thấy công cụ. Dữ liệu nằm trên máy người dùng (localStorage của công cụ), app thành viên không lưu gì và không gọi máy chủ. Lúc chạy trên máy, đặt hai thư mục cạnh nhau dưới cùng một gốc.
 
 ## Thông tin học viên app thu thập
 
@@ -84,9 +84,9 @@ Thư ký hoặc điều hành tạo nhóm Zalo **trước khi nạp danh sách**
 
 App gửi được mã kích hoạt cho học viên qua email, thay cho việc thư ký chép bảng gửi tay. Thành viên CLB không có email trong danh sách nên không gửi thư cho thành viên.
 
-**Nối dịch vụ gửi thư** (làm một lần, quản trị): tạo tài khoản Mailjet (gói miễn phí 200 thư mỗi ngày) → xác minh một địa chỉ gửi ở *Account › Sender domains & addresses* → vào *Account › API Key Management*, bấm **Generate Secret Key** và chép cả API Key lẫn Secret Key → đặt hai secret `MAILJET_API_KEY` và `MAILJET_SECRET_KEY` cho dự án Supabase → vào **Quản lý › Gửi thư**, điền tên và địa chỉ người gửi, gửi một thư thử, rồi bật công tắc. Khóa API không nằm trong kho mã nguồn và không nằm trong cơ sở dữ liệu.
+**Nối dịch vụ gửi thư** (làm một lần, quản trị): tạo tài khoản Mailjet (gói miễn phí 200 thư mỗi ngày) → xác minh một địa chỉ gửi ở *Account › Sender domains & addresses* → vào *Account › API Key Management*, bấm **Generate Secret Key** và chép cả API Key lẫn Secret Key → đặt hai secret `MAILJET_API_KEY` và `MAILJET_SECRET_KEY` cho dự án Supabase → vào **Công cụ › Gửi thư**, điền tên và địa chỉ người gửi, gửi một thư thử, rồi bật công tắc. Khóa API không nằm trong kho mã nguồn và không nằm trong cơ sở dữ liệu.
 
-Edge Function `gui-thu` chạy được với Brevo (`BREVO_API_KEY`) lẫn Mailjet (`MAILJET_API_KEY` + `MAILJET_SECRET_KEY`); đủ cặp khóa Mailjet thì nó dùng Mailjet, không thì quay về Brevo. Màn *Quản lý › Gửi thư* hiện tên dịch vụ đang nối.
+Edge Function `gui-thu` chạy được với Brevo (`BREVO_API_KEY`) lẫn Mailjet (`MAILJET_API_KEY` + `MAILJET_SECRET_KEY`); đủ cặp khóa Mailjet thì nó dùng Mailjet, không thì quay về Brevo. Màn *Công cụ › Gửi thư* hiện tên dịch vụ đang nối.
 
 **Cách dùng:** Ban tổ chức cấp mã ở *Danh sách học viên* → bảng mã hiện ra kèm nút **Gửi email**. App gửi theo từng lượt 40 người, xong thì báo ai nhận được, ai không. Người không nhận được vẫn gửi tay bằng bảng CSV, mã vẫn dùng được.
 
@@ -119,3 +119,11 @@ python -m http.server 8765
 ```
 
 Mở `http://localhost:8765/?demo=admin`.
+
+## Tab Công cụ, điểm danh theo cấp, gọi ngẫu nhiên (24/11/2026)
+
+Tab **Công cụ** thay tab Quản lý và tab Tập huấn, đường dẫn vẫn là `#quan-ly`. Mọi thành viên có tab này vì Lịch tuần khả thi nằm ở đây; ai xem được tên thấy thêm các nhóm quản lý như cũ (`js/v-congcu.js`).
+
+Trang một buổi có bảng đếm theo cấp (Junior, Senior, Ban cố vấn) × trạng thái; chạm một ô để lọc danh sách. Xem mọi cấp thì danh sách gom theo cấp, từng khối gập được. Đơn xin nghỉ chia theo buổi.
+
+**Gọi ngẫu nhiên** (`#quan-ly/goi`, hoặc `#quan-ly/goi/<id buổi>` từ trang một buổi; chỉ quản trị và Ban cố vấn): gọi một Junior, một Senior hoặc một nhà trong số người đã điểm danh có mặt. Trong một buổi không gọi lặp cho tới khi hết một vòng; danh sách đã gọi giữ trong `sessionStorage` của máy đang dùng, không lên máy chủ.

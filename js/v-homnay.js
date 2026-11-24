@@ -1,6 +1,9 @@
 // Màn hình "Hôm nay": buổi sắp tới, thông báo, việc đang chờ.
 import { S } from './state.js';
 import { h, dat, dong, nhom, bieuTuong, moSheet, thu, gio, ngayGio, ngay, namHoc, oNhap, oBat, qrSvg, moTaTV, NHA, DS_NHA, anhDaiDien, tenDep, thuDai, ngayNgan, giaTriNgay } from './ui.js';
+import { nutGiaoDien } from './nut-giao-dien.js';
+import { chuHat } from './chu-hat.js';
+import { veNoiDung } from './noi-dung-tb.js';
 import { suKienBuoi } from './v-lich.js';
 import { taoMa, BUOC } from './ma-dong.js';
 import { khoiKhaoSat } from './v-khaosat.js';
@@ -54,7 +57,7 @@ export async function moThongBao(tb, sauKhi) {
     noiDung: h('div', null,
       h('h2', { style: 'font-size:1.25rem;letter-spacing:-0.015em;line-height:1.25;margin-bottom:4px' }, tb.tieu_de),
       h('p', { class: 'chu-nho', style: 'margin-bottom:12px' }, ngayGio(tb.dang_luc)),
-      h('div', { class: 'noi-dung-tb' }, tb.noi_dung || ''))
+      veNoiDung(tb.noi_dung))
   });
   S.db.danhDauDoc(tb.id, S.toi.id).then(sauKhi).catch(() => {});
 }
@@ -90,6 +93,11 @@ const LOI_NGAY_THUONG = [
   'Đón Nhận – Trưởng thành – Trao lại: mỗi tuần một bước',
   'Ôn lại một kỹ năng của buổi trước, mười phút là đủ'
 ];
+/** Mascot ở dải xanh: của nhà mình; chưa có nhà (Junior chờ chọn nhà) thì đổi ngẫu nhiên theo ngày. */
+function linhVat() {
+  if (S.toi.nha && NHA[S.toi.nha]) return NHA[S.toi.nha];
+  return NHA[DS_NHA[bam((S.toi.id || '') + '|' + giaTriNgay(Date.now())) % DS_NHA.length]];
+}
 const bam = (s) => { let x = 5381; for (const c of s) x = ((x * 33) ^ c.charCodeAt(0)) >>> 0; return x; };
 function loiChao(toi) {
   const homNay = new Date(giaTriNgay(Date.now()) + 'T12:00:00+07:00');
@@ -147,14 +155,17 @@ export async function manHomNay(vung) {
   ].filter(Boolean) : [];
 
   dat(vung,
-    h('section', { class: 'hero-hom-nay' },
+    h('section', { class: 'hero-hom-nay co-linh-vat' },
       h('div', { class: 'hero-dau' },
         h('img', { class: 'logo-trang', src: 'img/logo.webp', alt: 'Logo CLB Ngoại khoa Trưng Vương' }),
-        h('span', { class: 'ten-dau' }, 'CLB Ngoại khoa Trưng Vương'),
-        h('a', { href: '#ho-so', 'aria-label': 'Hồ sơ của tôi' }, anhDaiDien(S.toi))),
+        // Tên CLB bằng hạt sáng (anh Long thử 24/11/2026); bấm để đổi sang ba chặng của câu chuyện trung tâm.
+        chuHat(['CLB Ngoại khoa\nTrưng Vương', 'Đón Nhận', 'Trưởng thành', 'Trao lại']),
+        nutGiaoDien('tren-xanh')),
       h('h1', null, thuDai(Date.now()), ' ', ngayNgan(Date.now())),
       h('p', { class: 'loi-chao' }, loiChao(toi)),
-      moTa ? h('div', { class: 'phu' }, moTa) : null),
+      moTa ? h('div', { class: 'phu' }, moTa) : null,
+      // Mascot nhà đứng ở góc và "nói" lời chào (anh Long 24/11/2026); chưa có nhà thì mỗi ngày một mascot ngẫu nhiên.
+      h('a', { class: 'linh-vat', href: '#ho-so', 'aria-label': 'Hồ sơ của tôi' }, h('img', { src: `img/${linhVat().anh}.webp`, alt: '' }))),
     toi ? h('div', { class: 'the-buoi' },
       h('div', { class: 'dau-the' },
         h('span', { class: 'nhan-the' }, giaTriNgay(toi.bat_dau) === giaTriNgay(Date.now()) ? 'Buổi hôm nay' : 'Buổi sắp tới'),
@@ -176,8 +187,7 @@ export async function manHomNay(vung) {
       chuaNha ? oNhanh('Hồ sơ', 'ho_so', '#ho-so') : oNhanh('Gửi bài', 'gui', '#gui-bai')),
     // Khảo sát đang mở chưa gửi (migration 0021); quản trị, Ban cố vấn thấy thêm dòng kết quả.
     khaoSat,
-    // Cùng điều kiện với v-lichtuan.js.
-    S.toi.loai === 'thanh_vien' && S.toi.hoat_dong === true ? nhom(null, dong({ truoc: h('div', { class: 'bieu-tuong' }, bieuTuong('lich')), tieu: 'Lịch tuần khả thi', phu: '15 phút mỗi tuần: xếp một lịch làm được, rồi rà soát.', href: '#lich-tuan' })) : null,
+    // Lịch tuần khả thi chuyển vào tab Công cụ (anh Long 24/11/2026).
     tuyenQuanMo ? nhom(null, dong({ truoc: h('div', { class: 'bieu-tuong' }, bieuTuong('phieu')), tieu: 'Tuyển quân đang mở', phu: 'Phiếu đánh giá thí sinh', href: '#tuyen-quan' })) : null,
     // Junior Gen12 chọn nhà sau Tết Nguyên đán (anh Long, 20/11/2026).
     chuaNha ? h('a', { class: 'the-chon-nha', href: '#lich/diem-nhom' },
