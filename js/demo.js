@@ -1,5 +1,5 @@
 // Bản chạy thử trên máy (localhost, ?demo=admin|diem|gv|bcv|nt|tv|jr|hv|hvchua|hvxong|dangnhap): dữ liệu giả trong bộ nhớ, không gọi máy chủ.
-// nt là nhóm trưởng nhà Genbu, bcv là Ban cố vấn không giữ vai trò quản trị, jr là Junior chưa xếp nhà (chọn nhà sau Tết Nguyên đán).
+// nt là nhóm trưởng nhà Genbu, bcv là Ban cố vấn không giữ vai trò quản trị, jr là Junior chưa xếp nhà (xếp nhà tại tiệc Tất niên).
 // Trong đợt XQ2627: admin là trưởng ban, tv là thư ký, diem là phụ trách điểm danh, gv là tập huấn viên.
 // hv là học viên đang trong đợt mở, hvxong là học viên chỉ còn đợt đã kết thúc (tài khoản chỉ xem).
 // Cùng tên hàm với api.js để thử giao diện mà không chạm vào dữ liệu thật.

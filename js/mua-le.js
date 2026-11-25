@@ -58,7 +58,15 @@ const LOI_GIANG_SINH = [
   'Một năm Đón~Nhận nhiều điều, cảm~ơn bạn đã đồng~hành cùng~CLB',
   'Món~quà cho khóa~sau là điều bạn học~kỹ hôm~nay',
   'Cuối năm bận thì xin~nghỉ sớm trong app để nhà~{nha} sắp~xếp',
-  'Còn {con} ngày nữa là gặp~lại cả~CLB, mặc~ấm nhé'
+  'Còn {con} ngày nữa là gặp~lại cả~CLB, mặc~ấm nhé',
+  // Anh Long thêm 25/11/2026.
+  'Trong mùa Giáng~sinh này, hãy cùng tìm~hiểu về CLB nhé'
+];
+// Câu gắn với Lịch 24 ô, thiệp "người bí ẩn" và đi chơi Noel: chỉ dùng tới hết 24/12 (anh Long thêm 25/11/2026).
+const LOI_TRUOC_NOEL = [
+  'Mỗi ngày mở một câu, bạn biết thêm một~chút về CLB',
+  'Bạn đã viết thiệp Giáng~sinh cho “người bí~ẩn” chưa?',
+  'Nhóm mình dự~định đi~chơi Noel ngày nào?'
 ];
 const LOI_NAM_MOI = [
   'Năm~{nam} sắp khép~lại, cảm~ơn {ten} đã đồng~hành cùng~CLB',
@@ -78,7 +86,7 @@ export function boCauLe(ngay, pha) {
   const md = ngay.slice(5);
   if (NGAY_LE[md] && phaTheoNgay(ngay) === pha) return [g(NGAY_LE[md])];
   if (pha === 'nam-moi') return LOI_NAM_MOI.filter(c => md >= '12-01' || !c.includes('{nam}')).map(c => g(c.replace('{nam}', ngay.slice(0, 4))));
-  return LOI_GIANG_SINH.map(g);
+  return (md >= '12-01' && md <= '12-24' ? LOI_GIANG_SINH.concat(LOI_TRUOC_NOEL) : LOI_GIANG_SINH).map(g);
 }
 
 /** Chữ đèn cạnh logo thay chữ hạt: mỗi chữ một màu đèn, ba nhóm nhấp nháy đuổi nhau (CSS lo phần màu và nhịp). */

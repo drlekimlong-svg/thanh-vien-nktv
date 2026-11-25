@@ -242,7 +242,7 @@ function suaThanhVien(t, sauKhi) {
       oNhap('Tính chuyên cần từ ngày', { name: 'tg', type: 'date', value: t ? t.tham_gia_tu : giaTriNgay(Date.now()), disabled: !qt }),
       oNhap('Tính điểm nhóm từ ngày', { name: 'vnt', type: 'date', value: ngayVaoNha(t), disabled: !qt }),
       oNhap('Ghi chú', { name: 'ghi', value: t ? t.ghi_chu : '', disabled: !qt })),
-    qt ? h('p', { class: 'chu-nhom' }, 'Tính chuyên cần từ ngày: để trống là tính từ đầu năm học. Tính điểm nhóm từ ngày: app tự ghi ngày xếp nhà lần đầu (Junior chọn nhà); sửa được nếu cần, để trống là tính cho nhà mọi buổi.') : null,
+    qt ? h('p', { class: 'chu-nhom' }, 'Tính chuyên cần từ ngày: để trống là tính từ đầu năm học. Tính điểm nhóm từ ngày: app tự ghi ngày xếp nhà lần đầu (Junior được xếp nhà); sửa được nếu cần, để trống là tính cho nhà mọi buổi.') : null,
     qt ? [h('div', { class: 'nhom' }, oChon('Vai trò trong app', Object.entries(VAI), t ? t.vai_tro : 'thanh_vien', { name: t && t.id === S.toi.id ? null : 'vai', disabled: t && t.id === S.toi.id })),
       t && t.id === S.toi.id ? h('p', { class: 'chu-nhom' }, 'Không tự đổi vai trò của chính mình, để app luôn còn người quản trị.') : null,
       t && t.id === S.toi.id ? h('input', { type: 'hidden', name: 'vai', value: t.vai_tro }) : null,

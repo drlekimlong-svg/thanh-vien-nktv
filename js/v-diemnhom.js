@@ -4,7 +4,7 @@ import { h, dat, dong, nhom, moSheet, soVN, ngay, namHoc, rong, dauNgay, NHA, DS
 
 const thanhNho = (tieu) => h('div', { class: 'thanh-nho' }, h('div', { class: 'khoang' }, h('a', { class: 'nut-lui', href: '#lich', style: 'text-decoration:none' }, '‹ Lịch')), h('h1', null, tieu), h('div', { class: 'khoang phai' }));
 const CACH_TINH = [
-  'Mỗi buổi đã đóng và tính chuyên cần, mỗi nhà được tối đa 100 điểm. Chỉ tính thành viên đã thuộc một nhà; Ban cố vấn không tính. Junior chưa chọn nhà vẫn được ghi chuyên cần và điểm test cá nhân, và được tính cho nhà từ ngày nhà được ghi trên app.',
+  'Mỗi buổi đã đóng và tính chuyên cần, mỗi nhà được tối đa 100 điểm. Chỉ tính thành viên đã thuộc một nhà; Ban cố vấn không tính. Junior chưa được xếp nhà vẫn được ghi chuyên cần và điểm test cá nhân, và được tính cho nhà từ ngày nhà được ghi trên app.',
   'Người đổi nhà hoặc lên Ban cố vấn giữa năm học thì các buổi cũ được tính theo nhà và cấp hiện tại.',
   'Chuyên cần, 60 điểm: đúng giờ 1, trễ 0,5, vắng 0, chia cho số người của nhà. Vắng có phép không tính vào số người.',
   'Test đầu giờ, 40 điểm: điểm trung bình của những người có mặt. Có mặt mà không làm bài tính 0.',
@@ -47,8 +47,8 @@ export async function manDiemNhom(vung) {
 
   dat(vung, thanhNho('Điểm nhóm'),
     h('p', { class: 'tieu-de-phu', style: 'margin-top:4px;text-align:center' }, 'Năm học ' + nam.nhan + ' · trung bình các buổi đã đóng'),
-    // Junior Gen12 chọn nhà sau Tết Nguyên đán (anh Long, 20/11/2026): báo rõ điểm của bạn đi đâu.
-    !S.toi.nha && S.toi.cap === 'Junior' ? h('div', { class: 'bang-tin xanh' }, 'Bạn chưa thuộc nhà nào: Junior chọn nhà sau Tết Nguyên đán. Chuyên cần của bạn xem ở tab Lịch, điểm các bài test (kể cả test đầu giờ) xem ở tab Hồ sơ; các điểm này chưa tính vào điểm nhóm.') : null,
+    // Junior được xếp nhà tại tiệc Tất niên (anh Long đính chính 25/11/2026): báo rõ điểm của bạn đi đâu.
+    !S.toi.nha && S.toi.cap === 'Junior' ? h('div', { class: 'bang-tin xanh' }, 'Bạn chưa thuộc nhà nào: Junior được xếp nhà trong tiệc Tất niên, trước Tết Nguyên đán. Chuyên cần của bạn xem ở tab Lịch, điểm các bài test (kể cả test đầu giờ) xem ở tab Hồ sơ; các điểm này chưa tính vào điểm nhóm.') : null,
     buoi.length ? nhom(null, xep.map((x, i) => h('div', { class: 'dong hang-nha', style: `--mau:${NHA[x.nha].mau}` },
       h('div', { class: 'hang-so' }, x.tb === null ? '–' : i + 1),
       h('img', { src: `img/${NHA[x.nha].anh}.webp`, alt: '' }),

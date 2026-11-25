@@ -202,9 +202,9 @@ export async function manHomNay(vung) {
     khaoSat,
     // Lịch tuần khả thi chuyển vào tab Công cụ (anh Long 24/11/2026).
     tuyenQuanMo ? nhom(null, dong({ truoc: h('div', { class: 'bieu-tuong' }, bieuTuong('phieu')), tieu: 'Tuyển quân đang mở', phu: 'Phiếu đánh giá thí sinh', href: '#tuyen-quan' })) : null,
-    // Junior Gen12 chọn nhà sau Tết Nguyên đán (anh Long, 20/11/2026).
+    // Junior được xếp nhà tại tiệc Tất niên, trước Tết Nguyên đán (anh Long đính chính 25/11/2026; trước đó ghi "chọn nhà sau Tết").
     chuaNha ? h('a', { class: 'the-chon-nha', href: '#lich/diem-nhom' },
-      h('div', { class: 'tieu' }, 'Sau Tết Nguyên đán, bạn sẽ chọn nhà'),
+      h('div', { class: 'tieu' }, 'Bạn sẽ được xếp nhà trong tiệc Tất niên'),
       h('div', { class: 'phu' }, 'Trước đó chuyên cần và điểm test vẫn ghi cho bạn, chưa cộng vào điểm nhóm.'),
       h('div', { class: 'sau-nha' }, DS_NHA.map(n => h('span', { style: `--nha-goc:${NHA[n].mau};--nha-nen:${NHA[n].nhat}`, title: n }, h('img', { src: `img/${NHA[n].anh}.webp`, alt: n }))))) : null,
     baiMo.length ? nhom('Bài cần làm', baiMo.map(b => dong({

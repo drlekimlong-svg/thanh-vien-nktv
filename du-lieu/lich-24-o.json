@@ -106,16 +106,16 @@
   },
   {
    "o": 9,
-   "cau_hoi": "Thời Gen2, CLB chia bốn nhóm để chuẩn bị buổi sinh hoạt. Tên nào KHÔNG phải tên một nhóm thời đó?",
+   "cau_hoi": "Hồ sơ CLB mô tả bản chất của CLB Ngoại khoa Trưng Vương là gì?",
    "lua_chon": [
-    "Đông cung bất bại",
-    "Tây cung",
-    "Bắc cung",
-    "Biển đảo xa xôi"
+    "Cộng đồng ngoại khoa liên thế hệ cùng trưởng thành",
+    "Đội tuyển thi học thuật",
+    "Lớp ôn thi nội trú",
+    "Nhóm tình nguyện y tế"
    ],
-   "dung": 2,
-   "giai_thich": "Bốn nhóm là Đông cung bất bại, Tây cung, Nam cung và Biển đảo xa xôi. Mỗi nhóm có một nhóm trưởng, thành viên từ năm 3 đến năm 5.",
-   "nguon": "Tài liệu nội bộ 2020"
+   "dung": 0,
+   "giai_thich": "Thế hệ trước dẫn dắt thế hệ sau. Founder kể nét riêng của CLB là nhiều thành viên đã tốt nghiệp vẫn trở về hỗ trợ, và sau mười năm CLB vẫn đều đặn sinh hoạt chuyên môn mỗi Chủ nhật.",
+   "nguon": "Hồ sơ CLB 2026; khảo sát bản sắc 07/2026 (founder)"
   },
   {
    "o": 10,
@@ -184,42 +184,42 @@
   },
   {
    "o": 15,
-   "cau_hoi": "Linh vật của nhà Genbu (Huyền Vũ) gồm những con vật nào?",
+   "cau_hoi": "Nguyên tắc nền của CLB là gì?",
    "lua_chon": [
-    "Rồng và cá",
-    "Hổ và rùa",
-    "Hạc và rùa",
-    "Rùa và rắn"
+    "Nhanh và nhiều",
+    "Cạnh tranh để tiến bộ",
+    "Liêm chính và thực chất",
+    "Điểm số là trên hết"
    ],
-   "dung": 3,
-   "giai_thich": "Huyền Vũ là linh vật phương Bắc, thường được vẽ là con rùa có con rắn quấn quanh. Mascot Genbu của CLB giữ đúng hình ảnh đó.",
-   "nguon": "Mascot sáu nhà, Ban Nhân sự 2026"
+   "dung": 2,
+   "giai_thich": "Hồ sơ CLB ghi nguyên tắc nền là liêm chính và thực chất. Tính cách của CLB là người đồng đội ngoại khoa nghiêm khắc nhưng ấm áp.",
+   "nguon": "Hồ sơ CLB 2026"
   },
   {
    "o": 16,
-   "cau_hoi": "Linh vật của nhà Yin-Yang Kois là gì?",
+   "cau_hoi": "Theo truyền thống, Junior được xếp vào nhà vào dịp nào?",
    "lua_chon": [
-    "Hai cá chép đen trắng bơi thành vòng âm dương",
-    "Một con rồng xanh",
-    "Hai con hạc",
-    "Một chú cá heo"
+    "Ngay buổi sinh hoạt đầu tiên",
+    "Cuối năm học",
+    "Sinh nhật CLB ngày 06/08",
+    "Tiệc Tất niên mỗi năm, trước Tết Nguyên đán"
    ],
-   "dung": 0,
-   "giai_thich": "Hai cá chép, một đen một trắng, bơi thành vòng âm dương. Tên nhà viết là Yin-Yang Kois.",
-   "nguon": "Mascot sáu nhà, Ban Nhân sự 2026"
+   "dung": 3,
+   "giai_thich": "Junior sinh hoạt cùng các nhà một thời gian rồi được xếp nhà trong tiệc Tất niên. Junior Gen7 có “Lễ chọn nhóm” ngay trong buổi Tất niên 2021. Trước khi có nhà, chuyên cần và điểm test vẫn ghi cho các bạn.",
+   "nguon": "Ban cố vấn, 25/11/2026; Fanpage CLB, bài 26/01/2022"
   },
   {
    "o": 17,
-   "cau_hoi": "Nhà nào có linh vật là Thanh Long (rồng xanh)?",
+   "cau_hoi": "Hội thi Nhà Ngoại khoa trẻ năm 2026 là mùa thứ mấy?",
    "lua_chon": [
-    "Byakko",
-    "Kirin",
-    "Seiryu",
-    "Suzaku"
+    "Mùa 2",
+    "Mùa 3",
+    "Mùa 4",
+    "Mùa 5"
    ],
-   "dung": 2,
-   "giai_thich": "Seiryu là Thanh Long. Suzaku là Chu Tước, Byakko là Bạch Hổ, Genbu là Huyền Vũ, Kirin là Kỳ Lân, và Yin-Yang Kois là đôi cá chép.",
-   "nguon": "Mascot sáu nhà, Ban Nhân sự 2026"
+   "dung": 1,
+   "giai_thich": "Hội thi có lần đầu năm 2018, CLB góp một phần công sức. Năm 2023, CLB cùng CLB Truyền thông PNT Zone làm lại hội thi cho sinh viên y khoa TP.HCM. Mùa 3 năm 2026 mở cho sinh viên khối ngành sức khỏe toàn miền Nam.",
+   "nguon": "Fanpage CLB, bài 04/06/2023 và 20/05/2026"
   },
   {
    "o": 18,
@@ -288,16 +288,16 @@
   },
   {
    "o": 23,
-   "cau_hoi": "Từ năm 2022, mỗi mùa Cozy Christmas có tên riêng. Mùa Cozy năm 2022 tên là gì?",
+   "cau_hoi": "Tuyển quân 7th Generation năm 2021 đi qua ba chặng nào trước khi công bố tân thành viên?",
    "lua_chon": [
-    "Miracles in December",
-    "Jingle All The Way",
-    "Home for Christmas",
-    "Silent Night"
+    "Thư tay, workshop, phỏng vấn",
+    "Bài luận, thuyết trình, thực hành khâu",
+    "Thi trắc nghiệm, phỏng vấn, thử việc",
+    "Phỏng vấn nhóm, phỏng vấn đơn, thử thách"
    ],
    "dung": 0,
-   "giai_thich": "Mùa 2022 tên “Miracles in December”, buổi Cozy diễn ra trong buổi sinh hoạt Chủ nhật 25/12/2022, mỗi nhà tự chọn dresscode. Mùa 2023 tên “Make it a December to remember”.",
-   "nguon": "Group CLB, tháng 12/2022 và 12/2023"
+   "giai_thich": "Ba chặng là thư tay, workshop và phỏng vấn. Tân thành viên Gen7 được công bố ngày 19/12/2021, ngay trước Giáng sinh.",
+   "nguon": "Fanpage CLB, bài 15/11/2021 và 19/12/2021"
   },
   {
    "o": 24,

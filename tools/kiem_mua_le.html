@@ -17,7 +17,8 @@ const bang = (ten, a, b) => { if (a !== b) loi.push(`${ten}: ${JSON.stringify(a)
   .forEach(([n, p, c]) => bang('đếm ngược ' + n, demNguoc(n, p), c));
 bang('câu riêng 24/12', boCauLe('2026-12-24', 'giang-sinh').length, 1);
 bang('câu riêng 31/12', boCauLe('2026-12-31', 'nam-moi')[0].includes('giao thừa'), true);
-bang('bộ Giáng sinh', boCauLe('2026-12-10', 'giang-sinh').length, 7);
+bang('bộ Giáng sinh tới 24/12', boCauLe('2026-12-10', 'giang-sinh').length, 11);
+bang('sau 24/12 bỏ câu Lịch 24 ô, thiệp, đi chơi Noel', boCauLe('2026-12-26', 'giang-sinh').length, 8);
 bang('năm trong câu', boCauLe('2026-12-29', 'nam-moi')[0].startsWith('Năm 2026'), true);
 bang('bỏ câu "khép lại" từ 01/01', boCauLe('2027-01-02', 'nam-moi').some(c => c.includes('khép')), false);
 bang('không còn {nam}', boCauLe('2027-01-02', 'nam-moi').some(c => c.includes('{nam}')), false);
@@ -32,5 +33,5 @@ S.caiDat = { giang_sinh: 'bat' }; bang('quản trị Bật ngay', giaiDoan() !==
 try { localStorage.setItem(KHOA_MAY, 'tat'); } catch (_) {}
 bang('máy này tắt thắng Bật ngay', giaiDoan(), null);
 try { if (cu === null) localStorage.removeItem(KHOA_MAY); else localStorage.setItem(KHOA_MAY, cu); } catch (_) {}
-document.getElementById('kq').textContent = loi.length ? 'LỖI\n' + loi.join('\n') : 'KIỂM OK (' + 27 + ' phép)';
+document.getElementById('kq').textContent = loi.length ? 'LỖI\n' + loi.join('\n') : 'KIỂM OK (' + 28 + ' phép)';
 </script>
