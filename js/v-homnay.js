@@ -7,6 +7,7 @@ import { veNoiDung } from './noi-dung-tb.js';
 import { suKienBuoi } from './v-lich.js';
 import { taoMa, BUOC } from './ma-dong.js';
 import { khoiKhaoSat } from './v-khaosat.js';
+import { giaiDoan, ngayLe, boCauLe, chuDen, dongDemNguoc, dayDen, lopTuyet, anhLinhVatLe } from './mua-le.js';
 
 const C = window.NKTV_CONFIG;
 export const linkThe = (khoa) => (S.demo ? location.origin + location.pathname + '?demo=tv&' : C.appUrl + '?') + 'the=' + khoa;
@@ -99,14 +100,15 @@ function linhVat() {
   return NHA[DS_NHA[bam((S.toi.id || '') + '|' + giaTriNgay(Date.now())) % DS_NHA.length]];
 }
 const bam = (s) => { let x = 5381; for (const c of s) x = ((x * 33) ^ c.charCodeAt(0)) >>> 0; return x; };
-function loiChao(toi) {
+function loiChao(toi, pha) {
   const homNay = new Date(giaTriNgay(Date.now()) + 'T12:00:00+07:00');
   const cn = new Date(homNay); cn.setUTCDate(cn.getUTCDate() - homNay.getUTCDay());
   const coBuoi = toi && giaTriNgay(toi.bat_dau) === giaTriNgay(Date.now());
   const con = toi ? Math.round((new Date(giaTriNgay(toi.bat_dau) + 'T12:00:00+07:00') - homNay) / 864e5) : 0;
   const tenGoi = tenDep(S.toi.ho_ten).split(/\s+/).pop();
   const gt = { ten: tenGoi, nha: S.toi.nha || '', gio: toi ? gio(toi.bat_dau) : '', noi: toi && toi.dia_diem ? toi.dia_diem : '', buoi: toi ? ngayGio(toi.bat_dau) : '', con: con >= 2 ? String(con) : '' };
-  const ds = (coBuoi ? LOI_HOM_NAY : LOI_NGAY_THUONG).filter(c => (c.match(/\{(\w+)\}/g) || []).every(k => gt[k.slice(1, -1)]));
+  // Mùa lễ (mua-le.js): ngày không có buổi dùng bộ câu Giáng sinh hoặc Năm mới; ngày có buổi vẫn báo giờ, nơi.
+  const ds = (coBuoi ? LOI_HOM_NAY : pha ? boCauLe(ngayLe(), pha) : LOI_NGAY_THUONG).filter(c => (c.match(/\{(\w+)\}/g) || []).every(k => gt[k.slice(1, -1)]));
   const c = ds[bam((S.toi.id || '') + '|' + giaTriNgay(cn)) % ds.length];
   return c.replace(/\{(\w+)\}/g, (_, k) => gt[k]);
 }
@@ -114,9 +116,12 @@ function loiChao(toi) {
 
 export async function manHomNay(vung) {
   const nam = namHoc();
-  const [buoi, tb, doc, bai, khaoSat] = await Promise.all([
+  const pha = giaiDoan(), ngayMua = ngayLe();
+  const [buoi, tb, doc, bai, khaoSat, the24] = await Promise.all([
     S.db.dsBuoi(new Date(Date.now() - 6 * 3600e3).toISOString()),
-    S.db.dsThongBao(), S.db.daDoc(S.toi.id), S.db.baiCuaToi().catch(() => []), khoiKhaoSat()
+    S.db.dsThongBao(), S.db.daDoc(S.toi.id), S.db.baiCuaToi().catch(() => []), khoiKhaoSat(),
+    // Lịch 24 ô tới Giáng sinh: chỉ nạp trong mùa Giáng sinh (câu hỏi về CLB, anh Long chốt 25/11/2026).
+    pha === 'giang-sinh' ? import('./lich-24-o.js').then(m => m.theLich24O(ngayMua)).catch(() => null) : null
   ]);
   const toi = buoi[0];
   const daDoc = new Set(doc);
@@ -156,16 +161,23 @@ export async function manHomNay(vung) {
 
   dat(vung,
     h('section', { class: 'hero-hom-nay co-linh-vat' },
+      // Mùa lễ: tuyết và dây đèn là con đầu tiên, không nhận chạm, nên nằm dưới mọi chữ và nút.
+      pha ? [lopTuyet(), dayDen()] : null,
       h('div', { class: 'hero-dau' },
         h('img', { class: 'logo-trang', src: 'img/logo.webp', alt: 'Logo CLB Ngoại khoa Trưng Vương' }),
         // Tên CLB bằng hạt sáng (anh Long thử 24/11/2026); bấm để đổi sang ba chặng của câu chuyện trung tâm.
-        chuHat(['CLB Ngoại khoa\nTrưng Vương', 'Đón Nhận', 'Trưởng thành', 'Trao lại']),
+        // Mùa lễ: chữ đèn "Cozy Christmas" / "Happy New Year" thay chỗ, bỏ hạt (anh Long 25/11/2026: có logo rồi, không cần tên).
+        pha ? chuDen(pha) : chuHat(['CLB Ngoại khoa\nTrưng Vương', 'Đón Nhận', 'Trưởng thành', 'Trao lại']),
         nutGiaoDien('tren-xanh')),
+      pha ? dongDemNguoc(ngayMua, pha) : null,
       h('h1', null, thuDai(Date.now()), ' ', ngayNgan(Date.now())),
-      h('p', { class: 'loi-chao' }, loiChao(toi)),
+      h('p', { class: 'loi-chao' }, loiChao(toi, pha)),
       moTa ? h('div', { class: 'phu' }, moTa) : null,
       // Mascot nhà đứng ở góc và "nói" lời chào (anh Long 24/11/2026); chưa có nhà thì mỗi ngày một mascot ngẫu nhiên.
-      h('a', { class: 'linh-vat', href: '#ho-so', 'aria-label': 'Hồ sơ của tôi' }, h('img', { src: `img/${linhVat().anh}.webp`, alt: '' }))),
+      // Mùa lễ: ảnh đội mũ, quàng khăn, ném tuyết hoặc Năm mới; thiếu ảnh thì lùi về ảnh thường.
+      h('a', { class: 'linh-vat', href: '#ho-so', 'aria-label': 'Hồ sơ của tôi' }, h('img', pha
+        ? { src: anhLinhVatLe(linhVat().anh, S.toi.id || '', ngayMua, pha), alt: '', onerror: (e) => { const i = e.currentTarget; if (!i.dataset.lui) { i.dataset.lui = '1'; i.src = `img/${linhVat().anh}.webp`; } } }
+        : { src: `img/${linhVat().anh}.webp`, alt: '' }))),
     toi ? h('div', { class: 'the-buoi' },
       h('div', { class: 'dau-the' },
         h('span', { class: 'nhan-the' }, giaTriNgay(toi.bat_dau) === giaTriNgay(Date.now()) ? 'Buổi hôm nay' : 'Buổi sắp tới'),
@@ -185,6 +197,7 @@ export async function manHomNay(vung) {
       oNhanh('Làm bài', 'test', '#post-test', baiMo.length || null),
       // Junior chưa có nhà không gửi bài nhóm (anh Long 23/11/2026): ô thứ tư là Hồ sơ.
       chuaNha ? oNhanh('Hồ sơ', 'ho_so', '#ho-so') : oNhanh('Gửi bài', 'gui', '#gui-bai')),
+    the24,
     // Khảo sát đang mở chưa gửi (migration 0021); quản trị, Ban cố vấn thấy thêm dòng kết quả.
     khaoSat,
     // Lịch tuần khả thi chuyển vào tab Công cụ (anh Long 24/11/2026).

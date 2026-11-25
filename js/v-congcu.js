@@ -2,10 +2,26 @@
 // Thành viên: Lịch tuần khả thi, Tập huấn nếu thuộc Ban tổ chức đợt. Quản trị, Ban cố vấn: thêm Gọi ngẫu nhiên.
 // Ai xem được tên (quản trị, phụ trách, người điểm danh) thấy thêm các nhóm quản lý như cũ.
 import { S } from './state.js';
-import { h, dat, dong, nhom, bieuTuong, rong, toast, NHA, moTaTV, tenDep, ngayGio, giaTriNgay } from './ui.js';
+import { h, dat, dong, nhom, bieuTuong, rong, toast, NHA, moTaTV, tenDep, ngayGio, giaTriNgay, oBat, oChon, thu } from './ui.js';
 import { manQuanLy, thanhNho } from './v-quanly.js';
+import { muaChung, mayDaTat, datMay, cheDoQT, apMuaLe } from './mua-le.js';
 
 const icon = (t) => h('div', { class: 'bieu-tuong' }, bieuTuong(t));
+
+/** Giao diện mùa lễ (anh Long 25/11/2026): thành viên CLB tắt trên máy mình khi đang mùa; quản trị chọn chế độ cho cả CLB (cai_dat.giang_sinh). */
+const nhomMuaLe = () => {
+  const ds = [
+    muaChung() ? oBat('Trang trí mùa lễ trên máy này', { checked: !mayDaTat(), onchange: (e) => {
+      datMay(e.target.checked); toast(e.target.checked ? 'Đã bật trang trí trên máy này' : 'Đã tắt trang trí trên máy này');
+    } }) : null,
+    S.toi.la_quan_tri ? oChon('Giao diện mùa lễ cho cả CLB', [['tu_dong', 'Tự động theo ngày (01/12–03/01)'], ['bat', 'Bật ngay'], ['tat', 'Tắt']], cheDoQT(), { onchange: async (e) => {
+      const v = e.target.value;
+      if (await thu(() => S.db.datCaiDat('giang_sinh', v), 'Đã lưu')) { S.caiDat.giang_sinh = v; apMuaLe(); dispatchEvent(new HashChangeEvent('hashchange')); }
+      else e.target.value = cheDoQT();
+    } }) : null
+  ].filter(Boolean);
+  return ds.length ? nhom('Giao diện mùa lễ', ...ds).filter(Boolean) : [];
+};
 
 const dsCongCu = () => [
   S.toi.la_quan_tri ? dong({ truoc: icon('xuc_xac'), tieu: 'Gọi ngẫu nhiên', phu: 'Một Junior, một Senior hoặc một nhà trong số người đang có mặt', href: '#quan-ly/goi' }) : null,
@@ -14,17 +30,18 @@ const dsCongCu = () => [
   !S.toi.xem_duoc_ten && S.toi.btc_dot && S.toi.btc_dot.length ? dong({ truoc: icon('nguoi'), tieu: 'Tập huấn học viên', phu: 'Đợt bạn thuộc Ban tổ chức', href: '#tap-huan' }) : null
 ].filter(Boolean);
 /** Tab Công cụ chỉ hiện khi có ít nhất một mục. */
-export const coCongCu = () => !!S.toi.xem_duoc_ten || dsCongCu().length > 0;
+export const coCongCu = () => !!S.toi.xem_duoc_ten || dsCongCu().length > 0 || !!muaChung();
 
 export async function manCongCu(vung) {
-  const cc = dsCongCu();
+  const cc = dsCongCu(), ml = nhomMuaLe();
   if (S.toi.xem_duoc_ten) {
-    // Các nhóm quản lý giữ như cũ; nhóm công cụ đặt ngay dưới tiêu đề.
+    // Các nhóm quản lý giữ như cũ; nhóm công cụ và nhóm mùa lễ đặt ngay dưới tiêu đề.
     await manQuanLy(vung);
-    if (cc.length) vung.querySelector('.tieu-de-lon').after(...nhom(null, ...cc).filter(Boolean));
+    const them = [...(cc.length ? nhom(null, ...cc).filter(Boolean) : []), ...ml];
+    if (them.length) vung.querySelector('.tieu-de-lon').after(...them);
     return;
   }
-  dat(vung, h('h1', { class: 'tieu-de-lon' }, 'Công cụ'), cc.length ? nhom(null, ...cc) : rong('Chưa có công cụ nào cho bạn.'));
+  dat(vung, h('h1', { class: 'tieu-de-lon' }, 'Công cụ'), cc.length ? nhom(null, ...cc) : ml.length ? null : rong('Chưa có công cụ nào cho bạn.'), ml);
 }
 
 /* ---------- Gọi ngẫu nhiên trong buổi sinh hoạt ----------

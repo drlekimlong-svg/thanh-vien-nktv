@@ -1,0 +1,113 @@
+/* Lớp giao diện mùa lễ cuối năm (anh Long duyệt kế hoạch 0.2 ngày 25/11/2026; bản xem trước ở TAI_LIEU_APP_THANH_VIEN/GIAO_DIEN_GIANG_SINH_2026-11-25).
+   js/mua-le.js chỉ nạp tệp này và gắn <html data-mua="giang-sinh"> (01/12–27/12) hoặc data-mua="nam-moi" (28/12–03/01) khi đang mùa lễ.
+   Tắt thì không nạp, không gắn: app y như cũ. Không đổi biến màu chính (--chinh, --nut-nen, màu chữ, thanh tab). */
+
+/* ---------- Màu mùa lễ (chỉ để trang trí; chỗ nào là chữ thì đã đo tương phản) ---------- */
+:root[data-mua] {
+  --le-do: #9E2A2B;    /* đỏ nhung: 7,45:1 trên trắng */
+  --le-vang: #F2D58A;  /* vàng nến: chữ nhỏ trên dải xanh, 5,51:1 */
+  --le-kim: #E2BE62;   /* vàng kim: sao, bóng đèn; không dùng cho chữ */
+  --chi-khau-le: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='112' height='20' viewBox='0 0 112 20' fill='none' stroke-linecap='round'%3E%3Cpath d='M3 12C17 11 31 13 45 12S63 11 70 12' stroke='%237E8FA0' stroke-opacity='.5' stroke-width='1.3'/%3E%3Cpath d='M10.8 17 13.2 7.4' stroke='%231D5C42' stroke-width='2.2'/%3E%3Cellipse cx='13.5' cy='5.8' rx='2.3' ry='1.6' stroke='%231D5C42' stroke-width='1.4'/%3E%3Cpath d='M26.8 17 29.2 7.4' stroke='%239E2A2B' stroke-width='2.2'/%3E%3Cellipse cx='29.5' cy='5.8' rx='2.3' ry='1.6' stroke='%239E2A2B' stroke-width='1.4'/%3E%3Cpath d='M42.8 17 45.2 7.4' stroke='%231D5C42' stroke-width='2.2'/%3E%3Cellipse cx='45.5' cy='5.8' rx='2.3' ry='1.6' stroke='%231D5C42' stroke-width='1.4'/%3E%3Cpath d='M58.8 17 61.2 7.4' stroke='%239E2A2B' stroke-width='2.2'/%3E%3Cellipse cx='61.5' cy='5.8' rx='2.3' ry='1.6' stroke='%239E2A2B' stroke-width='1.4'/%3E%3Cpath d='M63.8 5.6C72 2.6 76 15 85 13.4S93 9.6 95.5 9' stroke='%231D5C42' stroke-width='1.3'/%3E%3Cpath d='M95.5 9A7.2 7.2 0 0 1 109.6 11.2' stroke='%237E8FA0' stroke-width='2'/%3E%3Cpath d='M109.6 11.2l-.2 3.4' stroke='%237E8FA0' stroke-width='1.5'/%3E%3Ccircle cx='95.5' cy='9' r='1.1' fill='%237E8FA0' stroke='none'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-mua]:not([data-theme="light"]) { --le-do: #F0948C; --chi-khau-le: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='112' height='20' viewBox='0 0 112 20' fill='none' stroke-linecap='round'%3E%3Cpath d='M3 12C17 11 31 13 45 12S63 11 70 12' stroke='%238292A2' stroke-opacity='.5' stroke-width='1.3'/%3E%3Cpath d='M10.8 17 13.2 7.4' stroke='%236FCF9C' stroke-width='2.2'/%3E%3Cellipse cx='13.5' cy='5.8' rx='2.3' ry='1.6' stroke='%236FCF9C' stroke-width='1.4'/%3E%3Cpath d='M26.8 17 29.2 7.4' stroke='%23F0948C' stroke-width='2.2'/%3E%3Cellipse cx='29.5' cy='5.8' rx='2.3' ry='1.6' stroke='%23F0948C' stroke-width='1.4'/%3E%3Cpath d='M42.8 17 45.2 7.4' stroke='%236FCF9C' stroke-width='2.2'/%3E%3Cellipse cx='45.5' cy='5.8' rx='2.3' ry='1.6' stroke='%236FCF9C' stroke-width='1.4'/%3E%3Cpath d='M58.8 17 61.2 7.4' stroke='%23F0948C' stroke-width='2.2'/%3E%3Cellipse cx='61.5' cy='5.8' rx='2.3' ry='1.6' stroke='%23F0948C' stroke-width='1.4'/%3E%3Cpath d='M63.8 5.6C72 2.6 76 15 85 13.4S93 9.6 95.5 9' stroke='%236FCF9C' stroke-width='1.3'/%3E%3Cpath d='M95.5 9A7.2 7.2 0 0 1 109.6 11.2' stroke='%238292A2' stroke-width='2'/%3E%3Cpath d='M109.6 11.2l-.2 3.4' stroke='%238292A2' stroke-width='1.5'/%3E%3Ccircle cx='95.5' cy='9' r='1.1' fill='%238292A2' stroke='none'/%3E%3C/svg%3E"); }
+}
+:root[data-mua][data-theme="dark"] { --le-do: #F0948C; --chi-khau-le: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='112' height='20' viewBox='0 0 112 20' fill='none' stroke-linecap='round'%3E%3Cpath d='M3 12C17 11 31 13 45 12S63 11 70 12' stroke='%238292A2' stroke-opacity='.5' stroke-width='1.3'/%3E%3Cpath d='M10.8 17 13.2 7.4' stroke='%236FCF9C' stroke-width='2.2'/%3E%3Cellipse cx='13.5' cy='5.8' rx='2.3' ry='1.6' stroke='%236FCF9C' stroke-width='1.4'/%3E%3Cpath d='M26.8 17 29.2 7.4' stroke='%23F0948C' stroke-width='2.2'/%3E%3Cellipse cx='29.5' cy='5.8' rx='2.3' ry='1.6' stroke='%23F0948C' stroke-width='1.4'/%3E%3Cpath d='M42.8 17 45.2 7.4' stroke='%236FCF9C' stroke-width='2.2'/%3E%3Cellipse cx='45.5' cy='5.8' rx='2.3' ry='1.6' stroke='%236FCF9C' stroke-width='1.4'/%3E%3Cpath d='M58.8 17 61.2 7.4' stroke='%23F0948C' stroke-width='2.2'/%3E%3Cellipse cx='61.5' cy='5.8' rx='2.3' ry='1.6' stroke='%23F0948C' stroke-width='1.4'/%3E%3Cpath d='M63.8 5.6C72 2.6 76 15 85 13.4S93 9.6 95.5 9' stroke='%236FCF9C' stroke-width='1.3'/%3E%3Cpath d='M95.5 9A7.2 7.2 0 0 1 109.6 11.2' stroke='%238292A2' stroke-width='2'/%3E%3Cpath d='M109.6 11.2l-.2 3.4' stroke='%238292A2' stroke-width='1.5'/%3E%3Ccircle cx='95.5' cy='9' r='1.1' fill='%238292A2' stroke='none'/%3E%3C/svg%3E"); }
+
+/* Mũi chỉ khâu dưới tiêu đề các trang trong app: hai trong bốn mũi đổi sang đỏ nhung.
+   Chỉ áp trong .noi-dung, nên giao diện đăng nhập, trang dữ liệu cá nhân, thẻ công khai không đổi. */
+:root[data-mua] .noi-dung .tieu-de-lon::after { background-image: var(--chi-khau-le); }
+
+/* ---------- Dải xanh Hôm nay ---------- */
+/* Sọc kẹo gậy ở mép trái (thay dải bạc). */
+:root[data-mua] .hero-hom-nay::before { background: repeating-linear-gradient(135deg, #FFFFFF 0 5px, #9E2A2B 5px 10px); }
+/* Chừa chỗ cho dây đèn ở mép trên. */
+:root[data-mua] .hero-hom-nay { padding-top: calc(var(--dem-dau) + 30px); }
+@media (min-width: 900px) { :root[data-mua] .hero-hom-nay { padding-top: 34px; } }
+
+/* Chữ đèn "Cozy Christmas" / "Happy New Year" thay chữ hạt cạnh logo (anh Long 25/11/2026: có logo rồi, không cần tên CLB).
+   Mỗi chữ một màu đèn, nhấp nháy đuổi nhau khoảng 24 giây rồi sáng đứng; giảm chuyển động thì sáng đứng ngay.
+   Chỉ đổi opacity nên trình duyệt không vẽ lại chữ mỗi khung hình. Màu chữ đều từ 4,6:1 trở lên trên dải xanh. */
+.chu-den { flex: 1; min-width: 0; min-height: 52px; margin: 0; display: flex; align-items: center; white-space: nowrap;
+  font-family: var(--serif); font-weight: 700; font-size: clamp(1.375rem, 7vw, 1.875rem); line-height: 1; letter-spacing: .01em; font-feature-settings: "lnum" 1; }
+.chu-den span { display: inline-block; animation: le-den 1.6s ease-in-out 15 both; }
+.chu-den .d1 { color: #FFB3AA; text-shadow: 0 0 6px rgba(255, 77, 77, .85), 0 0 14px rgba(255, 77, 77, .45); }
+.chu-den .d2 { color: #FFD86B; text-shadow: 0 0 6px rgba(255, 201, 60, .85), 0 0 14px rgba(255, 201, 60, .45); }
+.chu-den .d3 { color: #A8F0B8; text-shadow: 0 0 6px rgba(76, 227, 138, .85), 0 0 14px rgba(76, 227, 138, .45); }
+.chu-den .d4 { color: #9FD3FF; text-shadow: 0 0 6px rgba(77, 178, 255, .85), 0 0 14px rgba(77, 178, 255, .45); }
+.chu-den .k2 { animation-delay: .53s; } .chu-den .k3 { animation-delay: 1.06s; }
+.chu-den .cach { width: .28em; animation: none; }
+/* Năm mới: đèn vàng, trắng ngà, xanh băng. */
+:root[data-mua="nam-moi"] .chu-den .d1 { color: #FFF3C4; text-shadow: 0 0 6px rgba(255, 236, 170, .9), 0 0 14px rgba(255, 236, 170, .45); }
+:root[data-mua="nam-moi"] .chu-den .d3 { color: #FFFFFF; text-shadow: 0 0 6px rgba(255, 255, 255, .9), 0 0 14px rgba(255, 255, 255, .4); }
+@keyframes le-den { 50% { opacity: .42; } }
+
+/* Dòng đếm ngược vàng trên ngày. */
+.hero-hom-nay .dem-nguoc { position: relative; display: flex; align-items: center; gap: 6px; margin: 0 0 -2px; font-size: .8125rem; font-weight: 600; line-height: 1.4; color: var(--le-vang); }
+.dem-nguoc svg { width: 14px; height: 14px; flex: none; color: var(--le-kim); }
+
+/* Dây đèn mép trên: nhấp nháy vài lần rồi sáng đứng. */
+.day-den { position: absolute; left: 6px; right: 0; top: var(--dem-dau); width: calc(100% - 6px); height: 26px; pointer-events: none; filter: drop-shadow(0 0 3px rgba(255, 236, 170, .55)); }
+.day-den .day { fill: none; stroke: rgba(255, 255, 255, .45); stroke-width: 1.2; }
+.day-den .den { animation: le-nhap-nhay 2.4s ease-in-out 10 both; }
+.day-den .den:nth-of-type(3n) { animation-delay: .8s; }
+.day-den .den:nth-of-type(3n+1) { animation-delay: 1.6s; }
+@keyframes le-nhap-nhay { 50% { opacity: .45; } }
+
+/* Tuyết: hai lớp chấm trắng trượt xuống bằng transform (chạy trên GPU), cùng ánh sao vàng sau mascot.
+   Mỗi vòng trượt đúng một ô nền nên nối liền; chạy khoảng 24 giây rồi đứng yên (anh Long chọn 25/11/2026).
+   Lớp tuyết là con đầu tiên của dải xanh và không nhận chạm, nên luôn nằm dưới chữ và nút. */
+.tuyet { position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+  background: radial-gradient(circle at calc(100% - 68px) calc(100% - 112px), rgba(242, 213, 138, .30), rgba(242, 213, 138, 0) 120px); }
+.tuyet::before, .tuyet::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; will-change: transform; }
+.tuyet::before {
+  top: -160px;
+  background:
+    radial-gradient(circle at 18px 24px, #fff 1.5px, transparent 2.2px),
+    radial-gradient(circle at 96px 70px, rgba(255, 255, 255, .8) 1.1px, transparent 1.8px),
+    radial-gradient(circle at 54px 128px, rgba(255, 255, 255, .9) 2px, transparent 2.7px),
+    radial-gradient(circle at 140px 104px, rgba(255, 255, 255, .7) 1.2px, transparent 1.9px);
+  background-size: 160px 160px;
+  animation: le-tuyet-160 6s linear 4 both;
+}
+.tuyet::after {
+  top: -220px; opacity: .8;
+  background:
+    radial-gradient(circle at 40px 50px, #fff 1px, transparent 1.6px),
+    radial-gradient(circle at 170px 120px, #fff 1.4px, transparent 2px),
+    radial-gradient(circle at 100px 196px, #fff 1px, transparent 1.6px);
+  background-size: 220px 220px;
+  animation: le-tuyet-220 12s linear 2 both;
+}
+@keyframes le-tuyet-160 { to { transform: translateY(160px); } }
+@keyframes le-tuyet-220 { to { transform: translateY(220px); } }
+
+/* Bật "giảm chuyển động": mọi thứ đứng yên, đèn sáng đứng. */
+@media (prefers-reduced-motion: reduce) { .tuyet::before, .tuyet::after, .day-den .den, .chu-den span { animation: none; } }
+
+/* ---------- Thẻ "Lịch 24 ô tới Giáng sinh" (01–24/12): mỗi ngày một câu hỏi lâm sàng ngắn ---------- */
+.the-24-o { display: block; margin-bottom: 24px; padding: 16px; border-radius: 16px; background: var(--be-mat); box-shadow: var(--bong), inset 0 3px 0 var(--le-do); color: inherit; text-decoration: none; }
+.the-24-o .dau { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.the-24-o .tieu { font-weight: 600; }
+.the-24-o .phu { margin: 4px 0 12px; font-size: .84375rem; line-height: 1.4; color: var(--chu-2); }
+.o-24 { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; }
+.o-24 > button { aspect-ratio: 1; display: grid; place-items: center; min-width: 0; padding: 0; border: 0; border-radius: 6px; background: var(--be-mat-2); color: var(--chu-2); font: inherit; font-size: .6875rem; font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; }
+.o-24 > button:focus-visible, .the-24-o button.the-nhan:focus-visible, .l24-chon:focus-visible { outline: 2px solid var(--chinh); outline-offset: 2px; }
+.o-24 > .da { background: var(--chinh-nhat); color: var(--chinh); }
+.o-24 > .nay { background: #9E2A2B; color: #fff; }
+.o-24 > .khoa { opacity: .6; }
+.the-24-o button.the-nhan { border: 0; font: inherit; cursor: pointer; }
+
+/* Giao diện một câu hỏi (sheet) */
+.l24-hoi { margin: 0 0 12px; font-size: 1rem; line-height: 1.5; font-weight: 600; }
+.l24-dong-ho { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-size: .84375rem; color: var(--chu-2); font-variant-numeric: tabular-nums; }
+.l24-nen { flex: 1; height: 6px; border-radius: 3px; background: var(--be-mat-2); overflow: hidden; }
+.l24-thanh { height: 100%; width: 100%; background: var(--chinh); border-radius: 3px; }
+.l24-lc { display: grid; gap: 8px; }
+.l24-chon { min-height: 48px; padding: 10px 14px; border: 1px solid var(--vien); border-radius: 12px; background: var(--be-mat); color: var(--chu); font: inherit; line-height: 1.4; text-align: left; cursor: pointer; }
+.l24-chon:disabled { cursor: default; color: var(--chu); }
+.l24-chon.dung { background: var(--chinh-nhat); border-color: var(--dung); color: var(--dung); font-weight: 600; }
+.l24-chon.sai { background: color-mix(in srgb, var(--vang) 16%, transparent); border-color: var(--vang); }
+.l24-giai { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: var(--be-mat-2); line-height: 1.5; }
+.l24-giai p { margin: 0; }
+.l24-giai .l24-nguon { margin-top: 8px; font-size: .78125rem; color: var(--chu-2); }

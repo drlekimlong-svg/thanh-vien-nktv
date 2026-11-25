@@ -18,6 +18,7 @@ import { manBaiGiay, manQlBaiGiay } from './v-baigiay.js';
 import { manKhaoSat } from './v-khaosat.js';
 import { manLichTuan } from './v-lichtuan.js';
 import { nutGiaoDien, apGiaoDienDaLuu } from './nut-giao-dien.js';
+import { apMuaLe } from './mua-le.js';
 import { oNoi, dongLoi, baoLoi, nutGo, dangKiem } from './o-dang-nhap.js';
 import { canHoi, noiDungHoiLai, noiDungTuChoi, noiDungThongBao, oDongY, manQlDuLieu, PHIEN_BAN } from './v-dulieu.js';
 
@@ -116,6 +117,7 @@ function nenSang(bat) {
 
 function dungKhung() {
   apGiaoDienDaLuu();
+  apMuaLe();   // mùa lễ cuối năm (mua-le.js): chỉ gắn khi đang mùa, sau đăng nhập
   const nha = S.toi.nha && NHA[S.toi.nha];
   document.documentElement.style.setProperty('--tab-nen', 'var(--be-mat)');
   dat(goc, h('div', { class: 'khung' },

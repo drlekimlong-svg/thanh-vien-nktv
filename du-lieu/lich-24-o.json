@@ -1,0 +1,316 @@
+{
+ "cau": [
+  {
+   "o": 1,
+   "cau_hoi": "CLB Ngoại khoa Trưng Vương được thành lập ngày nào?",
+   "lua_chon": [
+    "05/09/2018",
+    "06/08/2015",
+    "20/11/2015",
+    "01/07/2017"
+   ],
+   "dung": 1,
+   "giai_thich": "Fanpage công bố ngày thành lập 06/08/2015. Ngày 05/09/2018 là mốc CLB chính thức trực thuộc Hội Sinh viên trường. Tính đến tháng 8/2026, CLB tròn 11 tuổi.",
+   "nguon": "Fanpage CLB, bài 06/08/2021"
+  },
+  {
+   "o": 2,
+   "cau_hoi": "Chữ “Trưng Vương” trong tên CLB đến từ đâu?",
+   "lua_chon": [
+    "Tên con đường gần trường",
+    "Tên một người sáng lập",
+    "Phòng sinh viên Bệnh viện Trưng Vương, nơi CLB ra đời",
+    "Tên khóa học đầu tiên"
+   ],
+   "dung": 2,
+   "giai_thich": "Một nhóm sinh viên tranh thủ đêm trực ngồi lại học lâm sàng ở phòng sinh viên Bệnh viện Trưng Vương. CLB mang tên nơi mình ra đời; về tổ chức, CLB trực thuộc Hội Sinh viên trường.",
+   "nguon": "Fanpage CLB, bài 13/11/2021"
+  },
+  {
+   "o": 3,
+   "cau_hoi": "Câu chuyện trung tâm của CLB gồm ba chặng nào?",
+   "lua_chon": [
+    "Đón Nhận – Trưởng thành – Trao lại",
+    "Học – Hỏi – Hành",
+    "Đọc chuẩn – Hiểu đúng – Trao lại",
+    "Kiến thức – Kỹ năng – Thái độ"
+   ],
+   "dung": 0,
+   "giai_thich": "Đón Nhận – Trưởng thành – Trao lại: được anh chị đón nhận, lớn lên qua từng buổi, rồi trao lại cho khóa sau. “Đọc chuẩn – Hiểu đúng – Trao lại” chỉ là tên tạm của một đề án thống kê.",
+   "nguon": "Hồ sơ CLB 2026"
+  },
+  {
+   "o": 4,
+   "cau_hoi": "Chữ TV ở giữa logo CLB được cách điệu thành hình gì?",
+   "lua_chon": [
+    "Kim khâu cong",
+    "Kẹp phẫu tích",
+    "Ống nghe",
+    "Lưỡi dao mổ số 10"
+   ],
+   "dung": 3,
+   "giai_thich": "Chữ T và V cách điệu thành lưỡi dao mổ số 10. Lưỡi dao sắc bén cùng mũi kim nhọn mà chính xác tượng trưng cho động lực vượt qua khó khăn, thử thách.",
+   "nguon": "Tờ rơi ý nghĩa logo CLB"
+  },
+  {
+   "o": 5,
+   "cau_hoi": "Trong logo, sợi chỉ khâu “mềm dẻo nhưng chắc chắn” tượng trưng cho điều gì?",
+   "lua_chon": [
+    "Kiến thức nền tảng",
+    "Kỹ năng mềm",
+    "Động lực",
+    "Sự trọn vẹn"
+   ],
+   "dung": 1,
+   "giai_thich": "Kim khâu là kiến thức nền tảng vững chắc, chỉ khâu là kỹ năng mềm, hai vòng chỉ hình vô cực là phản biện và tự học không ngừng, lưỡi dao và mũi kim là động lực.",
+   "nguon": "Tờ rơi ý nghĩa logo CLB"
+  },
+  {
+   "o": 6,
+   "cau_hoi": "Dòng chữ tên CLB cong như mái vòm phía trên logo mang ý nghĩa gì?",
+   "lua_chon": [
+    "Vòng nguyệt quế chiến thắng",
+    "Cổng bệnh viện",
+    "Mái nhà che chở các thành viên",
+    "Con đường dài phía trước"
+   ],
+   "dung": 2,
+   "giai_thich": "Dòng chữ cong như mái nhà che chở, nâng đỡ và gắn kết thành viên, nơi các thế hệ tụ họp và mỗi người tìm thấy chỗ đứng của mình. Dáng tròn của logo nói về sự trọn vẹn, gắn kết.",
+   "nguon": "Tờ rơi ý nghĩa logo CLB"
+  },
+  {
+   "o": 7,
+   "cau_hoi": "CLB chính thức trực thuộc Hội Sinh viên Trường Đại học Y khoa Phạm Ngọc Thạch từ năm nào?",
+   "lua_chon": [
+    "2016",
+    "2018",
+    "2020",
+    "2022"
+   ],
+   "dung": 1,
+   "giai_thich": "Mốc 05/09/2018. Cũng trong năm 2018, CLB mở đợt tuyển thành viên đầu tiên và tổ chức khóa Kỹ năng khâu cơ bản đợt 1.",
+   "nguon": "Fanpage CLB, bài 06/08/2021"
+  },
+  {
+   "o": 8,
+   "cau_hoi": "Năm 2017, khi còn sinh hoạt ở phòng sinh viên Bệnh viện Trưng Vương, một buổi sinh hoạt của CLB diễn ra vào khung giờ nào?",
+   "lua_chon": [
+    "07:00–09:00",
+    "13:00–15:00",
+    "17:00–21:00",
+    "21:00–23:00"
+   ],
+   "dung": 2,
+   "giai_thich": "Lịch sinh hoạt ngày 23/04/2017 ghi 17:00–21:00. Năm 2018, khi đã về trường, CLB vẫn sinh hoạt tối Chủ nhật hằng tuần, 17:00–21:00.",
+   "nguon": "Lịch sinh hoạt 23/04/2017 (tài liệu nội bộ 2020); Fanpage CLB, bài 08/08/2018"
+  },
+  {
+   "o": 9,
+   "cau_hoi": "Thời Gen2, CLB chia bốn nhóm để chuẩn bị buổi sinh hoạt. Tên nào KHÔNG phải tên một nhóm thời đó?",
+   "lua_chon": [
+    "Đông cung bất bại",
+    "Tây cung",
+    "Bắc cung",
+    "Biển đảo xa xôi"
+   ],
+   "dung": 2,
+   "giai_thich": "Bốn nhóm là Đông cung bất bại, Tây cung, Nam cung và Biển đảo xa xôi. Mỗi nhóm có một nhóm trưởng, thành viên từ năm 3 đến năm 5.",
+   "nguon": "Tài liệu nội bộ 2020"
+  },
+  {
+   "o": 10,
+   "cau_hoi": "Khóa Kỹ năng khâu cơ bản đợt 1 (tháng 11/2018) được thiết kế cho bao nhiêu sinh viên?",
+   "lua_chon": [
+    "50",
+    "80",
+    "120",
+    "200"
+   ],
+   "dung": 1,
+   "giai_thich": "Khóa học các tối 5, 7 và 9/11/2018, thiết kế cho 80 sinh viên, vé bán hết ngay khi đăng thông báo. Đây là chương trình đầu tiên của chuỗi kỹ năng CLB tổ chức.",
+   "nguon": "Fanpage CLB, bài 03/11/2018; tài liệu nội bộ 2020"
+  },
+  {
+   "o": 11,
+   "cau_hoi": "Cuối năm 2018, CLB gom các khóa kỹ năng vào một chuỗi chung. Chuỗi đó tên là gì?",
+   "lua_chon": [
+    "Vũ trụ kỹ năng lâm sàng",
+    "Hành trình ngoại khoa",
+    "Ngoại khoa 360",
+    "Lò luyện kỹ năng"
+   ],
+   "dung": 0,
+   "giai_thich": "Chuỗi được hình dung như sáu viên ngọc: Nghiên cứu khoa học, Xử trí vết thương, Hình ảnh học, Phân tích ECG, Phân tích cận lâm sàng và Bệnh lý ngoại khoa.",
+   "nguon": "Fanpage CLB, bài 28/11/2018; tài liệu nội bộ 2020"
+  },
+  {
+   "o": 12,
+   "cau_hoi": "Khóa Rèn luyện kỹ năng đọc phim CT-scan bụng cơ bản lần 1 của CLB diễn ra khi nào?",
+   "lua_chon": [
+    "06/2017",
+    "12/2018",
+    "11/2019",
+    "12/2020"
+   ],
+   "dung": 1,
+   "giai_thich": "Khóa lần 1 diễn ra tháng 12/2018, lượng giá sáng 29/12/2018. Tháng 3/2019, CLB mở lần 2 và trả lời lần lượt từng góp ý của học viên lần 1.",
+   "nguon": "Fanpage CLB, bài 24/12/2018"
+  },
+  {
+   "o": 13,
+   "cau_hoi": "Khóa “X-quang bụng dưới góc nhìn lâm sàng” được CLB mở lần đầu năm nào?",
+   "lua_chon": [
+    "2017",
+    "2018",
+    "2019",
+    "2021"
+   ],
+   "dung": 2,
+   "giai_thich": "Tháng 11/2019, CLB gọi khóa này là mảnh ghép tiếp theo của Vũ trụ kỹ năng lâm sàng, sau khóa khâu và khóa CT-scan. Năm học 2026–2027 khóa vẫn tiếp tục.",
+   "nguon": "Fanpage CLB, bài 07/11/2019"
+  },
+  {
+   "o": 14,
+   "cau_hoi": "Ngày 08/12/2019, năm nhóm của Gen5 lần đầu mang tên linh vật. Nhà nào chưa có trong năm nhóm đó?",
+   "lua_chon": [
+    "Seiryu",
+    "Genbu",
+    "Byakko",
+    "Kirin"
+   ],
+   "dung": 3,
+   "giai_thich": "Năm nhóm đầu tiên là Seiryu, Suzaku, Byakko, Yin-Yang Kois và Genbu. Kirin ra đời muộn hơn; Giáng sinh 2020, cả sáu nhà cùng đăng bài trên fanpage.",
+   "nguon": "Tài liệu nội bộ 2020; Fanpage CLB, bài 23/12/2020"
+  },
+  {
+   "o": 15,
+   "cau_hoi": "Linh vật của nhà Genbu (Huyền Vũ) gồm những con vật nào?",
+   "lua_chon": [
+    "Rồng và cá",
+    "Hổ và rùa",
+    "Hạc và rùa",
+    "Rùa và rắn"
+   ],
+   "dung": 3,
+   "giai_thich": "Huyền Vũ là linh vật phương Bắc, thường được vẽ là con rùa có con rắn quấn quanh. Mascot Genbu của CLB giữ đúng hình ảnh đó.",
+   "nguon": "Mascot sáu nhà, Ban Nhân sự 2026"
+  },
+  {
+   "o": 16,
+   "cau_hoi": "Linh vật của nhà Yin-Yang Kois là gì?",
+   "lua_chon": [
+    "Hai cá chép đen trắng bơi thành vòng âm dương",
+    "Một con rồng xanh",
+    "Hai con hạc",
+    "Một chú cá heo"
+   ],
+   "dung": 0,
+   "giai_thich": "Hai cá chép, một đen một trắng, bơi thành vòng âm dương. Tên nhà viết là Yin-Yang Kois.",
+   "nguon": "Mascot sáu nhà, Ban Nhân sự 2026"
+  },
+  {
+   "o": 17,
+   "cau_hoi": "Nhà nào có linh vật là Thanh Long (rồng xanh)?",
+   "lua_chon": [
+    "Byakko",
+    "Kirin",
+    "Seiryu",
+    "Suzaku"
+   ],
+   "dung": 2,
+   "giai_thich": "Seiryu là Thanh Long. Suzaku là Chu Tước, Byakko là Bạch Hổ, Genbu là Huyền Vũ, Kirin là Kỳ Lân, và Yin-Yang Kois là đôi cá chép.",
+   "nguon": "Mascot sáu nhà, Ban Nhân sự 2026"
+  },
+  {
+   "o": 18,
+   "cau_hoi": "Trong ba cấp mascot Junior – Senior – Master, cấp Master dành cho ai?",
+   "lua_chon": [
+    "Junior mới vào CLB",
+    "Nhóm trưởng các nhà",
+    "Người có điểm test cao nhất",
+    "Thành viên Ban cố vấn"
+   ],
+   "dung": 3,
+   "giai_thich": "Thành viên đạt cấp Master là Ban cố vấn, những người thế hệ trước còn hoạt động để dẫn dắt người sau. Mỗi người có một mascot cấp ba được thiết kế riêng.",
+   "nguon": "Hồ sơ CLB 2026"
+  },
+  {
+   "o": 19,
+   "cau_hoi": "Năm 2021, CLB nêu công khai tháp bốn bậc thang giá trị. Bậc nào KHÔNG có trong tháp đó?",
+   "lua_chon": [
+    "Năng lực chuyên môn",
+    "Thành tích học tập",
+    "Tự nhận thức – Tự điều chỉnh",
+    "Động lực"
+   ],
+   "dung": 1,
+   "giai_thich": "Bốn bậc là Năng lực chuyên môn, Kỹ năng mềm, Tự nhận thức – Tự điều chỉnh và Động lực. Tháp này đã có trong tài liệu nội bộ năm 2020, trước bài đăng năm 2021.",
+   "nguon": "Fanpage CLB, bài 06/08/2021; tài liệu nội bộ 2020"
+  },
+  {
+   "o": 20,
+   "cau_hoi": "Fanpage của CLB mang tên “CLB Ngoại Khoa Trưng Vương” kèm câu tiếng Anh nào?",
+   "lua_chon": [
+    "Who want to be the next top surgeon?",
+    "Born to operate",
+    "Surgeons never sleep",
+    "Cut well, heal well"
+   ],
+   "dung": 0,
+   "giai_thich": "Câu này đi theo CLB rất lâu. Năm 2026, hội thi Nhà Ngoại khoa trẻ mùa 3 vẫn mở đầu bằng câu gần giống: “Who will rise as the next top surgeon?”.",
+   "nguon": "Fanpage CLB; bài 15/05/2026"
+  },
+  {
+   "o": 21,
+   "cau_hoi": "Tháng 11/2020, lần đầu CLB có gian hàng ở Ngày hội Tân sinh viên. Ngoài thử một mũi khâu, tân sinh viên được xem bộ sưu tập gì?",
+   "lua_chon": [
+    "Dụng cụ phẫu thuật xưa",
+    "Phim X-quang hiếm",
+    "Sỏi túi mật",
+    "Mô hình tim"
+   ],
+   "dung": 2,
+   "giai_thich": "Các bạn năm nhất được hướng dẫn thử một mũi khâu đơn giản và xem bộ sưu tập sỏi túi mật của CLB.",
+   "nguon": "Fanpage CLB, bài 12/11/2020 và 16/11/2020"
+  },
+  {
+   "o": 22,
+   "cau_hoi": "Mỗi tháng 12, trong Cozy Christmas, mỗi thành viên bốc thăm một “người bí ẩn” trong CLB để làm gì?",
+   "lua_chon": [
+    "Tặng một món quà mua sẵn",
+    "Mời người đó đi ăn",
+    "Cùng làm một bài thuyết trình",
+    "Viết cho người đó một lá thư tay"
+   ],
+   "dung": 3,
+   "giai_thich": "Truyền thống bắt đầu từ Giáng sinh 2018 với dự án #christmas2018: bốc thăm tên, viết thư tay, gửi bưu điện tới tận nhà. Tên Cozy Christmas có từ năm 2019.",
+   "nguon": "Group CLB, bài 12/12/2018 và 21/12/2019"
+  },
+  {
+   "o": 23,
+   "cau_hoi": "Từ năm 2022, mỗi mùa Cozy Christmas có tên riêng. Mùa Cozy năm 2022 tên là gì?",
+   "lua_chon": [
+    "Miracles in December",
+    "Jingle All The Way",
+    "Home for Christmas",
+    "Silent Night"
+   ],
+   "dung": 0,
+   "giai_thich": "Mùa 2022 tên “Miracles in December”, buổi Cozy diễn ra trong buổi sinh hoạt Chủ nhật 25/12/2022, mỗi nhà tự chọn dresscode. Mùa 2023 tên “Make it a December to remember”.",
+   "nguon": "Group CLB, tháng 12/2022 và 12/2023"
+  },
+  {
+   "o": 24,
+   "cau_hoi": "Giáng sinh 2020, sáu nhà cùng đăng bài trên fanpage. Nhà nào viết rằng mình “không phải là nhóm, … là nhà”?",
+   "lua_chon": [
+    "Genbu",
+    "Kirin",
+    "Seiryu",
+    "Suzaku"
+   ],
+   "dung": 3,
+   "giai_thich": "Suzaku viết mình “không phải là nhóm, Suzaku là nhà”. Đó là mùa Giáng sinh đầu tiên đủ sáu nhà cùng lên tiếng, có cả Kirin “sinh sau đẻ muộn”. Giáng sinh an lành.",
+   "nguon": "Fanpage CLB, bài 23/12/2020"
+  }
+ ]
+}

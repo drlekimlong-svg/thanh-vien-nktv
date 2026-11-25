@@ -127,3 +127,19 @@ Tab **Công cụ** thay tab Quản lý và tab Tập huấn, đường dẫn v�
 Trang một buổi có bảng đếm theo cấp (Junior, Senior, Ban cố vấn) × trạng thái; chạm một ô để lọc danh sách. Xem mọi cấp thì danh sách gom theo cấp, từng khối gập được. Đơn xin nghỉ chia theo buổi.
 
 **Gọi ngẫu nhiên** (`#quan-ly/goi`, hoặc `#quan-ly/goi/<id buổi>` từ trang một buổi; chỉ quản trị và Ban cố vấn): gọi một Junior, một Senior hoặc một nhà trong số người đã điểm danh có mặt. Trong một buổi không gọi lặp cho tới khi hết một vòng; danh sách đã gọi giữ trong `sessionStorage` của máy đang dùng, không lên máy chủ.
+
+## Giao diện mùa lễ cuối năm (25/11/2026)
+
+Anh Long duyệt kế hoạch 0.2 (`TAI_LIEU_APP_THANH_VIEN/GIAO_DIEN_GIANG_SINH_2026-11-25/`). Tự bật theo ngày giờ Việt Nam, năm nào cũng chạy lại:
+
+- **01/12–27/12 Giáng sinh:** chữ đèn "Cozy Christmas" thay chữ hạt cạnh logo, dây đèn, sọc kẹo gậy, tuyết rơi khoảng 24 giây rồi đứng, dòng đếm ngược, lời chào mùa lễ, mascot đội mũ, quàng khăn, ném tuyết (`img/le/`), thẻ **Lịch 24 ô** (01–24/12, mỗi ngày một câu hỏi về CLB).
+- **28/12–03/01 Năm mới:** chữ đèn "Happy New Year", đếm ngược tới năm mới, mascot tư thế Năm mới.
+- Ngày có buổi, lời chào vẫn báo giờ, nơi. Chỉ thành viên CLB thấy; học viên các đợt không đổi.
+
+**Bật, tắt:** quản trị chọn Tự động theo ngày / Bật ngay / Tắt ở tab Công cụ (khóa `giang_sinh` trong `cai_dat`, không cần migration). Thành viên tắt trên máy mình ở cùng chỗ (`localStorage['nktv-mua-le']`). Tắt thì không nạp `css/giang-sinh.css`, không gắn `data-mua`: app y như cũ.
+
+**Chạy thử:** `?demo=tv&mua=giang-sinh&ngay=2026-12-10`, `?demo=bcv&mua=nam-moi&ngay=2026-12-29` (chỉ trên máy; dòng ngày trên dải xanh vẫn là ngày thật). Tự kiểm các hàm: mở `tools/kiem_mua_le.html` qua máy chủ chạy thử.
+
+**Câu Lịch 24 ô:** 24 câu hỏi về CLB (anh Long đổi từ câu lâm sàng ngày 25/11/2026), soạn trong `LICH_24_O/MAU_24_CAU.csv` (thư mục kế hoạch). Muốn sửa thì điền `LICH_24_O/MAU_24_CAU.csv` (trong thư mục kế hoạch), rồi chạy `python -I tools/lich_24_o.py` để ghi `du-lieu/lich-24-o.json` (`--kiem` để tự kiểm công cụ). Chưa có tệp này thì thẻ 24 ô tự ẩn. Bản chạy thử đọc `du-lieu/lich-24-o.demo.json` (câu mẫu, thiếu ô 12).
+
+Tệp: `js/mua-le.js`, `js/lich-24-o.js`, `css/giang-sinh.css`, `img/le/`, sửa nhỏ ở `js/app.js`, `js/v-homnay.js`, `js/v-congcu.js`.

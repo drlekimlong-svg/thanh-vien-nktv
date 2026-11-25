@@ -1,0 +1,36 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Tự kiểm mùa lễ</title>
+<!-- Tự kiểm js/mua-le.js (giai đoạn theo ngày, đếm ngược, bộ câu, tư thế mascot, thứ tự công tắc).
+     Mở qua máy chủ chạy thử, ví dụ http://127.0.0.1:8768/app-thanh-vien/tools/kiem_mua_le.html; trang ghi "KIỂM OK" hoặc dòng lỗi. -->
+<pre id="kq">Đang kiểm…</pre>
+<script type="module">
+import { S } from '../js/state.js';
+import { phaTheoNgay, demNguoc, boCauLe, anhLinhVatLe, giaiDoan, KHOA_MAY } from '../js/mua-le.js';
+const loi = [];
+const bang = (ten, a, b) => { if (a !== b) loi.push(`${ten}: ${JSON.stringify(a)} ≠ ${JSON.stringify(b)}`); };
+[['2026-11-30', null], ['2026-12-01', 'giang-sinh'], ['2026-12-27', 'giang-sinh'], ['2026-12-28', 'nam-moi'], ['2027-01-03', 'nam-moi'], ['2027-01-04', null]]
+  .forEach(([n, p]) => bang('pha ' + n, phaTheoNgay(n), p));
+[['2026-12-01', 'giang-sinh', 'Còn 24 ngày tới Giáng sinh'], ['2026-12-24', 'giang-sinh', 'Tối nay là đêm Giáng sinh'], ['2026-12-25', 'giang-sinh', 'Giáng sinh an lành'],
+ ['2026-12-26', 'giang-sinh', 'Mùa Giáng sinh'], ['2026-12-28', 'nam-moi', 'Còn 4 ngày tới năm 2027'], ['2026-12-31', 'nam-moi', 'Tối nay giao thừa'],
+ ['2027-01-01', 'nam-moi', 'Chúc mừng năm mới 2027'], ['2027-01-02', 'nam-moi', 'Năm mới 2027']]
+  .forEach(([n, p, c]) => bang('đếm ngược ' + n, demNguoc(n, p), c));
+bang('câu riêng 24/12', boCauLe('2026-12-24', 'giang-sinh').length, 1);
+bang('câu riêng 31/12', boCauLe('2026-12-31', 'nam-moi')[0].includes('giao thừa'), true);
+bang('bộ Giáng sinh', boCauLe('2026-12-10', 'giang-sinh').length, 7);
+bang('năm trong câu', boCauLe('2026-12-29', 'nam-moi')[0].startsWith('Năm 2026'), true);
+bang('bỏ câu "khép lại" từ 01/01', boCauLe('2027-01-02', 'nam-moi').some(c => c.includes('khép')), false);
+bang('không còn {nam}', boCauLe('2027-01-02', 'nam-moi').some(c => c.includes('{nam}')), false);
+bang('mascot 24/12', anhLinhVatLe('byakko', 't1', '2026-12-24', 'giang-sinh'), 'img/le/byakko-1.webp');
+bang('mascot Năm mới', anhLinhVatLe('koi', 't1', '2026-12-29', 'nam-moi'), 'img/le/koi-4.webp');
+bang('mascot ngày thường 1–3', /-[123]\.webp$/.test(anhLinhVatLe('kirin', 't7', '2026-12-10', 'giang-sinh')), true);
+// Công tắc: quản trị Tắt → máy này tắt → quản trị Bật ngay → theo ngày. Chỉ thành viên CLB.
+let cu = null; try { cu = localStorage.getItem(KHOA_MAY); localStorage.removeItem(KHOA_MAY); } catch (_) {}
+S.toi = { loai: 'hoc_vien' }; S.caiDat = { giang_sinh: 'bat' }; bang('học viên', giaiDoan(), null);
+S.toi = { loai: 'thanh_vien' }; S.caiDat = { giang_sinh: 'tat' }; bang('quản trị Tắt', giaiDoan(), null);
+S.caiDat = { giang_sinh: 'bat' }; bang('quản trị Bật ngay', giaiDoan() !== null, true);
+try { localStorage.setItem(KHOA_MAY, 'tat'); } catch (_) {}
+bang('máy này tắt thắng Bật ngay', giaiDoan(), null);
+try { if (cu === null) localStorage.removeItem(KHOA_MAY); else localStorage.setItem(KHOA_MAY, cu); } catch (_) {}
+document.getElementById('kq').textContent = loi.length ? 'LỖI\n' + loi.join('\n') : 'KIỂM OK (' + 27 + ' phép)';
+</script>

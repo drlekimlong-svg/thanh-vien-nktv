@@ -1,0 +1,303 @@
+{
+ "cau": [
+  {
+   "o": 1,
+   "cau_hoi": "Câu hỏi mẫu cho ô 1: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 1,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 2,
+   "cau_hoi": "Câu hỏi mẫu cho ô 2: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 2,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 3,
+   "cau_hoi": "Câu hỏi mẫu cho ô 3: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 3,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 4,
+   "cau_hoi": "Câu hỏi mẫu cho ô 4: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 0,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 5,
+   "cau_hoi": "Câu hỏi mẫu cho ô 5: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 1,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 6,
+   "cau_hoi": "Câu hỏi mẫu cho ô 6: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 2,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 7,
+   "cau_hoi": "Câu hỏi mẫu cho ô 7: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 3,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 8,
+   "cau_hoi": "Câu hỏi mẫu cho ô 8: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 0,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 9,
+   "cau_hoi": "Câu hỏi mẫu cho ô 9: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 1,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 10,
+   "cau_hoi": "Câu hỏi mẫu cho ô 10: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 2,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 11,
+   "cau_hoi": "Câu hỏi mẫu cho ô 11: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 3,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 13,
+   "cau_hoi": "Câu hỏi mẫu cho ô 13: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 1,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 14,
+   "cau_hoi": "Câu hỏi mẫu cho ô 14: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 2,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 15,
+   "cau_hoi": "Câu hỏi mẫu cho ô 15: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 3,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 16,
+   "cau_hoi": "Câu hỏi mẫu cho ô 16: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 0,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 17,
+   "cau_hoi": "Câu hỏi mẫu cho ô 17: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 1,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 18,
+   "cau_hoi": "Câu hỏi mẫu cho ô 18: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 2,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 19,
+   "cau_hoi": "Câu hỏi mẫu cho ô 19: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 3,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 20,
+   "cau_hoi": "Câu hỏi mẫu cho ô 20: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 0,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 21,
+   "cau_hoi": "Câu hỏi mẫu cho ô 21: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 1,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 22,
+   "cau_hoi": "Câu hỏi mẫu cho ô 22: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 2,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 23,
+   "cau_hoi": "Câu hỏi mẫu cho ô 23: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 3,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  },
+  {
+   "o": 24,
+   "cau_hoi": "Câu hỏi mẫu cho ô 24: đây là chỗ Ban chuyên môn điền một tình huống lâm sàng ngắn?",
+   "lua_chon": [
+    "Phương án A",
+    "Phương án B",
+    "Phương án C",
+    "Phương án D"
+   ],
+   "dung": 0,
+   "giai_thich": "Giải thích mẫu.",
+   "nguon": "Nguồn mẫu"
+  }
+ ]
+}
